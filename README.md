@@ -2,7 +2,7 @@
 
 A browser mech-combat prototype for 1–4 players. **[Play at thorneloe.ai/ironwake](https://thorneloe.ai/ironwake/).**
 
-Build and paint a mech, fit two independently controlled weapons and a special, and fly into Cinderfall: a multi-stage planetary operation targeting about 15 minutes. A training platform and AI duel are also available.
+Build and paint a mech, fit two independently controlled weapons and a special, and fly into Cinderfall: a multi-stage planetary operation targeting about 15 minutes. Open **Workshop** to configure your build, enter the **Target range**, or start an **AI duel**. The home screen keeps only the operation and workshop as its main choices.
 
 ## Play
 
@@ -35,9 +35,9 @@ Deployments use Wrangler authentication stored outside this repository. The chec
 
 ## Multiplayer
 
-PeerJS provides public room discovery; WebRTC carries game traffic directly between browsers. The squad host runs the authoritative simulation and sends snapshots. Players join and ready up before deployment. Keep the host tab active.
+PeerJS provides public room discovery; WebRTC carries game traffic directly between browsers. The squad host runs the authoritative simulation and sends snapshots. PeerJS binary serialization chunks large level and horde messages before transmission; the JSON channel’s 16 KB limit is not suitable for these snapshots. Players join and ready up before deployment. Keep the host tab active.
 
-Public PeerJS signaling and Google STUN require internet. There is no TURN relay, dedicated game server, host migration or mid-mission joining. Restrictive NAT/firewalls can prevent connections. Callsigns are random cosmetic identifiers, not authenticated accounts. Protocol v40 separates this release from earlier clients.
+Public PeerJS signaling and Google STUN require internet. There is no TURN relay, dedicated game server, host migration or mid-mission joining. Restrictive NAT/firewalls can prevent connections. Callsigns are random cosmetic identifiers, not authenticated accounts. Protocol v41 separates this release from earlier clients.
 
 ## Project layout
 
@@ -48,7 +48,11 @@ Public PeerJS signaling and Google STUN require internet. There is no TURN relay
 - `tests/`: simulation, controls, rendering fixtures and hosting checks.
 - `worker/`: Cloudflare asset routing; only `dist/` is published as static files.
 
-Cinderfall scales objectives and enemies for 1–4 pilots. Two rare siege-mech arrivals and the reactor warden have warning, descent and impact phases. The estimated mission duration comes from a deterministic pacing model, not a complete human playtest; difficulty remains a work in progress.
+Cinderfall follows a continuous, walled freight canyon through five stages: insertion, battery ridge, a crawler escort, the reactor, and extraction. Seeded cargo cover, raised decks, gantries, silo banks, route lights, windblown ash and industrial signage give each section a readable path. Reinforcements arrive at freight gates near the squad; distant ordinary robots recycle while elites and objectives persist. Enemy caps scale from 32 solo to 56 with four pilots, with short arrival telegraphs and roughly 5.5 seconds between reinforcement waves.
+
+The menus and HUD share a monochrome green visual system inspired by the Even G2 display: thin outlines, subdued secondary text and brighter active states. Static scenery and ordinary robot parts use instanced rendering; a spatial collision index and analytic sight-line checks keep larger encounters practical. No new image/model downloads or remote font requests are needed.
+
+Cinderfall scales objectives and enemies for 1–4 pilots. Two rare siege-mech arrivals and the reactor warden have warning, descent and impact phases. The deterministic pacing model estimates 13.2–14.8 minutes for 1–4 pilots. This is not a complete human playtest; difficulty remains a work in progress. `tests/planet-preview.html` walks through the route and `tests/cinder-stress.html` exercises four pilots against 56 robots.
 
 The old site provides a one-time browser-to-browser transfer of saved mech builds. It does not transfer old pilot tokens or database records. The receiver accepts messages only from the exact legacy origin and opening window, sanitizes builds, and retains at most 12 saves.
 

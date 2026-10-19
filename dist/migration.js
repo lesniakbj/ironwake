@@ -1,6 +1,6 @@
 // The retired site sends browser-local saves only to this origin via postMessage.
 // Only sanitized mech builds transfer; no identity keys or credentials are read.
-import {cleanBuild} from './core.js?v=39';
+import {cleanBuild} from './core.js?v=41';
 const legacyOrigin='https://ironwake-mech-coop.loganthorneloe.chatgpt.site';
 export async function receiveLegacyMechs(){
  if(!window.opener)return;

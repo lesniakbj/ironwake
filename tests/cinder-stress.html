@@ -1,0 +1,8 @@
+<!doctype html><meta charset="utf-8"><title>Cinderfall horde performance check</title><style>body{margin:0;background:#111;color:#c0e890;font:13px monospace}canvas{width:100vw;height:90vh}#result{padding:8px}</style><canvas id="battle"></canvas><p id="result">Warming up four pilots and 56 robots…</p><script type="module">
+import{newWorld,planetMission,cleanBuild,step,setInput}from'../dist/core.js?v=41';import{drawBattle3D,getAim,renderingStats}from'../dist/three-view.js?v=41';import{view}from'../dist/view-controls.js?v=41';
+const world=newWorld(planetMission(38),Array.from({length:4},(_,i)=>({id:'p'+i,build:cleanBuild({equipment:['carbine','rail','emp'],parts:{booster:'heavy'}})}))),p=world.players[0];view.yaw=0;view.pitch=-.04;world.operation.nextWave=Infinity;
+for(let i=0;i<56;i++)world.spawn.push({time:0,type:i%9===0?'tank':i%3===0?'gunner':'drone',zone:{x:p.x+250+(i%8)*55,y:p.y-180+Math.floor(i/8)*55,exact:true,operation:true}});
+step(world,.01);world.enemies.forEach(e=>e.hp=e.max=100000);const costs=[],draws=[];let frames=0,first=0;
+function frame(t){if(!first)first=t;const at=performance.now();world.players.forEach((q,i)=>{q.recoverUntil=world.time+1;setInput(world,q.id,{...getAim(q),left:true,right:true,fly:frames%180<90});});step(world,1/60);drawBattle3D(battle,world,p.id,t/1000);costs.push(performance.now()-at);draws.push(renderingStats().calls);frames++;if(frames<240)requestAnimationFrame(frame);else{costs.sort((a,b)=>a-b);result.textContent=JSON.stringify({pilots:4,enemies:world.enemies.length,projectiles:world.bullets.length,fps:Math.round(239000/(t-first)),p95ms:+costs[Math.floor(costs.length*.95)].toFixed(1),peakDraws:Math.max(...draws),...renderingStats()});}}
+requestAnimationFrame(frame);
+</script>

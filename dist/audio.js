@@ -1,5 +1,5 @@
-import{RANGED}from './core.js?v=39';
-import{createSoundBus,playWeaponSound,playMeleeSound,playMechanicalSound,createThrusterSound,createBeamSound}from './sound-design.js?v=39';
+import{RANGED}from './core.js?v=41';
+import{createSoundBus,playWeaponSound,playMeleeSound,playMechanicalSound,createThrusterSound,createBeamSound}from './sound-design.js?v=41';
 let ctx=null,master=null,muted=false,shots=0,meleeShots=0,meleeImpacts=0,kills=0,hp=null,hits=0,energy=100,abilityCooldown=0,lastMoveCount=0,lastBlastId=0,lastHeavyAlert=0,lastSirenBeat=-1;
 export function initAudio(){try{ctx??=new(window.AudioContext||window.webkitAudioContext)();if(!master){master=createSoundBus(ctx);}if(ctx.state==='suspended')ctx.resume().catch(()=>{});}catch{}}
 function tone(freq,end,duration,type='sine',gain=1){if(!ctx||ctx.state!=='running'||muted)return;const o=ctx.createOscillator(),g=ctx.createGain(),now=ctx.currentTime;o.type=type;o.frequency.setValueAtTime(freq,now);o.frequency.exponentialRampToValueAtTime(Math.max(10,end),now+duration);g.gain.setValueAtTime(gain,now);g.gain.exponentialRampToValueAtTime(.001,now+duration);o.connect(g);g.connect(master);o.start();o.stop(now+duration+.01);o.onended=()=>{o.disconnect();g.disconnect();};}

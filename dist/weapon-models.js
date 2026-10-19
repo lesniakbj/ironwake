@@ -1,5 +1,5 @@
-import{BULWARK}from './bulwark.js?v=39';
-import{MUZZLES}from './weapon-origin.js?v=39';
+import{BULWARK}from './bulwark.js?v=41';
+import{MUZZLES}from './weapon-origin.js?v=41';
 import * as T from './vendor/three.module.min.js';
 export function makeWeapons(build,k){
  const {box,cyl,glow,mesh,mat,sphereGeometry}=k,dark='#172331',steel='#a6b8c5',orange='#ff9d54',cyan='#80f7ff',purple='#c596ff';

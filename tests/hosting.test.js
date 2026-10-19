@@ -8,7 +8,7 @@ test('bare game path redirects with room invite intact',async()=>{
  assert.equal(response.headers.get('Location'),origin+'/ironwake/?room=ABCDEF');
 });
 test('game assets are fetched under subpath and receive safe content headers',async()=>{
- for(const [path,expected] of [['/ironwake/','/index.html'],['/ironwake/app.js?v=39','/app.js']]){
+ for(const [path,expected] of [['/ironwake/','/index.html'],['/ironwake/app.js?v=41','/app.js']]){
   const response=await worker.fetch(new Request(origin+path),{ASSETS:{fetch:async req=>{
    assert.equal(new URL(req.url).pathname,expected);
    return new Response('asset',{headers:{'Content-Type':'text/javascript'}});
