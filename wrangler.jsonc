@@ -1,0 +1,19 @@
+{
+  "name": "ironwake",
+  "main": "worker/index.js",
+  "compatibility_date": "2026-10-18",
+  "workers_dev": false,
+  "preview_urls": false,
+  "routes": [
+    {
+      "pattern": "thorneloe.ai/ironwake*",
+      "zone_name": "thorneloe.ai"
+    }
+  ],
+  "assets": {
+    "directory": "./dist",
+    "binding": "ASSETS",
+    "html_handling": "none",
+    "run_worker_first": true
+  }
+}

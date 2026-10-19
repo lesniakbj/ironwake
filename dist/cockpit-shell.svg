@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1000" viewBox="0 0 1600 1000" preserveAspectRatio="none">
+<defs>
+ <linearGradient id="metal" x2="1" y2="1"><stop stop-color="#55616a"/><stop offset=".07" stop-color="#2b343a"/><stop offset=".4" stop-color="#151c21"/><stop offset=".85" stop-color="#242e35"/><stop offset="1" stop-color="#080d11"/></linearGradient>
+ <linearGradient id="roof" x2="0" y2="1"><stop stop-color="#090d11"/><stop offset=".55" stop-color="#323d43"/><stop offset=".58" stop-color="#677078"/><stop offset=".64" stop-color="#11191e"/><stop offset="1" stop-color="#080c10"/></linearGradient>
+ <pattern id="grain" width="29" height="37" patternUnits="userSpaceOnUse"><path d="M2 4h5m14 8h3M4 28h9M24 31h4" stroke="#bdc9ce" stroke-opacity=".08"/><path d="M8 16h10M3 35h6" stroke="#000" stroke-opacity=".3"/></pattern>
+ <g id="bolt"><circle r="6" fill="#080d11" stroke="#626e75" stroke-width="1.5"/><path d="M-3 0h6" stroke="#7f8c92" stroke-width="1.4"/></g>
+ <g id="rib"><path d="M0 0L70 0 115 120 88 710 140 865 0 1000Z" fill="url(#metal)" stroke="#080c10" stroke-width="8"/><path d="M18 25L52 25 92 126 67 715 111 860" fill="none" stroke="#77838b" stroke-opacity=".65" stroke-width="3"/><path d="M0 0L70 0 115 120 88 710 140 865 0 1000Z" fill="url(#grain)"/><path d="M27 140L18 662" stroke="#070b0f" stroke-width="18"/><path d="M27 140L18 662" stroke="#465159" stroke-width="5"/>
+ <use href="#bolt" x="65" y="114"/><use href="#bolt" x="50" y="295"/><use href="#bolt" x="44" y="520"/><use href="#bolt" x="50" y="715"/>
+ <path d="M84 130l-4 27m-7 343l-3 16M81 758l8 24" stroke="#abb4b6" stroke-opacity=".5" stroke-width="2"/>
+ </g>
+</defs>
+<use href="#rib"/><use href="#rib" transform="translate(1600) scale(-1 1)"/>
+<path d="M0 0H1600V45H1320L1240 82H1010L980 58H620L590 82H360L280 45H0Z" fill="url(#roof)" stroke="#05090c" stroke-width="5"/>
+<path d="M160 25h120l85 35h210m450 0h210l85-35h120" fill="none" stroke="#819096" stroke-width="2" opacity=".5"/>
+<path d="M410 42h130m520 0h130" stroke="#96b8b6" stroke-width="3" opacity=".6"/>
+<use href="#bolt" x="320" y="30"/><use href="#bolt" x="610" y="29"/><use href="#bolt" x="990" y="29"/><use href="#bolt" x="1280" y="30"/>
+<path d="M0 770L180 795 290 835H650L700 810H900L950 835H1310L1420 795 1600 770V1000H0Z" fill="url(#metal)" stroke="#080d11" stroke-width="6"/>
+<path d="M0 778L180 803 290 843H650M950 843H1310L1420 803 1600 778" fill="none" stroke="#899194" stroke-opacity=".6" stroke-width="3"/>
+<path d="M0 770L180 795 290 835H650L700 810H900L950 835H1310L1420 795 1600 770V1000H0Z" fill="url(#grain)"/>
+<!-- Scuffs stay at the edge of the optical panel. -->
+<g fill="none" stroke="#b4c8cc" opacity=".14" stroke-width="1"><path d="M123 190l30-18m-32 22l18-11M1400 145l36 22m-28-9l21 13M120 650l45-19m-39 26l24-13M1450 600l-30 22M270 750l32-7m3-4l17-4M1270 754l38 9"/></g>
+</svg>

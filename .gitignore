@@ -1,0 +1,14 @@
+node_modules/
+.wrangler/
+.openai/
+build/
+.env
+.env.*
+.dev.vars
+.dev.vars.*
+*.log
+*.sqlite*
+*.db
+.DS_Store
+dist/server/
+dist/.openai/

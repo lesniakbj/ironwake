@@ -1,0 +1,6 @@
+<!doctype html><meta charset="utf-8"><body style="margin:0;background:#111;color:white"><pre id="result"></pre><canvas id="c" style="width:100vw;height:90vh"></canvas><script type="module">
+import{drawHomeBattle3D}from'../dist/three-view.js?v=18';import{cleanBuild}from'../dist/core.js?v=18';
+const build=cleanBuild();let frames=0,start=0,cycle=0;
+function frame(t){try{drawHomeBattle3D(c,build,t/1000);frames++;if(!start)start=t;if(t-start>2000){result.textContent=`Home battle running · ${Math.round(frames*1000/(t-start))} fps · loop ${Math.floor(t/12000)+1}`;frames=0;start=t;}requestAnimationFrame(frame);}catch(e){result.textContent=e.stack;}}
+requestAnimationFrame(frame);
+</script>
