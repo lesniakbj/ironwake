@@ -33,6 +33,38 @@ npm run deploy
 
 Deployments use Wrangler authentication stored outside this repository. The checked-in route targets `thorneloe.ai/ironwake*`; change the route and zone for another domain. Workers.dev and preview URLs are disabled. There are **no database bindings, API secrets or account credentials** required by the game. Never commit `.env`, `.dev.vars`, Wrangler state or database exports.
 
+## Experimental destruction branch
+
+Open `http://localhost:4174/ironwake/?lab=destruction` to opt into the destruction
+console. The ordinary home screen, Cinderfall and campaign flow do not select
+these levels. **Breakwater** is a standalone second operation: breach customs,
+rupture three refinery pumps, collapse the command roof, then extract together.
+The **Breach range** has no hostiles; the **Stress yard** adds dense cargo and
+fuel arrays. The optional demolition kit fits hammer, rockets and repair.
+
+This is authored, panel-based destruction, not arbitrary mesh cutting or voxel
+terrain. Concrete, steel, glass, cargo, fuel and gold load-bearing columns have
+different durability. Removed panels immediately stop blocking movement,
+projectiles, sightlines, camera rays and minimaps. Elevated roof slabs have a
+real underside; removing their four supports schedules a bounded collapse.
+Fuel chains also damage nearby combatants. Debris and low rubble are cosmetic
+and nonblocking so the fight keeps moving.
+
+`destruction.js` owns the opt-in spatial index and authoritative HP state;
+`destruction-mission.js` authors levels and directs objectives;
+`destruction-scene.js` batches panels, debris and rubble;
+`destruction-lab.js` owns the opt-in console and live counters. Definitions stay
+in the initial mission; panel HP, revision, pending work and recent events travel
+in normal host snapshots. Lab invites use an isolated PeerJS protocol prefix.
+There are no physics bodies: caps are 240 animated debris instances, 160 rubble
+instances, 48 recent fracture events, 128 pending jobs and 12 jobs per simulation
+step. Counters show real scene draw calls and active debris, not a performance
+guarantee. The HUD also exposes renderer geometry/texture counts for repeated
+reset checks. Panel transforms are cached; only changed batches upload on a
+damage revision, rubble rebuilds only on a fracture, and collision-cell survivors
+are cached between revisions. Manual play/measurement remains necessary on
+target hardware; no mobile/low-end frame-rate target is claimed yet.
+
 ## Multiplayer
 
 PeerJS provides public room discovery; WebRTC carries game traffic directly between browsers. The squad host runs the authoritative simulation and sends snapshots. PeerJS binary serialization chunks large level and horde messages before transmission; the JSON channel’s 16 KB limit is not suitable for these snapshots. Players join and ready up before deployment. Keep the host tab active.
