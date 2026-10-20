@@ -5,3 +5,4 @@ body[data-lab=destruction] #modal:has(.demolition-brief){width:min(1060px,94vw);
 #demolitionScenarioLabel{display:flex;gap:8px;align-items:center;margin:8px 0;color:#a7c096}#demolitionScenarioLabel[hidden]{display:none}#demolitionScenario{max-width:180px;background:#16271d;color:#d3e9b9;border:1px solid #66775b;padding:3px;font:10px monospace}
 #destructionTelemetry{top:calc(104px + var(--squad-extra,0px))}@media(max-width:800px){#destructionTelemetry{top:calc(124px + var(--squad-extra,0px))}}
 #demolitionMemory{display:block}
+#destructionTelemetry p span{flex:0 0 auto;min-width:52px;white-space:nowrap}

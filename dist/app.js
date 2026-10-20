@@ -17,7 +17,7 @@ import{view,look,resetView,movementInput,mouseButtons}from'./view-controls.js?v=
 import{initAudio,resetSound,updateSound,toggleSound,updateBoostSound,updateChargeSound,updatePreviewSound}from'./audio.js?v=41';
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)],escape=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const read=(k,f)=>{try{return JSON.parse(localStorage.getItem(k))??f;}catch{return f;}},write=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v));return true;}catch{toast('Storage unavailable. Export your mech to keep a copy.');return false;}};
-const peerProtocol=destructionLabEnabled?'ironwake-demolition-v1-':'ironwake-v41-';
+const peerProtocol=destructionLabEnabled?'ironwake-demolition-v2-':'ironwake-v41-';
 const randomSeed=()=>crypto.getRandomValues(new Uint32Array(1))[0];let build=cleanBuild(read('iw-active',DEFAULT_BUILD)),saved=read('iw-builds',[]);if(!Array.isArray(saved))saved=[];saved=saved.slice(0,12).map(cleanBuild);let pilot=read('iw-callsign',null),m=planetMission(randomSeed()),localId='local',peer=null,hostConn=null,isHost=false,room='',roster=[],connections=new Map(),world=null,playing=false,endShown=false,connecting=false,joinTimeout=null,lastSnapshot=0,receivedAt=0,netFrames=0,toastTimeout;
 if(!validCallsign(pilot)){pilot=createCallsign();write('iw-callsign',pilot);}
 let homePaused=false,homeTime=0,homeTick=0;let activeSlot="torso",equipmentFilter="all",thrusterPreview=false,equipmentPreview=false;

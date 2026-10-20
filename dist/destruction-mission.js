@@ -1,4 +1,4 @@
-import {initDestruction,stepDestruction} from './destruction.js';
+import {initDestruction,stepDestruction,structureHasOpening} from './destruction.js';
 
 export const BREACH_PHASES=['Breach the customs wall','Rupture the refinery tanks','Collapse the command roof','Extract through the freight yard'];
 // Level 02 is intentionally opt-in. Cinderfall and its campaign remain untouched.
@@ -51,7 +51,7 @@ export function destructionMission(variant='level',seed=92002){
 }
 const alive=w=>w.players.filter(p=>p.hp>0),distance=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
 const group=(w,name)=>w.mission.obstacles.filter(o=>o.goal===name);
-const removed=(w,o)=>w.destruction.hp[o.breakable]<=0;
+const removed=(w,o)=>w.destruction.hp[o.breakable]<=0||!!w.destruction.severed[o.breakable];
 export function initDestructionMission(w){
  initDestruction(w);
  w.siege={phase:0,nextWave:3,waves:0,extract:0,redeploys:2,wipeAt:null,checkpoint:{...w.mission.entry},notice:'LIVE DEMOLITION / Breach walls. Open your own route.',noticeUntil:3};
@@ -88,7 +88,7 @@ export function stepDestructionMission(w,dt,stats,onBlast){
    if(!blocked){if(w.enemies.length>=8+w.players.length*3)break;enemy(w,p.x,p.y,spawned%2?'drone':'gunner');if(++spawned>=1+w.players.length)break;}
   }
  }
- const complete=s.phase===0?group(w,'gate').some(o=>removed(w,o)):s.phase===1?group(w,'refinery').every(o=>removed(w,o)):s.phase===2?group(w,'command').every(o=>removed(w,o)):false;
+ const complete=s.phase===0?group(w,'gate').some(o=>removed(w,o)||structureHasOpening(w.mission,o)):s.phase===1?group(w,'refinery').every(o=>removed(w,o)):s.phase===2?group(w,'command').every(o=>removed(w,o)):false;
  if(complete){
   s.phase++;w.cleared=s.phase;w.zoneIndex=s.phase;s.checkpoint={...w.mission.zones[s.phase]};
   s.notice=['','WALL BREACHED / Push into the refinery','FUEL NETWORK RUPTURED / Bring down command','COMMAND COLLAPSED / Boost to extraction'][s.phase];s.noticeUntil=w.time+3.5;

@@ -42,28 +42,32 @@ rupture three refinery pumps, collapse the command roof, then extract together.
 The **Breach range** has no hostiles; the **Stress yard** adds dense cargo and
 fuel arrays. The optional demolition kit fits hammer, rockets and repair.
 
-This is authored, panel-based destruction, not arbitrary mesh cutting or voxel
-terrain. Concrete, steel, glass, cargo, fuel and gold load-bearing columns have
-different durability. Removed panels immediately stop blocking movement,
-projectiles, sightlines, camera rays and minimaps. Elevated roof slabs have a
-real underside; removing their four supports schedules a bounded collapse.
-Fuel chains also damage nearby combatants. Debris and low rubble are cosmetic
-and nonblocking so the fight keeps moving.
+Objects now fracture locally: small per-object grids let bullets punch holes
+without deleting an entire wall or crate. The remaining chunks share exact bounds
+with movement, projectiles, sightlines and camera rays. Disconnected islands
+crumble; severing load-bearing columns cascades the roof. This is not arbitrary
+mesh cutting or a voxelized terrain world. Fuel chains also damage combatants.
+Detached chunks use gravity, tumble, terrain/structure collisions, restitution,
+friction and sleeping. They remain nonblocking and non-damaging to pilots.
 
-`destruction.js` owns the opt-in spatial index and authoritative HP state;
+`fracture-layout.js` defines shared cell bounds and adjacency;
+`destruction.js` owns the opt-in spatial index, cell HP and support state;
 `destruction-mission.js` authors levels and directs objectives;
 `destruction-scene.js` batches panels, debris and rubble;
+`chunk-physics.js` owns the capped, presentation-only debris simulation;
 `destruction-lab.js` owns the opt-in console and live counters. Definitions stay
 in the initial mission; panel HP, revision, pending work and recent events travel
 in normal host snapshots. Lab invites use an isolated PeerJS protocol prefix.
-There are no physics bodies: caps are 240 animated debris instances, 160 rubble
-instances, 48 recent fracture events, 128 pending jobs and 12 jobs per simulation
-step. Counters show real scene draw calls and active debris, not a performance
-guarantee. The HUD also exposes renderer geometry/texture counts for repeated
-reset checks. Panel transforms are cached; only changed batches upload on a
-damage revision, rubble rebuilds only on a fracture, and collision-cell survivors
-are cached between revisions. Manual play/measurement remains necessary on
-target hardware; no mobile/low-end frame-rate target is claimed yet.
+Budgets are 64 awake physics chunks, 160 sleeping chunks, 48 recent fracture
+events, 128 pending jobs and 12 structural jobs per simulation step. Chunk physics
+runs at 60 Hz with at most three substeps per rendered frame and no chunk-to-chunk
+collision pairs. Reduced motion lowers the awake budget to 24 and removes tumble.
+Intact objects stay single instances; only damaged objects activate fracture
+cells. Geometry stays instanced and shared; sleeping transforms upload only when
+the sleeping pool changes. Only host hole/support state replicates, not cosmetic
+physics transforms. Counters expose awake/settled chunks, draw calls and renderer
+geometry/texture counts. These are not frame-rate guarantees; low-end/mobile
+hardware still needs measurement.
 
 ## Multiplayer
 

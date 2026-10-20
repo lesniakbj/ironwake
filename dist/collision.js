@@ -1,4 +1,4 @@
-import {obstacleSolid,destructionRevision} from './destruction.js';
+import {obstacleSolid,destructionRevision,structureBoxes} from './destruction.js';
 // Static mission geometry is indexed once, never serialized into co-op snapshots.
 const grids=new WeakMap(),CELL=256,EMPTY=[];
 function liveCell(m,cached,key){
@@ -23,5 +23,5 @@ export function segmentHitsBox(a,b,o,r=2,minZ=-Infinity,maxZ=o.height||100){
  }return leave>0&&enter<=1;
 }
 export function staticShotBlocked(m,a,b,r=2){
- return m.obstacles.some(o=>obstacleSolid(m,o)&&segmentHitsBox(a,b,o,r,o.baseZ??-Infinity))||(m.platforms||[]).some(p=>segmentHitsBox(a,b,p,r,p.z-8,p.z));
+ return m.obstacles.some(o=>obstacleSolid(m,o)&&(m.destructible?structureBoxes(m,o).some(c=>segmentHitsBox(a,b,c,r,c.baseZ??-Infinity)):segmentHitsBox(a,b,o,r,o.baseZ??-Infinity)))||(m.platforms||[]).some(p=>segmentHitsBox(a,b,p,r,p.z-8,p.z));
 }
