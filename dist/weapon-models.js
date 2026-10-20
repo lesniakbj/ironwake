@@ -1,3 +1,4 @@
+import{addMuzzleBurst}from './impact-effects.js';
 import{BULWARK}from './bulwark.js?v=41';
 import{MUZZLES}from './weapon-origin.js?v=41';
 import * as T from './vendor/three.module.min.js';
@@ -48,7 +49,7 @@ if(build.weapon==='rail'){for(let i=0;i<5;i++){const cell=new T.Group();cell.pos
 if(build.weapon==='carbine'){box(gun,0,.66,-.55,.34,.28,.5,dark);glow(gun,0,.66,-.82,.19,.14,.025,cyan);}
 if(build.weapon==='rotary')for(let i=0;i<6;i++){const a=i*.27;box(gun,.82+Math.sin(a)*.22,-.68+i*.15,-.25,.3,.1,.27,accent);}
 if(build.weapon==='launcher'){box(gun,.67,.63,-.7,.12,.45,.8,dark);glow(gun,.74,.63,-.7,.03,.25,.5,'#93ffb5');}
-const muzzle=new T.Group();muzzle.position.set(...(MUZZLES[build.weapon]||MUZZLES.carbine));gun.add(muzzle);const flashColor=build.weapon==='dynamo'?'#ffe28b':build.weapon==='phaser'?'#aaffd8':build.weapon==='plasma'||build.weapon==='scatter'?purple:build.weapon==='rotary'?'#ffb3c4':build.weapon==='launcher'?'#fff1bb':cyan;mesh(muzzle,sphereGeometry,mat(flashColor,true),0,0,-.2,.45,.45,.8);for(let i=0;i<3;i++){const blade=box(muzzle,0,0,-.35,.12,1.8,1.4,mat(accent,true));blade.rotation.z=i*Math.PI/3;}muzzle.visible=false;
+const muzzle=new T.Group();muzzle.position.set(...(MUZZLES[build.weapon]||MUZZLES.carbine));gun.add(muzzle);const flashColor=build.weapon==='dynamo'?'#ffe28b':build.weapon==='phaser'?'#aaffd8':build.weapon==='plasma'||build.weapon==='scatter'?purple:build.weapon==='rotary'?'#ffb3c4':build.weapon==='launcher'?'#fff1bb':cyan;addMuzzleBurst(muzzle,flashColor);muzzle.visible=false;
  box(meleeRig,0,0,0,.36,.35,.6,dark);
  switch(build.melee||'blade'){
  case'guard':

@@ -1,3 +1,4 @@
+import{impactLevel}from './impact-preferences.js';
 import * as T from './vendor/three.module.min.js';
 // Bounded, per-mech effects: original edge geometry is reused, with six pooled echoes.
 export function createDashEffect(root){
@@ -19,15 +20,16 @@ export function createDashEffect(root){
  return{
  update(player,dt){
   const active=player.hp>0&&player.moveKind==='dash'&&player.moveTime>0;
+  const level=impactLevel();shellMaterial.opacity=.45+level*.45;ribbons.material.opacity=.35+level*.5;
   for(const {node,material}of edges)node.material=active?edgeMaterial:material;
   for(const shell of shells)shell.visible=active;
   light.intensity=active?22:Math.max(0,light.intensity-dt*85);
   root.updateWorldMatrix(true,true);inverse.copy(root.matrixWorld).invert();
-  for(const echo of echoes){echo.life=Math.max(0,echo.life-dt);echo.mesh.visible=echo.life>0;echo.mesh.material.opacity=.27*echo.life/.36;echo.mesh.matrix.multiplyMatrices(inverse,echo.world);}
+  for(const echo of echoes){echo.life=Math.max(0,echo.life-dt);echo.mesh.visible=echo.life>0&&level===1;echo.mesh.material.opacity=.38*echo.life/.36;echo.mesh.matrix.multiplyMatrices(inverse,echo.world);}
   for(const sample of samples)sample.life-=dt;while(samples[0]?.life<=0)samples.shift();
   if(active){
    if(!wasActive)echoTimer=0;
-   echoTimer-=dt;if(echoTimer<=0){const echo=echoes[echoIndex++%echoes.length];echo.world.copy(root.matrixWorld);echo.life=.36;echo.mesh.visible=true;echo.mesh.material.opacity=.27;echo.mesh.matrix.identity();echoTimer=.045;}
+   echoTimer-=dt;if(echoTimer<=0){const echo=echoes[echoIndex++%echoes.length];echo.world.copy(root.matrixWorld);echo.life=.36;echo.mesh.visible=level===1;echo.mesh.material.opacity=.38;echo.mesh.matrix.identity();echoTimer=.045;}
    samples.push({points:anchors.map(p=>root.localToWorld(p.clone())),life:.5});if(samples.length>37)samples.shift();
   }
   let index=0;

@@ -17,3 +17,21 @@ export function playMeleeSound(ctx,bus,id,impact=false){const heavy=id==='hammer
 export function playMechanicalSound(ctx,bus,kind){if(kind==='start')voice(ctx,bus,{noise:true,duration:.18,gain:.32,filter:'bandpass',cutoff:1900,to:600});else if(kind==='stop')voice(ctx,bus,{noise:true,duration:.25,gain:.28,cutoff:2800,to:220});else if(kind==='land'){voice(ctx,bus,{frequency:65,end:27,duration:.25,gain:.65});voice(ctx,bus,{noise:true,duration:.12,gain:.4,cutoff:1600,to:200});}else{voice(ctx,bus,{noise:true,duration:.045,gain:.17,cutoff:2200,to:600});}}
 export function createThrusterSound(ctx,bus){const gain=ctx.createGain(),eq=ctx.createBiquadFilter(),noise=ctx.createBufferSource(),rotor=ctx.createOscillator(),whine=ctx.createOscillator(),rg=ctx.createGain(),wg=ctx.createGain();gain.gain.value=0;eq.type='lowpass';eq.frequency.value=650;noise.buffer=noiseBuffer(ctx);noise.loop=true;rotor.type='triangle';rotor.frequency.value=48;whine.type='sine';whine.frequency.value=170;rg.gain.value=.35;wg.gain.value=.045;noise.connect(eq);eq.connect(gain);rotor.connect(rg);rg.connect(gain);whine.connect(wg);wg.connect(gain);gain.connect(bus);noise.start();rotor.start();whine.start();return{update(throttle,style='standard'){const factor=style==='light'?1.3:style==='heavy'?.72:1,now=ctx.currentTime;gain.gain.setTargetAtTime(throttle*.14,now,throttle?.065:.14);eq.frequency.setTargetAtTime((420+throttle*750)*factor,now,.12);rotor.frequency.setTargetAtTime((42+throttle*39)*factor,now,.1);whine.frequency.setTargetAtTime((170+throttle*190)*factor,now,.12);}};}
 export function createBeamSound(ctx,bus){const gain=ctx.createGain(),a=ctx.createOscillator(),b=ctx.createOscillator(),second=ctx.createGain();gain.gain.value=0;a.type='sine';b.type='triangle';a.frequency.value=118;b.frequency.value=238;second.gain.value=.2;a.connect(gain);b.connect(second);second.connect(gain);gain.connect(bus);a.start();b.start();return{update(active,hit){const now=ctx.currentTime;gain.gain.setTargetAtTime(active?(hit?.16:.11):0,now,.045);a.frequency.setTargetAtTime(hit?143:118,now,.08);b.frequency.setTargetAtTime(hit?287:238,now,.08);}};}
+// Short armor cracks sit above the body of a shot; the bus limits dense volleys.
+export function playImpactAccent(ctx,bus,kind,power=1){
+ const precision=kind==='precision',heavy=power>.65;
+ voice(ctx,bus,{noise:true,duration:heavy?.075:.035,gain:.17+power*.14,filter:'bandpass',cutoff:precision?6500:3800,to:700,attack:.001});
+ voice(ctx,bus,{frequency:precision?1900:heavy?170:800,end:precision?950:heavy?55:330,duration:heavy?.12:.045,gain:.08+power*.14,type:heavy?'triangle':'sine',delay:.007});
+ if(kind==='melee'||kind==='hammer'||kind==='dash'){
+  voice(ctx,bus,{frequency:95,end:28,duration:.25,gain:.5+power*.35,type:'triangle'});
+  voice(ctx,bus,{noise:true,duration:.12,gain:.35,cutoff:6500,to:400,delay:.018});
+ }
+}
+// A distinct cockpit crunch, rather than another outgoing hit-confirm chirp.
+export function playArmorImpact(ctx,bus,amount=10,blocked=false){
+ const power=Math.min(1,amount/35);
+ voice(ctx,bus,{noise:true,duration:.065,gain:.65+power*.3,filter:'highpass',cutoff:1700,to:700,attack:.001});
+ voice(ctx,bus,{frequency:blocked?420:105,end:blocked?170:29,duration:.24,gain:.6+power*.45,type:'triangle'});
+ voice(ctx,bus,{noise:true,duration:.27,gain:.3+power*.2,filter:'bandpass',cutoff:blocked?3400:1900,to:250,delay:.035});
+ voice(ctx,bus,{frequency:blocked?1600:760,end:blocked?600:180,duration:.14,gain:.11,type:'sine',delay:.018});
+}
