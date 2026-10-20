@@ -15,7 +15,7 @@ Legacy saves without a chassis retain their original stats, physical scale and u
 ## PR #5: equipment and special-weapon art
 
 - Preserve both part-design installation and `chassis` sanitization when resolving `core.js`. The build key must contain chassis identity, parts, equipment, paint and exhaust color.
-- In `makeMech`, keep both `addChassisDetails` and `addItemDetails` before rigid-part batching. Chassis geometry owns the silhouette; item geometry owns selected equipment and carried pickups. Preserve the art pass's animated beacon/cargo exclusions.
+- In `makeMech`, run `buildChassisModel` first, then `addItemDetails`, before rigid-part batching. Chassis geometry owns the silhouette; item geometry owns selected equipment and carried pickups. Preserve the art pass's animated beacon/cargo exclusions.
 - Apply chassis scale once to the mech root. Arm/weapon transforms, muzzle flashes and articulated accessories inherit it. Do not independently scale weapons a second time.
 - Combine `partChassis` from the art pass with the chassis-default part tiers in `weapon-origin.js`; authoritative muzzle transforms must match the rendered root scale and selected arm/torso geometry.
 - Retain `buildKey` as the live-model signature. Rebuild on chassis/part/paint changes as well as equipment changes.
@@ -42,3 +42,9 @@ This branch uses `ironwake-chassis-v1-` room IDs so older clients cannot normali
 Run all tests after each integration. Check every factory kit; smallest/largest mixed squads; saved/JSON/snapshot round trips; invalid heavy mounts with otherwise legal weight; body-sized cover and shield coverage; both muzzle origins at several headings and elevations; all elevated objectives; and Full/Reduced special effects on Scout and Giga roots. Verify shared ranks, contracts and fracture state in actual multiplayer after integration. The current automated coverage does not replace those future multi-feature multiplayer checks.
 
 The gallery at `tests/chassis-preview.html` uses the live model factory and a shared camera distance to show relative sizes. `tests/chassis.test.js` covers roster validity, migrations, mount rules, movement, scale/weapon agreement, hitboxes, shields, cameras and Giga clearance. Initial armor and movement tuning still needs full campaign playtesting.
+
+## Authored chassis shells
+
+`dist/chassis-art.js` defines fifteen visual identities and workshop silhouettes. `dist/chassis-models.js` replaces the generic rigid shells on named platforms while retaining arm, elbow, weapon and live nozzle groups. Chassis shells must be built before item or module hardware is attached: the replacement removes direct structural meshes. Head and stance offsets are visual; authoritative hand transforms remain unchanged. Selected part tiers change shell bulk and paint is applied by component. Legacy custom frames and enemies retain the original models.
+
+Citadel uses a stationary track undercarriage, including when airborne, and suppresses walking bob. Leviathan uses four splayed supports in two articulated pairs. Other chassis have individual ground stride factors. All retain the existing simulation locomotion, including boost and flight; these models add no auxiliary guns or new chassis abilities. Shared shell geometries and rigid batching follow the existing renderer ownership rules.

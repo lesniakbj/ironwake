@@ -1,9 +1,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import{createHash}from 'node:crypto';
 import * as T from '../dist/vendor/three.module.min.js';
 import{CHASSIS,CHASSIS_CLASSES,chassisFor,chassisBlueprint,chassisBounds}from '../dist/chassis.js';
 import{cleanBuild,mechStats,newWorld,testPlatform,setInput,step,snapshot,validBuild,buildKey}from '../dist/core.js';
-import{makeMech,disposeMech}from '../dist/three-view.js';
+import{makeMech,animateMech,disposeMech}from '../dist/three-view.js';
+import{CHASSIS_ART}from '../dist/chassis-art.js';
 import{muzzleOrigin}from '../dist/weapon-origin.js';
 import{thirdPersonView}from '../dist/third-person-view.js';
 import{blocksBullet}from '../dist/bulwark.js';
@@ -77,5 +79,54 @@ test('mixed and all-Giga squads spawn with enough space for their real body radi
   for(let i=0;i<w.players.length;i++)for(let j=i+1;j<w.players.length;j++){
    const a=w.players[i],b=w.players[j];assert.ok(Math.hypot(a.x-b.x,a.y-b.y)>chassisBounds(a.build).radius+chassisBounds(b.build).radius);
   }
+ }
+});
+
+test('all fifteen platforms have distinct structural geometry with identical parts, paint and equipment',()=>{
+ const signatures=new Set();
+ for(const c of Object.values(CHASSIS)){
+  const build=cleanBuild({...chassisBlueprint(c.id),color:'#d3dadd',parts:{head:'standard',torso:'standard',arms:'standard',legs:'standard',booster:'standard'},equipment:['carbine','carbine','emp']}),g=makeMech(build),hash=createHash('sha256');
+  assert.equal(g.userData.chassisPose.name,CHASSIS_ART[c.id].name);
+  const roots=[g.userData.body,g.userData.head,...g.userData.legs,...g.userData.arms,...g.userData.arms.map(a=>a.userData.elbow)];
+  for(const root of roots)for(const m of root.children.filter(o=>o.isMesh)){
+   const pa=m.geometry.attributes.position.array;assert.ok(pa.every(Number.isFinite),c.id+' geometry must stay finite');hash.update(new Uint8Array(pa.buffer,pa.byteOffset,pa.byteLength));
+  }
+  const signature=hash.digest('hex');assert.ok(!signatures.has(signature),c.id+' must change shape, independently of color or weapons');signatures.add(signature);
+  // New art remains rigid-batched; detail must not introduce hundreds of draw roots.
+  let meshes=0,triangles=0;g.traverse(o=>{if(o.isMesh){meshes++;triangles+=(o.geometry.index?.count||o.geometry.attributes.position.count)/3;}});assert.ok(meshes<160,c.id);assert.ok(triangles<20000,c.id);disposeMech(g);
+ }
+ assert.equal(signatures.size,15);
+ const legacy=makeMech(cleanBuild({frame:'striker'}));assert.equal(legacy.userData.chassisPose,null);disposeMech(legacy);
+ const enemy=makeMech(cleanBuild(chassisBlueprint('citadel')),true,'tank');assert.equal(enemy.userData.chassisPose,undefined);disposeMech(enemy);
+});
+
+test('redesigned shells preserve both weapon origins through every replaceable part tier and pitch',()=>{
+ for(const c of Object.values(CHASSIS))for(const tier of['light','standard','heavy']){
+  const build=cleanBuild({...chassisBlueprint(c.id),parts:{head:tier,torso:tier,arms:tier,legs:tier,booster:tier},equipment:['carbine','phaser','emp']}),g=makeMech(build);
+  for(const pitch of[-.45,0,.65]){
+   const p={x:0,y:0,altitude:0,angle:.63,pitch,hp:100,build};animateMech(g,p,1,10);g.updateMatrixWorld(true);
+   for(const [hand,kit]of g.userData.kits.entries()){
+    const visual=kit.muzzle.getWorldPosition(new T.Vector3()),origin=muzzleOrigin({...p,hand},kit.item);assert.ok(Math.hypot(visual.x-origin.x*.1,visual.y-origin.z*.1,visual.z-origin.y*.1)<1e-6,`${c.id}/${tier}/${hand}/${pitch}`);
+   }
+  }
+  disposeMech(g);
+ }
+});
+
+test('tracked Citadel stays level during movement and flight, while four-legged and runner frames articulate',()=>{
+ for(const id of['citadel','leviathan','lark']){
+  const build=cleanBuild(chassisBlueprint(id)),g=makeMech(build);
+  for(let i=0;i<20;i++)animateMech(g,{x:i*5,y:0,angle:-Math.PI/2,altitude:0,hp:100,build},.05,i*.05);
+  if(id==='citadel'){assert.equal(g.position.y,0);for(const leg of g.userData.legs){assert.equal(leg.rotation.x,0);assert.equal(leg.rotation.z,0);}}
+  else assert.ok(g.userData.legs.some(leg=>Math.abs(leg.rotation.x)>.01),id);
+  for(let i=0;i<20;i++)animateMech(g,{x:100,y:0,angle:-Math.PI/2,altitude:70,hp:100,airborne:true,build},.05,1+i*.05);
+  if(id==='citadel')for(const leg of g.userData.legs){assert.equal(leg.rotation.x,0);assert.equal(leg.rotation.z,0);}
+  assert.ok(g.userData.jets.every(j=>j.userData.exhaust.visible));
+  if(id==='leviathan')for(const leg of g.userData.legs){
+   // Each side has a front and a rear ground contact, rather than one broad boot.
+   const geometry=leg.children.find(o=>o.isMesh&&!o.material.isMeshBasicMaterial).geometry,pa=geometry.attributes.position;let front=0,rear=0;
+   for(let i=0;i<pa.count;i++)if(pa.getY(i)<-2){if(pa.getZ(i)<-.8)front++;if(pa.getZ(i)>.8)rear++;}assert.ok(front>0&&rear>0);
+  }
+  disposeMech(g);
  }
 });
