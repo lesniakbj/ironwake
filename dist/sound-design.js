@@ -22,4 +22,16 @@ export function playImpactAccent(ctx,bus,kind,power=1){
  const precision=kind==='precision',heavy=power>.65;
  voice(ctx,bus,{noise:true,duration:heavy?.075:.035,gain:.17+power*.14,filter:'bandpass',cutoff:precision?6500:3800,to:700,attack:.001});
  voice(ctx,bus,{frequency:precision?1900:heavy?170:800,end:precision?950:heavy?55:330,duration:heavy?.12:.045,gain:.08+power*.14,type:heavy?'triangle':'sine',delay:.007});
+ if(kind==='melee'||kind==='hammer'||kind==='dash'){
+  voice(ctx,bus,{frequency:95,end:28,duration:.25,gain:.5+power*.35,type:'triangle'});
+  voice(ctx,bus,{noise:true,duration:.12,gain:.35,cutoff:6500,to:400,delay:.018});
+ }
+}
+// A distinct cockpit crunch, rather than another outgoing hit-confirm chirp.
+export function playArmorImpact(ctx,bus,amount=10,blocked=false){
+ const power=Math.min(1,amount/35);
+ voice(ctx,bus,{noise:true,duration:.065,gain:.65+power*.3,filter:'highpass',cutoff:1700,to:700,attack:.001});
+ voice(ctx,bus,{frequency:blocked?420:105,end:blocked?170:29,duration:.24,gain:.6+power*.45,type:'triangle'});
+ voice(ctx,bus,{noise:true,duration:.27,gain:.3+power*.2,filter:'bandpass',cutoff:blocked?3400:1900,to:250,delay:.035});
+ voice(ctx,bus,{frequency:blocked?1600:760,end:blocked?600:180,duration:.14,gain:.11,type:'sine',delay:.018});
 }
