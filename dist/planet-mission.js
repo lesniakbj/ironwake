@@ -1,3 +1,4 @@
+import {contractFor,awardSalvage} from './sortie-progression.js';
 // Host-authoritative Cinderfall director. All progress lives in the replicated world.
 const distance=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y),clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const randomSeed=seed=>()=>{seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/4294967296;};
@@ -33,7 +34,7 @@ function segmentDistance(p,a,b){const dx=b.x-a.x,dy=b.y-a.y,t=clamp(((p.x-a.x)*d
 export function initOperation(w){const count=w.players.length;w.operation={phase:0,phaseAt:0,nextWave:1.5,nextStrike:18,killsAt:0,redeploys:2,wipeAt:null,checkpoint:{...w.mission.entry},wave:0,notice:'ORBITAL INSERTION · Follow the freight road into the canyon',noticeUntil:9,batteriesDown:[],cells:[],delivered:0,crawler:{...w.mission.route[0],segment:0,progress:0,fuel:0},extraction:0,elitePhases:[],teamSize:count};for(const p of w.players){p.altitude=210;p.recoverUntil=6;}w.encounter=true;}
 function objective(w,id,kind,p,hp,group,locked=false){const scale=1+.75*(w.players.length-1),e={id,type:'objective',objective:true,objectiveKind:kind,group,x:p.x,y:p.y,altitude:p.z||0,hp:hp*scale,max:hp*scale,r:kind==='battery'?42:25,locked,stun:0,speed:0};w.enemies.push(e);return e;}
 function notice(w,text){w.operation.notice=text;w.operation.noticeUntil=w.time+6;}
-function enter(w,phase,stats){const o=w.operation;o.phase=phase;o.phaseAt=w.time;o.killsAt=w.kills;o.nextWave=w.time+3;o.nextStrike=w.time+12;w.zoneIndex=phase;w.cleared=phase;o.checkpoint={...w.mission.zones[phase]};for(const p of w.players){const f=stats(p.build);if(p.hp<=0){p.x=o.checkpoint.x;p.y=o.checkpoint.y;p.altitude=o.checkpoint.z||0;p.revive=0;}p.hp=Math.min(f.hp,Math.max(p.hp,f.hp*.55)+f.hp*.3);p.recoverUntil=w.time+3;}notice(w,'CHECKPOINT · '+OPERATION_PHASES[phase]);
+function enter(w,phase,stats){const o=w.operation;o.phase=phase;o.phaseAt=w.time;o.killsAt=w.kills;o.nextWave=w.time+3;o.nextStrike=w.time+12;w.zoneIndex=phase;w.cleared=phase;o.checkpoint={...w.mission.zones[phase]};for(const p of w.players){const f=stats(p.build);if(p.hp<=0){p.x=o.checkpoint.x;p.y=o.checkpoint.y;p.altitude=o.checkpoint.z||0;p.revive=0;}p.hp=Math.min(f.hp,Math.max(p.hp,f.hp*.55)+f.hp*.3);p.recoverUntil=w.time+3;}awardSalvage(w,30);notice(w,'CHECKPOINT · '+OPERATION_PHASES[phase]+' · SALVAGE RECOVERED');
  if(phase===1)w.mission.batteries.forEach((p,i)=>{objective(w,'battery-'+i,'battery',p,3600,i,true);for(const side of[-1,1])objective(w,'relay-'+i+'-'+side,'relay',{x:p.x+side*(p.z?90:230),y:p.y-(p.z?50:180),z:p.z},950,i);});
  if(phase===2){o.cells=w.mission.cells.map((p,i)=>({id:'cell-'+i,...p,state:'sealed',carrier:null}));o.cells.forEach(c=>objective(w,'cache-'+c.id,'cache',c,700,c.id));}
  if(phase===3){const p=w.mission.reactor;for(let i=0;i<3;i++){const a=i*Math.PI*2/3;objective(w,'coolant-'+i,'coolant',{x:p.x+Math.cos(a)*360,y:p.y+Math.sin(a)*360,z:i===1?120:0},2200,i);}o.bossSpawned=false;}
@@ -41,13 +42,13 @@ function enter(w,phase,stats){const o=w.operation;o.phase=phase;o.phaseAt=w.time
 }
 export const operationEnemyCap=players=>24+8*players;
 function supportWave(w){
- const o=w.operation,n=w.players.length,alive=w.players.filter(p=>p.hp>0);o.nextWave=w.time+5.5;if(!alive.length)return;
+ const o=w.operation,n=w.players.length,alive=w.players.filter(p=>p.hp>0);const contract=contractFor(w.sortie?.contract);o.nextWave=w.time+contract.wave;if(!alive.length)return;
  // Recycle only distant fodder. Elites and mission objects persist across the route.
  w.enemies=w.enemies.filter(e=>e.objective||e.elite||alive.some(p=>distance(p,e)<1900));
  const combat=w.enemies.filter(e=>!e.objective&&e.hp>0).length+w.spawn.length,amount=Math.min(operationEnemyCap(n)-combat,7+n*2+Math.min(3,o.phase));if(amount<=0)return;
  const anchor=alive[o.wave%alive.length],ports=w.mission.portals.filter(p=>distance(p,anchor)>330&&distance(p,anchor)<1100).sort((a,b)=>distance(a,anchor)-distance(b,anchor));
  if(!ports.length)return;
- for(let i=0;i<amount;i++){const port=ports[(o.wave+i)%Math.min(6,ports.length)],type=(o.wave+i)%9===0&&o.phase>0?'tank':(o.wave+i)%3===0?'gunner':'drone';
+ for(let i=0;i<amount;i++){const port=ports[(o.wave+i)%Math.min(6,ports.length)],type=(o.wave+i)%contract.tanks===0&&(o.phase>0||contract.id==='siegebreaker')?'tank':(o.wave+i)%3===0?'gunner':'drone';
  w.spawn.push({time:w.time+2.4+i*.13,type,zone:{x:port.x,y:port.y,exact:true,operation:true,variant:0}});}
  o.wave++;
 }
@@ -57,7 +58,7 @@ export function queueHeavyDrop(w,point,boss=false){
  w.spawn.push({time:at,type:boss?'boss':'tank',zone:{x:point.x,y:point.y,exact:true,operation:true,elite:true,warden:boss}});
  o.heavyAlert={id:++w.id,start:w.time,landingAt:at+600/340,until:at+600/340+3,name:boss?'REACTOR WARDEN':'SIEGE MECH',x:point.x,y:point.y};
 }
-function eliteArrival(w){const o=w.operation;if(![1,2].includes(o.phase)||o.elitePhases.includes(o.phase)||w.time-o.phaseAt<(o.phase===1?20:45)||w.enemies.some(e=>e.elite&&e.hp>0)||w.spawn.some(s=>s.zone.elite))return;
+function eliteArrival(w){const o=w.operation;if(![1,2].includes(o.phase)||o.elitePhases.includes(o.phase)||w.time-o.phaseAt<contractFor(w.sortie?.contract).eliteTimes[o.phase===1?0:1]||w.enemies.some(e=>e.elite&&e.hp>0)||w.spawn.some(s=>s.zone.elite))return;
  const p=w.players.find(p=>p.hp>0);if(!p)return;let point;for(let i=0;i<12;i++){const a=i*Math.PI/6,x=clamp(p.x+Math.cos(a)*550,160,w.mission.width-160),y=clamp(p.y+Math.sin(a)*550,160,w.mission.height-160);if(!w.mission.obstacles.some(b=>x>b.x-70&&x<b.x+b.w+70&&y>b.y-70&&y<b.y+b.h+70)&&!w.mission.platforms.some(b=>x>b.x-70&&x<b.x+b.w+70&&y>b.y-70&&y<b.y+b.h+70)){point={x,y};break;}}if(point){o.elitePhases.push(o.phase);queueHeavyDrop(w,point);}}
 
 function bombard(w){const o=w.operation,alive=w.players.filter(p=>p.hp>0);if(!alive.length)return;for(const p of alive.slice(0,o.phase===4?4:2))w.hazards.push({x:p.x,y:p.y,r:o.phase===4?150:115,time:2.5});o.nextStrike=w.time+(o.phase===4?6:o.phase===1?10:15);}
