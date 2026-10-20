@@ -1,3 +1,4 @@
+import{installPartDesigns}from './part-designs.js';
 import{nearbyObstacles,staticShotBlocked}from './collision.js?v=41';
 import{planetMission,initOperation,stepOperation}from './planet-mission.js?v=41';
 export{planetMission}from './planet-mission.js?v=41';
@@ -40,6 +41,7 @@ export const PARTS={
  legs:{light:{name:'Springstep',weight:7,hp:15,drive:0,desc:'15 armor · 7t'},standard:{name:'Stride biped',weight:12,hp:22,drive:10,desc:'22 armor · 12t'},heavy:{name:'Siege struts',weight:19,hp:30,drive:20,desc:'30 armor · 19t'}},
  booster:{light:{name:'Wisp jets',weight:4,capacity:58,force:330,draw:10,energy:90,recharge:36,desc:'Fastest lift · Powers up to 58t · 4t'},standard:{name:'Ion drive',weight:7,capacity:88,force:300,draw:12,energy:100,recharge:32,desc:'Balanced lift · Powers up to 88t · 7t'},heavy:{name:'Nova thrusters',weight:11,capacity:110,force:270,draw:14,energy:125,recharge:28,desc:'Slower lift · Powers up to 110t · 11t'}}
 };
+installPartDesigns(PARTS);
 for(const[id,weight]of Object.entries({emp:5,shield:4,repair:6}))ABILITIES[id].weight=weight;
 export const EQUIPMENT={...WEAPONS,...ABILITIES};
 export const RACK_SIZE=3;

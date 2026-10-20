@@ -10,7 +10,7 @@ The overworld is the main deployment hub. Green cells are allied, amber conteste
 
 Choose a Vanguard, Kestrel, Bastion, a saved mech, or your current workshop build. Specials can be changed directly on the board. Equipment weight still applies, and overloaded mechs cannot deploy. Workshop **Done** returns to the campaign.
 
-The host owns the campaign, selects the shared insertion, and launches once all pilots have marked ready. Each pilot independently selects their mech and special. Changing the insertion clears the whole squad's readiness; changing a loadout clears that pilot's readiness. Guests see the host's board without replacing their own saved solo campaign. Campaign rooms use an isolated `ironwake-campaign-v1` protocol and cannot connect to the original v41 client.
+The host owns the campaign, selects the shared insertion, and launches once all pilots have marked ready. Each pilot independently selects their mech and special. Changing the insertion clears the whole squad's readiness; changing a loadout clears that pilot's readiness. Guests see the host's board without replacing their own saved solo campaign. Campaign rooms use an isolated `ironwake-campaign-v2` protocol so clients with the expanded part catalog cannot silently downgrade builds when joining an older host.
 
 After a victory, defeat, or voluntary withdrawal, return to campaign command. Results are recorded once by the host and shared with the squad; victories secure Cinderfall's three cells. Campaign state is saved on the host's browser. Cinderfall remains replayable with a fresh cover seed after each sortie. There is no host migration or mid-sortie joining.
 
@@ -24,6 +24,18 @@ After a victory, defeat, or voluntary withdrawal, return to campaign command. Re
 - Mechs and random callsigns persist in browser storage. Saved mechs can be exported and imported as JSON.
 
 Five frame components trade armor against movement speed and booster capacity. Both hand mounts accept ranged, melee or defensive equipment. Overweight mechs remain editable but cannot deploy. Damage, cooldowns, range, area effects and utility vary across weapons.
+
+## Visible equipment and part catalog
+
+The workshop offers **45 frame designs**: nine choices for each of the five sockets, including 30 new alternatives. Each has a distinct mesh silhouette and matching inventory icon. Raptor ribs, Spectre panels, circular Helios reactors, Ronin crests, radar dishes, hydraulic arms, skate runners, track sabatons, wing packs and induction halos can be mixed and painted independently. New designs inherit the established light, medium or heavy tier's stats and firing geometry.
+
+All **15 hand weapons** add matching support hardware to the equipped side: shell clips, ammunition drums, missile racks, fuel tanks, capacitors, scabbards and shield generators. EMP, Aegis and Repair have different dorsal emitters and active beacons. A recovered Cinderfall cell bolts onto the lower backpack and disappears on delivery or drop; loose cells use the same armored canister design. Frame, equipment, paint and exhaust changes rebuild live models, including replicated allies.
+
+Specials have different usage effects: EMP launches staggered electric waves and branching lightning, with electrical crowns on stunned targets; Aegis grows a patterned dome with field boundaries and incoming-hit ripples; Repair sends rising cross particles and flowing motes toward living allies in range. Rail and Dynamo charge rings, plasma/rocket discharge rings, Gatling spin arcs, flame nozzle wakes, phaser flow particles and melee sweeps reinforce weapon identity. Workshop **Test equipment** also previews the selected special.
+
+The added usage effects use three fixed instanced pools, a bounded lightning buffer and at most four shield shells. Reduced mode decreases particles and removes their continuous spin, scans and orbiting motion. Effects consume existing simulation state. Damage, cooldowns and ability radii retain their existing rules.
+
+Run `node scripts/preview-server.mjs` and open **http://127.0.0.1:4175/tests/item-gallery.html** for a rotating gallery of every frame, weapon and special, with Full/Reduced, cast timing and carried-cell controls. The server also serves the game at **http://127.0.0.1:4175/ironwake/**. This development gallery is excluded from deployed assets.
 
 ## Impact art pass
 
@@ -56,7 +68,7 @@ Deployments use Wrangler authentication stored outside this repository. The chec
 
 PeerJS provides public room discovery; WebRTC carries game traffic directly between browsers. The squad host runs the authoritative simulation and sends snapshots. PeerJS binary serialization chunks large level and horde messages before transmission; the JSON channel’s 16 KB limit is not suitable for these snapshots. Players join and ready up before deployment. Keep the host tab active.
 
-Public PeerJS signaling and Google STUN require internet. There is no TURN relay, dedicated game server, host migration or mid-mission joining. Restrictive NAT/firewalls can prevent connections. Callsigns are random cosmetic identifiers, not authenticated accounts. Protocol v41 separates this release from earlier clients.
+Public PeerJS signaling and Google STUN require internet. There is no TURN relay, dedicated game server, host migration or mid-mission joining. Restrictive NAT/firewalls can prevent connections. Callsigns are random cosmetic identifiers, not authenticated accounts. Campaign protocol v2 separates the expanded part catalog from earlier clients.
 
 ## Project layout
 
