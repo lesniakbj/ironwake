@@ -22,7 +22,13 @@ export function createCampaignView(root,actions){
   let inspected='3-3',latest;
   root.addEventListener('click',event=>{
     const target=event.target.closest('[data-action],[data-cell]');if(!target)return;
-    if(target.dataset.cell){inspected=target.dataset.cell;const landing=LANDINGS.find(p=>p.cell===inspected);if(landing&&latest.canChoose)actions.landing(landing.id);else render(latest);return;}
+    if(target.dataset.cell){
+      inspected=target.dataset.cell;
+      const landing=LANDINGS.find(p=>p.cell===inspected);
+      if(landing&&latest.canChoose&&landing.id!==latest.campaign.landing)actions.landing(landing.id);
+      else render(latest);
+      return;
+    }
     const action=target.dataset.action;
     if(action==='focus'){inspected=landingFor(latest.campaign).cell;render(latest);return;}
     actions[action]?.();
