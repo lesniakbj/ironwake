@@ -2,7 +2,17 @@
 
 A browser mech-combat prototype for 1–4 players. **[Play at thorneloe.ai/ironwake](https://thorneloe.ai/ironwake/).**
 
-Build and paint a mech, fit two independently controlled weapons and a special, and fly into Cinderfall: a multi-stage planetary operation targeting about 15 minutes. Open **Workshop** to configure your build, enter the **Target range**, or start an **AI duel**. The home screen keeps only the operation and workshop as its main choices.
+Start a **New campaign** to open the Kepler-9 command board. Inspect colored territory cells, select a Cinderfall landing zone, choose a mech and special weapon, and deploy solo or with up to three friends. **Continue campaign** restores your front from this browser. Open **Workshop** to customize components and paint, enter the **Target range**, or start an **AI duel**.
+
+## Campaign outline
+
+The overworld is the main deployment hub. Green cells are allied, amber contested, red hostile, and gray uncharted. Three marked cells select different insertion positions in **Cinderfall**, the only playable battlefield. Outer territories are inspectable future fronts with no missions yet; winning does not unlock additional maps.
+
+Choose a Vanguard, Kestrel, Bastion, a saved mech, or your current workshop build. Specials can be changed directly on the board. Equipment weight still applies, and overloaded mechs cannot deploy. Workshop **Done** returns to the campaign.
+
+The host owns the campaign, selects the shared insertion, and launches once all pilots have marked ready. Each pilot independently selects their mech and special. Changing the insertion clears the whole squad's readiness; changing a loadout clears that pilot's readiness. Guests see the host's board without replacing their own saved solo campaign. Campaign rooms use an isolated `ironwake-campaign-v1` protocol and cannot connect to the original v41 client.
+
+After a victory, defeat, or voluntary withdrawal, return to campaign command. Results are recorded once by the host and shared with the squad; victories secure Cinderfall's three cells. Campaign state is saved on the host's browser. Cinderfall remains replayable with a fresh cover seed after each sortie. There is no host migration or mid-sortie joining.
 
 ## Play
 
@@ -53,6 +63,7 @@ Public PeerJS signaling and Google STUN require internet. There is no TURN relay
 - `dist/core.js`, `planet-mission.js`: simulation, combat and mission progression.
 - `dist/three-view.js`, scene/model/effect modules: cel-shaded Three.js rendering.
 - `dist/app.js`: workshop, HUD, input and room lifecycle.
+- `dist/campaign.js`, `campaign-view.js`, `campaign.css`: campaign state, territory board, insertion choices and deployment loadouts.
 - `dist/audio.js`, `sound-design.js`: synthesized sound effects.
 - `tests/`: simulation, controls, rendering fixtures and hosting checks.
 - `worker/`: Cloudflare asset routing; only `dist/` is published as static files.
