@@ -8,9 +8,9 @@ Start a **New campaign** to open the Kepler-9 command board. Inspect colored ter
 
 The overworld is the main deployment hub. Green cells are allied, amber contested, red hostile, and gray uncharted. Three marked cells select different insertion positions in **Cinderfall**, the only playable battlefield. Outer territories are inspectable future fronts with no missions yet; winning does not unlock additional maps.
 
-Choose a Vanguard, Kestrel, Bastion, a saved mech, or your current workshop build. Specials can be changed directly on the board. Equipment weight still applies, and overloaded mechs cannot deploy. Workshop **Done** returns to the campaign.
+Choose one of 15 base chassis, a saved mech, or your current workshop build. Specials can be changed directly on the board. Equipment weight still applies, and overloaded mechs cannot deploy. Workshop **Done** returns to the campaign.
 
-The host owns the campaign, selects the shared insertion, and launches once all pilots have marked ready. Each pilot independently selects their mech and special. Changing the insertion clears the whole squad's readiness; changing a loadout clears that pilot's readiness. Guests see the host's board without replacing their own saved solo campaign. Campaign rooms use an isolated `ironwake-campaign-v1` protocol and cannot connect to the original v41 client.
+The host owns the campaign, selects the shared insertion, and launches once all pilots have marked ready. Each pilot independently selects their mech and special. Changing the insertion clears the whole squad's readiness; changing a loadout clears that pilot's readiness. Guests see the host's board without replacing their own saved solo campaign. Campaign rooms use an isolated `ironwake-chassis-v1` protocol and cannot connect to clients without the chassis catalog.
 
 After a victory, defeat, or voluntary withdrawal, return to campaign command. Results are recorded once by the host and shared with the squad; victories secure Cinderfall's three cells. Campaign state is saved on the host's browser. Cinderfall remains replayable with a fresh cover seed after each sortie. There is no host migration or mid-sortie joining.
 
@@ -24,6 +24,26 @@ After a victory, defeat, or voluntary withdrawal, return to campaign command. Re
 - Mechs and random callsigns persist in browser storage. Saved mechs can be exported and imported as JSON.
 
 Five frame components trade armor against movement speed and booster capacity. Both hand mounts accept ranged, melee or defensive equipment. Overweight mechs remain editable but cannot deploy. Damage, cooldowns, range, area effects and utility vary across weapons.
+
+## Base chassis roster
+
+The workshop and campaign offer **15 chassis in five size classes**, three per class. Open the chassis selector beside the Workshop heading. **Fit chassis** keeps your parts, paint and weapons; **Factory build** loads that platform's starting kit. Parts remain independently replaceable and painted.
+
+| Class | Starting chassis | Heavy-rated hand mounts | Relative size |
+| --- | --- | --- | --- |
+| Scout | Lark (recon), Needle (sniper), Wisp (aerial) | 0 / 1 / 0 | 0.76× |
+| Light | Kestrel (skirmish), Ronin (melee), Harrier (aerial) | 1 / 0 / 1 | 0.90× |
+| Medium | Vanguard (assault), Longbow (sniper), Warden (support) | 1 / 2 / 1 | 1.00× |
+| Heavy | Bastion (defense), Anvil (artillery), Skyguard (aerial) | 2 each | 1.23× |
+| Giga | Colossus (assault), Leviathan (siege), Citadel (support) | 2 each | 1.68× |
+
+All chassis currently have two independently controlled hand mounts and one special. A heavy-rated item occupies one of those hands and consumes one heavy allowance. Railguns, Dynamo, rocket/plasma launchers, Gatling, flamethrowers, hammers and Bulwark shields require heavy-rated mounts. Payload and mount limits are validated separately, and an invalid build remains editable but cannot deploy.
+
+Chassis change assembled armor, ground speed, lift and effective booster capacity. Sniper and aerial variants trade those attributes against their role's factory equipment. Physical scale also changes incoming hitboxes, cover/deck clearance, shield coverage, melee reach, muzzle positions and the chase camera. Damage and special ability radii retain their existing rules. Legacy custom saves keep their original stats and size.
+
+Chassis data lives in `dist/chassis.js`; silhouette details and the roster UI have separate modules. See [chassis integration notes](docs/chassis-integration.md) for the merge contract with destruction, sortie progression and equipment/special art. This branch does not merge those open PRs automatically.
+
+Run `node scripts/preview-server.mjs 4177`, then open **http://127.0.0.1:4177/tests/chassis-preview.html** for the true-size roster gallery or **http://127.0.0.1:4177/ironwake/** for the game. Initial chassis balance still needs full campaign playtesting.
 
 ## Impact art pass
 
@@ -56,7 +76,7 @@ Deployments use Wrangler authentication stored outside this repository. The chec
 
 PeerJS provides public room discovery; WebRTC carries game traffic directly between browsers. The squad host runs the authoritative simulation and sends snapshots. PeerJS binary serialization chunks large level and horde messages before transmission; the JSON channel’s 16 KB limit is not suitable for these snapshots. Players join and ready up before deployment. Keep the host tab active.
 
-Public PeerJS signaling and Google STUN require internet. There is no TURN relay, dedicated game server, host migration or mid-mission joining. Restrictive NAT/firewalls can prevent connections. Callsigns are random cosmetic identifiers, not authenticated accounts. Protocol v41 separates this release from earlier clients.
+Public PeerJS signaling and Google STUN require internet. There is no TURN relay, dedicated game server, host migration or mid-mission joining. Restrictive NAT/firewalls can prevent connections. Callsigns are random cosmetic identifiers, not authenticated accounts. The chassis room protocol separates this release from clients without chassis rules.
 
 ## Project layout
 
