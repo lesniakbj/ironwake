@@ -10,9 +10,18 @@ Build and paint a mech, fit two independently controlled weapons and a special, 
 - **Left / right mouse:** use the corresponding hand. Hold to repeat fire; railguns charge automatically, fire, recover and repeat.
 - **Shift:** directional damaging dash. **E:** rechargeable special.
 - **M:** sound. **H:** controls. Arrow keys turn if mouse capture is unavailable.
+- **V:** switch between Full and Reduced impact effects. The same control is available in the menu and controls dialog.
 - Mechs and random callsigns persist in browser storage. Saved mechs can be exported and imported as JSON.
 
 Five frame components trade armor against movement speed and booster capacity. Both hand mounts accept ranged, melee or defensive equipment. Overweight mechs remain editable but cannot deploy. Damage, cooldowns, range, area effects and utility vary across weapons.
+
+## Impact art pass
+
+Combat uses ink-edged muzzle flashes and hit bursts, white-edged melee smears, sharper recoil and strike holds, stepped smoke, blast pressure arcs, and persistent rocket/rail/Dynamo trails. Nearby explosions and heavy hits add brief camera punches; dashes add peripheral speed lines and stronger afterimages. Larger damage numbers and layered armor cracks reinforce successful contact.
+
+Full is the default unless the operating system requests reduced motion. Reduced removes the added camera shake, speed lines, afterimages and armor flashes, and tones down sparks, smoke and recoil. The choice is saved in this browser. There are no full-screen flash frames or simulation pauses. Camera effects are applied after the aiming ray is sampled and restored before the next frame, preserving the original aiming and combat rules.
+
+Hit bursts share three instanced draw calls (28 hits maximum); explosions share five (18 bursts maximum). Trails use fixed histories and clean up when a battlefield resets. The effects consume existing replicated events and require no protocol change or remote art assets.
 
 ## Develop
 
