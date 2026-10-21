@@ -14,6 +14,37 @@ The host owns the campaign, selects the shared insertion, and launches once all 
 
 After a victory, defeat, or voluntary withdrawal, return to campaign command. Results are recorded once by the host and shared with the squad; victories secure Cinderfall's three cells. Campaign state is saved on the host's browser. Cinderfall remains replayable with a fresh cover seed after each sortie. There is no host migration or mid-sortie joining.
 
+## Sortie progression and contracts
+
+Choose **Frontline**, **Overrun**, or **Siegebreaker** on the campaign board.
+Frontline keeps standard encounter pressure. Overrun shortens reinforcement
+intervals from 5.5 to 4.2 seconds and awards 25% more salvage. Siegebreaker adds
+more armored scarabs, brings siege arrivals forward, and awards 35% more salvage.
+The host chooses the contract; changing it clears everyone's readiness.
+
+Every pilot chooses one starting field module. Destroying enemies and mission
+targets, and completing stages, earns shared salvage toward four more choices.
+The whole squad earns the same ranks, with thresholds scaled to the squad size
+at deployment. Each pilot chooses independently: weapon damage, damage against
+heavy targets, armor, recovery, movement, or special recharge. Modules can stack
+up to three times; a sortie allows five installations in total. They do not add
+weight or modify saved mech builds, and reset on the next drop.
+
+Press **U** to show or hide the field-upgrade tray, then **1 / 2 / 3** to choose,
+or click a card. Combat continues while choosing. Downed pilots retain their
+choices but must recover before installing. Upgrade requests include the choice
+number and are validated by the host; retransmission cannot install a second copy.
+
+The debrief records objectives, combat time, shared salvage, redeploys, and each
+present pilot's eliminations, damage and installed modules. The host's campaign
+retains the latest report (including withdrawals) and the fastest successful
+extraction for each contract. Existing campaign saves remain compatible. Guests
+see the shared report without overwriting their own solo campaign.
+
+This adds no pickup entities, per-enemy models or physics. Existing enemy caps
+remain 32–56; field state is limited to five module IDs per pilot and a few counters.
+Rooms use `ironwake-sortie-v1` so older clients cannot join without these rules.
+
 ## Play
 
 - **WASD:** horizontal thrust. **Space:** fly upward; release to descend.
@@ -21,6 +52,7 @@ After a victory, defeat, or voluntary withdrawal, return to campaign command. Re
 - **Shift:** directional damaging dash. **E:** rechargeable special.
 - **M:** sound. **H:** controls. Arrow keys turn if mouse capture is unavailable.
 - **V:** switch between Full and Reduced impact effects. The same control is available in the menu and controls dialog.
+- **U**, then **1 / 2 / 3:** inspect and install earned field upgrades during a sortie.
 - Mechs and random callsigns persist in browser storage. Saved mechs can be exported and imported as JSON.
 
 Five frame components trade armor against movement speed and booster capacity. Both hand mounts accept ranged, melee or defensive equipment. Overweight mechs remain editable but cannot deploy. Damage, cooldowns, range, area effects and utility vary across weapons.
@@ -98,6 +130,7 @@ Public PeerJS signaling and Google STUN require internet. There is no TURN relay
 - `dist/three-view.js`, scene/model/effect modules: cel-shaded Three.js rendering.
 - `dist/app.js`: workshop, HUD, input and room lifecycle.
 - `dist/campaign.js`, `campaign-view.js`, `campaign.css`: campaign state, territory board, insertion choices and deployment loadouts.
+- `dist/sortie-progression.js`, `sortie-view.js`, `sortie.css`: shared salvage, field modules, contract selection and sortie reports.
 - `dist/audio.js`, `sound-design.js`: synthesized sound effects.
 - `tests/`: simulation, controls, rendering fixtures and hosting checks.
 - `worker/`: Cloudflare asset routing; only `dist/` is published as static files.

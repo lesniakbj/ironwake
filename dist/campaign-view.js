@@ -1,4 +1,5 @@
 import{CHASSIS,chassisBlueprint}from './chassis.js';
+import {contractMarkup,debriefMarkup} from './sortie-view.js';
 import {LANDINGS,landingFor,campaignCells} from './campaign.js';
 import {cleanBuild,EQUIPMENT,ABILITIES,mechStats,buildKey,validBuild} from './core.js?v=41';
 import {itemIcon} from './workshop-icons.js?v=41';
@@ -19,7 +20,8 @@ function mapMarkup(campaign,inspected,canChoose){
 export function createCampaignView(root,actions){
   let inspected='3-3',latest;
   root.addEventListener('click',event=>{
-    const target=event.target.closest('[data-action],[data-cell]');if(!target)return;
+    const target=event.target.closest('[data-action],[data-cell],[data-contract]');if(!target)return;
+    if(target.dataset.contract){actions.contract(target.dataset.contract);return;}
     if(target.dataset.cell){
       inspected=target.dataset.cell;
       const landing=LANDINGS.find(p=>p.cell===inspected);
@@ -37,7 +39,7 @@ export function createCampaignView(root,actions){
     if(state.campaign?.id!==latest?.campaign?.id||state.campaign?.landing!==latest?.campaign?.landing)inspected=landingFor(state.campaign).cell;
     latest=state;const {campaign,build,saved,members,localId,room,isHost,connecting,canChoose}=state;
     if(!campaign){root.innerHTML='';return;}
-    const focused=root.contains(document.activeElement)?document.activeElement:null,focusId=focused?.id,focusCell=focused?.dataset.cell;
+    const focused=root.contains(document.activeElement)?document.activeElement:null,focusId=focused?.id,focusCell=focused?.dataset.cell,focusContract=focused?.dataset.contract;
     const landing=landingFor(campaign),cell=campaignCells(campaign).find(c=>c.id===inspected),available=!!cell?.landing,valid=validBuild(build),stats=mechStats(build),self=members.find(p=>p.id===localId),allReady=members.every(p=>p.ready&&validBuild(p.build));
     const presets=CAMPAIGN_MECHS.map((p,i)=>({value:`preset-${i}`,label:`${p.label} · ${p.role}`,build:p.build})),savedOptions=saved.map((b,i)=>({value:`saved-${i}`,label:`Saved · ${b.name}`,build:b})),options=[...presets,...savedOptions];
     const match=options.find(p=>buildKey({...p.build,equipment:[...p.build.equipment.slice(0,2),build.equipment[2]]})===buildKey(build));
