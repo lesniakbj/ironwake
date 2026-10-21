@@ -2,48 +2,29 @@
 
 A browser mech-combat prototype for 1–4 players. **[Play at thorneloe.ai/ironwake](https://thorneloe.ai/ironwake/).**
 
-Start a **New campaign** to open the Kepler-9 command board. Inspect colored territory cells, select a Cinderfall landing zone, choose a mech and special weapon, and deploy solo or with up to three friends. **Continue campaign** restores your front from this browser. Open **Workshop** to customize components and paint, enter the **Target range**, or start an **AI duel**.
+Start a **New campaign** for a nine-mission co-op run across three acts. Earn shared salvage in combat, extract, install personal upgrades during refit, then deploy to a harder mission. **Continue campaign** restores the current run. The workshop, target range and AI duel remain available.
 
-## Campaign outline
+## Nine-mission campaign
 
-The overworld is the main deployment hub. Green cells are allied, amber contested, red hostile, and gray uncharted. Three marked cells select different insertion positions in **Cinderfall**, the only playable battlefield. Outer territories are inspectable future fronts with no missions yet; winning does not unlock additional maps.
+| Act | Missions | Combat focus |
+| --- | --- | --- |
+| I / Breach | Ashgate Depot, Glasswater Spillway, Relay Nine | Swarms, cell recovery, sequential uplinks |
+| II / Disrupt | Iron Orchard, Gale Foundry, Blackrail Junction | Shielded batteries, elevated sabotage, fueled escort |
+| III / Overload | Halo Spire, Shatter Basin, The Crown Engine | Vertical captures, siege-leader hunts, final warden |
 
-Choose one of 15 base chassis, a saved mech, or your current workshop build. Specials can be changed directly on the board. Equipment weight still applies, and overloaded mechs cannot deploy. Workshop **Done** returns to the campaign.
+Rounds target roughly 2–3½ minutes, plus refit time. Each arena has authored cover, landmarks, objective positions and spawn lanes. Later missions shorten reinforcement intervals, introduce more armored enemies, raise damage and hull pressure, and add telegraphed artillery. Co-op increases encounter capacity and objective durability; combatants remain capped at 48.
 
-The host owns the campaign, selects the shared insertion, and launches once all pilots have marked ready. Each pilot independently selects their mech and special. Changing the insertion clears the whole squad's readiness; changing a loadout clears that pilot's readiness. Guests see the host's board without replacing their own saved solo campaign. Campaign rooms use an isolated `ironwake-chassis-items-v1` protocol that requires both the chassis and expanded item catalogs.
+Campaign missions advance in order. Every layout also has a **Practice** drill that gives no campaign upgrades. The original long Cinderfall operation remains available through **Classic operation**. See [mission design and tuning](docs/campaign-missions.md) for layouts, economy, difficulty and testing notes.
 
-After a victory, defeat, or voluntary withdrawal, return to campaign command. Results are recorded once by the host and shared with the squad; victories secure Cinderfall's three cells. Campaign state is saved on the host's browser. Cinderfall remains replayable with a fresh cover seed after each sortie. There is no host migration or mid-sortie joining.
+## Earn during combat, install between missions
 
-## Sortie progression and contracts
+Destroy enemies and objectives for shared salvage. Successful extraction grants each present pilot one personal upgrade choice, plus a second when enough salvage was earned. Spend those choices in the campaign refit screen or bank them for later. Choose weapon damage, heavy-target damage, damage reduction, recovery, mobility or special recharge. Each module stacks up to three times, with up to eighteen module slots reserved for future run expansion.
 
-Choose **Frontline**, **Overrun**, or **Siegebreaker** on the campaign board.
-Frontline keeps standard encounter pressure. Overrun shortens reinforcement
-intervals from 5.5 to 4.2 seconds and awards 25% more salvage. Siegebreaker adds
-more armored scarabs, brings siege arrivals forward, and awards 35% more salvage.
-The host chooses the contract; changing it clears everyone's readiness.
+Installed modules carry across missions in the same run. They add no loadout weight and never modify saved workshop builds. Combat-time installation requests are rejected. Defeat or withdrawal ends the run; starting a new run clears its modules and retains best mission/contract times. Returning pilots retain their profile; late joiners receive one catch-up choice per secured mission. All surviving pilots must land at extraction for three seconds after the ship arrives.
 
-Every pilot chooses one starting field module. Destroying enemies and mission
-targets, and completing stages, earns shared salvage toward four more choices.
-The whole squad earns the same ranks, with thresholds scaled to the squad size
-at deployment. Each pilot chooses independently: weapon damage, damage against
-heavy targets, armor, recovery, movement, or special recharge. Modules can stack
-up to three times; a sortie allows five installations in total. They do not add
-weight or modify saved mech builds, and reset on the next drop.
+The host owns progress, contracts and reward validation. Each pilot chooses upgrades independently. Refit, contract and insertion changes clear squad readiness. Duplicate or stale upgrade requests cannot consume another choice. Campaign saves migrate from the earlier outline. Rooms use the isolated **ironwake-campaign-rounds-v1** protocol; no host migration or mid-mission joining is supported.
 
-Press **U** to show or hide the field-upgrade tray, then **1 / 2 / 3** to choose,
-or click a card. Combat continues while choosing. Downed pilots retain their
-choices but must recover before installing. Upgrade requests include the choice
-number and are validated by the host; retransmission cannot install a second copy.
-
-The debrief records objectives, combat time, shared salvage, redeploys, and each
-present pilot's eliminations, damage and installed modules. The host's campaign
-retains the latest report (including withdrawals) and the fastest successful
-extraction for each contract. Existing campaign saves remain compatible. Guests
-see the shared report without overwriting their own solo campaign.
-
-This adds no pickup entities, per-enemy models or physics. Existing enemy caps
-remain 32–56; field state is limited to five module IDs per pilot and a few counters.
-Rooms use `ironwake-sortie-v1` so older clients cannot join without these rules.
+Run **node scripts/preview-server.mjs 4178**, then open **http://127.0.0.1:4178/ironwake/**. The arena overview is **http://127.0.0.1:4178/tests/mission-gallery.html**. The development-only campaign fixture page can prepare synthetic completed-round saves for refit testing; it is excluded from deployment. These are playable first-pass missions, with encounter balance and full-run pacing still needing human squad playtests.
 
 ## Play
 
@@ -52,7 +33,7 @@ Rooms use `ironwake-sortie-v1` so older clients cannot join without these rules.
 - **Shift:** directional damaging dash. **E:** rechargeable special.
 - **M:** sound. **H:** controls. Arrow keys turn if mouse capture is unavailable.
 - **V:** switch between Full and Reduced impact effects. The same control is available in the menu and controls dialog.
-- **U**, then **1 / 2 / 3:** inspect and install earned field upgrades during a sortie.
+- Install earned upgrades on the **campaign refit screen between missions**.
 - Mechs and random callsigns persist in browser storage. Saved mechs can be exported and imported as JSON.
 
 Five frame components trade armor against movement speed and booster capacity. Both hand mounts accept ranged, melee or defensive equipment. Overweight mechs remain editable but cannot deploy. Damage, cooldowns, range, area effects and utility vary across weapons.
@@ -75,7 +56,7 @@ Chassis change assembled armor, ground speed, lift and effective booster capacit
 
 Each chassis has an authored structural model: Scouts include a skeletal runner and four-fan drone; Lights include a layered samurai and aircraft frame; Mediums include a knight, optical-mast sniper and rounded rescue capsule; Heavies include a bunker, furnace rig and VTOL gunship; Gigas include a reactor brawler, four-legged dreadnought and tracked fortress. Heads, hulls, limbs, stance and propulsion change with chassis identity. Replaceable part tiers still affect bulk and component paint.
 
-Chassis data lives in `dist/chassis.js`; visual identities and icons live in `dist/chassis-art.js`, and rigid shells are built by `dist/chassis-models.js`. Equipment retains the shared articulated hand mounts. See [chassis integration notes](docs/chassis-integration.md) for the merge contract with destruction, sortie progression and equipment/special art. PR #5 is integrated here; PRs #3 and #4 remain separate.
+Chassis data lives in `dist/chassis.js`; visual identities and icons live in `dist/chassis-art.js`, and rigid shells are built by `dist/chassis-models.js`. Equipment retains the shared articulated hand mounts. See [chassis integration notes](docs/chassis-integration.md) for the merge contract with destruction, sortie progression and equipment/special art. PRs #4 and #5 are integrated here; PR #3 remains separate.
 
 Run `node scripts/preview-server.mjs 4177`, then open **http://127.0.0.1:4177/tests/chassis-preview.html** for the true-size roster gallery or **http://127.0.0.1:4177/ironwake/** for the game. The gallery includes class close-ups, front/side/rear angles, bare frames, matching paint, silhouettes, alternate part kits, carried cells, Full/Reduced special effects, walking and flight. Use **Play combined build** to enter normal gameplay. Initial chassis balance still needs full campaign playtesting.
 

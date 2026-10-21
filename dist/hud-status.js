@@ -1,7 +1,7 @@
 import{operationObjective}from './planet-mission.js?v=41';
 import{AI_ARM_TIME}from './core.js?v=41';
 export function taskStatus(w,p,yaw){
- if(p.hp<=0)return{warning:true,label:w.operation?.wipeAt!=null?'EMERGENCY REDEPLOY':'MECH DISABLED',detail:w.operation?.wipeAt!=null?'Recovery in '+Math.max(0,Math.ceil(7-w.time+w.operation.wipeAt))+'s':'Stay linked. A nearby ally can bring you back online.'};
+ if(p.hp<=0)return{warning:true,label:w.operation?.wipeAt!=null?'EMERGENCY REDEPLOY':'MECH DISABLED',detail:w.operation?.wipeAt!=null?'Recovery in '+Math.max(0,Math.ceil((w.mission.raid?4:7)-w.time+w.operation.wipeAt))+'s':'Stay linked. A nearby ally can bring you back online.'};
  const heavy=w.operation?.heavyAlert;if(heavy&&w.time<heavy.until)return{warning:true,heavy:true,label:w.time<heavy.landingAt?'HOSTILE MECH INBOUND':heavy.name+' LANDED',detail:w.time<heavy.landingAt?heavy.name+' · Impact in '+Math.max(1,Math.ceil(heavy.landingAt-w.time))+'s · Clear the landing zone':'Heavy armor · Focus fire and keep moving'};
  if(w.hazards.some(h=>Math.hypot(h.x-p.x,h.y-p.y)<h.r))return{warning:true,label:'INCOMING STRIKE',detail:'Boost clear of the marked impact zone.'};
  if(w.enemies.some(e=>e.hp>0&&!e.training&&!e.species&&!e.objective&&Math.hypot(e.x-p.x,e.y-p.y)<250&&Math.cos(Math.atan2(e.y-p.y,e.x-p.x)-yaw)<-.25))return{warning:true,label:'CONTACT BEHIND',detail:'Turn or boost clear. Check your vicinity map.'};
@@ -10,7 +10,7 @@ export function taskStatus(w,p,yaw){
  if(w.mission.mode==='trial'&&w.enemies.some(e=>e.windup>0&&e.attackTarget===p.id))return{warning:true,label:'INCOMING '+(w.enemies[0].attackKind==='melee'?'MELEE':'BURST'),detail:'Boost away from the attack.'};
  if(w.mission.mode==='trial')return{label:'DEFEAT THE AI MECH',detail:'Strafe, fly, and test your loadout in live combat.'};
  if(w.mission.mode==='sandbox')return{label:'TEST YOUR LOADOUT',detail:'LMB left hand · RMB right hand · Space fly · E special'};
- if(w.operation){if(w.operation.noticeUntil>w.time)return{notice:true,label:w.operation.notice,detail:'CINDERFALL · '+(w.operation.phase+1)+' / 5 objectives'};return{label:'CINDERFALL',detail:operationObjective(w,p).teamDetail};}
+ if(w.operation){if(w.operation.noticeUntil>w.time)return{notice:true,label:w.operation.notice,detail:w.mission.raid?w.mission.name+' · LEVEL '+w.mission.sector:'CINDERFALL · '+(w.operation.phase+1)+' / 5 objectives'};return{label:w.mission.name,detail:operationObjective(w,p).teamDetail};}
  const zone=w.mission.zones[w.zoneIndex];
  if(w.encounter)return{label:zone?.boss?'WARDEN ENGAGED':'CLEAR THE SECTOR',detail:`${w.enemies.filter(e=>e.hp>0).length} contacts remaining · Keep moving`};
  if(zone)return{label:`ADVANCE TO SECTOR ${w.zoneIndex+1}`,detail:`${zone.name} · ${Math.round(Math.hypot(zone.x-p.x,zone.y-p.y))}m to contact`};

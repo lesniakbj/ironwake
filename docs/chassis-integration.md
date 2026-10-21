@@ -1,6 +1,6 @@
 # Chassis roster and integration contract
 
-This branch starts at `loganthorneloe/ironwake:main` (`1b68a07`) and now includes PR #5 (item distinctiveness and special-weapon art), merged from `2ad051c`. PRs #3 (destruction) and #4 (sortie progression) remain independent. PR #6 targets the canonical repository's **main** branch.
+The campaign-expansion branch builds on PR #6 (chassis plus PR #5 item/special art) and integrates PR #4 (sortie modules and rewards). PR #3 (destruction) remains independent. See `docs/campaign-missions.md` for the nine-round director and the revised between-mission upgrade timing. All PRs target `loganthorneloe/ironwake:main`.
 
 ## Chassis and equipment are separate
 
@@ -22,7 +22,7 @@ Legacy saves without a chassis retain their original stats, physical scale and u
 - Ability fields retain the actual simulation radius. Weapon effects should sample world-space muzzle transforms, as the art pass already does. Preserve both the scaled workshop camera and special-preview update helper.
 - A carried cell attaches to the existing body mount and inherits chassis scale. Keep the dropped canister and mounted cell mutually exclusive.
 
-## PR #4: sortie progression
+## Integrated PR #4: run progression
 
 - Apply chassis factors to assembled part stats, then apply sortie upgrade modifiers. Keep chassis identity and factory loadouts separate from earned module IDs; choosing a platform must not silently install or discard a sortie upgrade.
 - Preserve the generated 15-platform campaign roster when resolving campaign UI changes. Contract selection remains host-owned and personal chassis changes invalidate only that pilot's ready state.
@@ -37,7 +37,7 @@ Legacy saves without a chassis retain their original stats, physical scale and u
 
 ## Network and regression checks
 
-The combined build uses `ironwake-chassis-items-v1-` room IDs. Both hosting and joining require the chassis registry and expanded part catalog, preventing either older branch from silently normalizing the other branch's builds. Keep the destruction lab's separate protocol when integrating PR #3.
+The campaign build uses `ironwake-campaign-rounds-v1-` room IDs. Both hosting and joining require the mission director, between-round refits, chassis registry and expanded part catalog, preventing either older branch from silently normalizing the other branch's builds. Keep the destruction lab's separate protocol when integrating PR #3.
 
 Run all tests after each integration. Check every factory kit; smallest/largest mixed squads; saved/JSON/snapshot round trips; invalid heavy mounts with otherwise legal weight; body-sized cover and shield coverage; both muzzle origins at several headings and elevations; all elevated objectives; and Full/Reduced special effects on Scout and Giga roots. Verify shared ranks, contracts and fracture state in actual multiplayer after integration. The current automated coverage does not replace those future multi-feature multiplayer checks.
 
@@ -58,3 +58,5 @@ The chassis foundry at `/tests/chassis-preview.html` includes six alternate part
 `tests/chassis-items-integration.test.js` exercises every part on all fifteen chassis, alternate part families and muzzle transforms, mixed-size squad fields in both effect modes, and real Cinderfall pickup/delivery/death/disconnect snapshots. Normal multiplayer still requires peers running the same combined branch; public signaling and NAT behavior need live squad testing.
 
 Validation on 2026-10-21: all 209 automated tests passed. Browser checks covered custom Wisp and Leviathan target-range firing, Aegis and repair in Full mode, EMP in Reduced mode, and a real two-tab mixed Scout/Giga PeerJS squad deploying into Cinderfall with simultaneous EMP/Aegis effects. Both clients reported no console warnings or errors. The test squad was disconnected after the sortie. Pickup lifecycle coverage is automated simulation/snapshot testing plus visual carried-cell inspection; a full-length multi-pilot campaign remains a playtest task.
+
+Campaign expansion validation and remaining tuning are documented in `docs/campaign-missions.md`. The earlier two-pilot Cinderfall result above refers to the chassis/item integration; new run/refit checks are tracked separately and do not establish nine-mission combat balance.
