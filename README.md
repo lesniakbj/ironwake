@@ -29,6 +29,8 @@ Run **node scripts/preview-server.mjs 4178**, then open **http://127.0.0.1:4178/
 ## Play
 
 - **WASD:** horizontal thrust. **Space:** fly upward; release to descend.
+- **Mouse:** aim continuously, without holding a weapon button. If capture is unavailable, hover over the battlefield and move to its edge to keep turning. **Esc:** release the cursor / pause aim; click the battlefield to resume.
+- **Hold Q or middle mouse:** lock your movement heading while aiming freely. Release to make movement follow your current aim again. Both weapon buttons remain independent.
 - **Left / right mouse:** use the corresponding hand. Hold to repeat fire; railguns charge automatically, fire, recover and repeat.
 - **Shift:** directional damaging dash. **E:** rechargeable special.
 - **M:** sound. **H:** controls. Arrow keys turn if mouse capture is unavailable.
