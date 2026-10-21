@@ -1,6 +1,6 @@
 # Chassis roster and integration contract
 
-This branch starts at `loganthorneloe/ironwake:main` (`1b68a07`). PRs #3 (destruction), #4 (sortie progression) and #5 (equipment art) remain independent. Merge them into this branch when integration is requested, then target the canonical repository's **main** branch with the resulting PR.
+This branch starts at `loganthorneloe/ironwake:main` (`1b68a07`) and now includes PR #5 (item distinctiveness and special-weapon art), merged from `2ad051c`. PRs #3 (destruction) and #4 (sortie progression) remain independent. PR #6 targets the canonical repository's **main** branch.
 
 ## Chassis and equipment are separate
 
@@ -12,7 +12,7 @@ The initial combat contract retains two independently controlled hands and one s
 
 Legacy saves without a chassis retain their original stats, physical scale and unrestricted two-hand fitting. New chassis IDs and all part/weapon IDs are validated against static registries. Runtime stat overrides are never loaded from saved builds.
 
-## PR #5: equipment and special-weapon art
+## Integrated PR #5: equipment and special-weapon art
 
 - Preserve both part-design installation and `chassis` sanitization when resolving `core.js`. The build key must contain chassis identity, parts, equipment, paint and exhaust color.
 - In `makeMech`, run `buildChassisModel` first, then `addItemDetails`, before rigid-part batching. Chassis geometry owns the silhouette; item geometry owns selected equipment and carried pickups. Preserve the art pass's animated beacon/cargo exclusions.
@@ -37,7 +37,7 @@ Legacy saves without a chassis retain their original stats, physical scale and u
 
 ## Network and regression checks
 
-This branch uses `ironwake-chassis-v1-` room IDs so older clients cannot normalize named chassis into legacy frames. After combining PRs, select one new normal-play protocol prefix that requires all integrated features. Keep the destruction lab's separate protocol as well. Do not accidentally select whichever string wins a merge conflict.
+The combined build uses `ironwake-chassis-items-v1-` room IDs. Both hosting and joining require the chassis registry and expanded part catalog, preventing either older branch from silently normalizing the other branch's builds. Keep the destruction lab's separate protocol when integrating PR #3.
 
 Run all tests after each integration. Check every factory kit; smallest/largest mixed squads; saved/JSON/snapshot round trips; invalid heavy mounts with otherwise legal weight; body-sized cover and shield coverage; both muzzle origins at several headings and elevations; all elevated objectives; and Full/Reduced special effects on Scout and Giga roots. Verify shared ranks, contracts and fracture state in actual multiplayer after integration. The current automated coverage does not replace those future multi-feature multiplayer checks.
 
@@ -48,3 +48,13 @@ The gallery at `tests/chassis-preview.html` uses the live model factory and a sh
 `dist/chassis-art.js` defines fifteen visual identities and workshop silhouettes. `dist/chassis-models.js` replaces the generic rigid shells on named platforms while retaining arm, elbow, weapon and live nozzle groups. Chassis shells must be built before item or module hardware is attached: the replacement removes direct structural meshes. Head and stance offsets are visual; authoritative hand transforms remain unchanged. Selected part tiers change shell bulk and paint is applied by component. Legacy custom frames and enemies retain the original models.
 
 Citadel uses a stationary track undercarriage, including when airborne, and suppresses walking bob. Leviathan uses four splayed supports in two articulated pairs. Other chassis have individual ground stride factors. All retain the existing simulation locomotion, including boost and flight; these models add no auxiliary guns or new chassis abilities. Shared shell geometries and rigid batching follow the existing renderer ownership rules.
+
+## Combined playtest
+
+Run `node scripts/preview-server.mjs 4177` and open `/ironwake/` for normal gameplay. All fifteen factory chassis can deploy into the target range, AI duel or Cinderfall. Workshop sockets expose all forty-five frame designs. Use the special socket and Test equipment to preview EMP, Aegis or repair on the chosen chassis. Cinderfall cells attach to the carrier and detach on delivery, death or disconnect.
+
+The chassis foundry at `/tests/chassis-preview.html` includes six alternate part kits, a special selector, carried-cell hardware and Full/Reduced effects on every chassis. It uses the combined live model factory and effect pools. Preview fields are intentionally reduced in radius for inspection; gameplay uses the actual ability radius in world space. Invalid preview fits remain inspectable; gameplay still enforces mount and payload limits.
+
+`tests/chassis-items-integration.test.js` exercises every part on all fifteen chassis, alternate part families and muzzle transforms, mixed-size squad fields in both effect modes, and real Cinderfall pickup/delivery/death/disconnect snapshots. Normal multiplayer still requires peers running the same combined branch; public signaling and NAT behavior need live squad testing.
+
+Validation on 2026-10-21: all 209 automated tests passed. Browser checks covered custom Wisp and Leviathan target-range firing, Aegis and repair in Full mode, EMP in Reduced mode, and a real two-tab mixed Scout/Giga PeerJS squad deploying into Cinderfall with simultaneous EMP/Aegis effects. Both clients reported no console warnings or errors. The test squad was disconnected after the sortie. Pickup lifecycle coverage is automated simulation/snapshot testing plus visual carried-cell inspection; a full-length multi-pilot campaign remains a playtest task.

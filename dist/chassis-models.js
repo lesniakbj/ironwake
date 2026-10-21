@@ -1,6 +1,7 @@
 import * as T from './vendor/three.module.min.js';
 import{chassisFor}from './chassis.js';
 import{CHASSIS_ART}from './chassis-art.js';
+import{partChassis}from './part-designs.js';
 
 const round=new T.IcosahedronGeometry(1,2),hoop=new T.TorusGeometry(1,.11,6,24),plates=new Map(),up=new T.Vector3(0,1,0);
 // Replace structural shells, never the articulated rig, weapon mounts or live jets.
@@ -9,7 +10,7 @@ export function buildChassisModel({body,head,arms,legs,jets,build},k){
  const c=chassisFor(build),art=CHASSIS_ART[c.id];if(!art)return null;
  const{box,cyl,glow,mesh,mat}=k,dark='#172732',steel='#9eb1b9',black='#0a141e',light=build.trailColor||'#80f7ff';
  const paint=slot=>build.partColors?.[slot]||build.color||'#79b9bd';
- const bulk=slot=>({light:.86,standard:1,heavy:1.13}[build.parts?.[slot]]||1);
+ const bulk=slot=>({light:.86,standard:1,heavy:1.13}[partChassis(slot,build.parts?.[slot],c.parts[slot])]);
  for(const root of[body,head,...arms,...arms.map(a=>a.userData.elbow),...legs])for(const child of [...root.children])if(child.isMesh)child.removeFromParent();
  const group=(parent,name)=>{const g=new T.Group();g.name='chassis:'+name;parent.add(g);return g;};
  const hull=group(body,'hull'),helmet=group(head,'head'),pack=group(body,'propulsion'),mounts=group(body,'mounts');

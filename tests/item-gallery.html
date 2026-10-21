@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>IRONWAKE · Item distinctiveness</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#0b1119;color:#d7e7eb;font:14px system-ui}header{padding:22px 28px;background:#111c27;border-bottom:1px solid #334959}h1{font-size:20px;margin:0 0 6px;letter-spacing:.1em}p{color:#9db4bf;margin:0 0 15px}nav{display:flex;flex-wrap:wrap;gap:7px}button{background:#172b39;color:#c5e5e6;border:1px solid #436173;border-radius:4px;padding:8px 13px;cursor:pointer}button[aria-pressed=true]{color:#12242b;background:#a3edda}label{margin-right:15px}#controls{margin-top:16px;display:flex;align-items:center;flex-wrap:wrap;gap:12px}input{width:200px}#stage{position:relative;height:calc(100vh - 220px);min-height:620px}canvas{width:100%;height:100%;display:block}#labels{position:absolute;inset:0;pointer-events:none;display:grid;grid-template-columns:repeat(3,1fr)}article{border:1px solid #253949;padding:14px;display:flex;flex-direction:column;justify-content:flex-end;background:linear-gradient(transparent 65%,#0b141fe8)}strong{font-size:15px}small{color:#94b7c4;margin-top:3px}#status{display:block;padding:10px 28px;color:#a4d8c8}#status.error{color:#ff8e83}@media(max-width:650px){header{padding:15px}#stage{height:1050px}strong{font-size:12px}article{padding:7px}small{font-size:10px}}
+</style>
+<header><h1>IRONWAKE / FIELD ASSEMBLIES</h1><p>45 frame designs · 15 weapon attachments · 3 dorsal specials · carried cell hardware. Drag to orbit.</p><nav id="tabs"></nav><div id="controls"><button id="rotate" aria-pressed="true">Auto rotate</button><button id="motion">Effects: Full</button><button id="cargo" aria-pressed="false">Carry cells</button><label>Cast / usage phase <input id="phase" type="range" min="0.05" max="7.95" value="0.35" step="0.05"></label><button id="play" aria-pressed="true">Animate effects</button></div></header>
+<div id="stage"><canvas id="gallery"></canvas><div id="labels"></div></div><output id="status">Loading assemblies…</output>
+<script type="module">
+import * as T from '../dist/vendor/three.module.min.js';
+import {PARTS,WEAPONS,ABILITIES,cleanBuild} from '../dist/core.js?v=41';
+import {makeMech,animateMech,disposeMech} from '../dist/three-view.js?v=41';
+import {createEquipmentFX} from '../dist/equipment-effects.js';
+import {updateItemDetails} from '../dist/item-models.js';
+import {toggleImpactMode,impactMode} from '../dist/impact-preferences.js';
+const $=id=>document.getElementById(id),canvas=$('gallery'),status=$('status');
+window.addEventListener('error',e=>{status.className='error';status.textContent=e.message;});
+const renderer=new T.WebGLRenderer({canvas,antialias:true});renderer.setPixelRatio(Math.min(devicePixelRatio,1.5));renderer.setScissorTest(true);
+const camera=new T.PerspectiveCamera(34,1,.1,150);let models=[],mode=new URLSearchParams(location.search).get('mode')||'loadouts',yaw=.55,rotating=true,playing=true,carrying=false,last=0;
+const modes=['loadouts',...Object.keys(PARTS),'weapons','specials'];
+$('tabs').innerHTML=modes.map(id=>`<button data-mode="${id}" aria-pressed="${id===mode}">${id[0].toUpperCase()+id.slice(1)}</button>`).join('');
+const loadouts=[
+ ['RAPTOR / pursuit',{torso:'raptor',head:'mantis',arms:'talon',legs:'raptor',booster:'kite'},['claws','scatter','emp']],
+ ['SPECTRE / recon',{torso:'spectre',head:'cyclops',arms:'wire',legs:'skate',booster:'wasp'},['rail','blade','shield']],
+ ['HELIOS / capacitor',{torso:'reactor',head:'surveyor',arms:'conduit',legs:'piston',booster:'halo'},['dynamo','plasma','emp']],
+ ['CORSAIR / raider',{torso:'corsair',head:'ronin',arms:'outrider',legs:'outrigger',booster:'gull'},['scythe','carbine','repair']],
+ ['CITADEL / siege',{torso:'citadel',head:'paladin',arms:'rampart',legs:'crab',booster:'saturn'},['guard','launcher','shield']],
+ ['FOUNDRY / furnace',{torso:'furnace',head:'anvil',arms:'riveter',legs:'tread',booster:'foundry'},['hammer','flamer','repair']],
+ ['KESTREL / light',{torso:'light',head:'light',arms:'light',legs:'light',booster:'light'},['lance','phaser','repair']],
+ ['ATLAS / medium',{torso:'standard',head:'standard',arms:'standard',legs:'standard',booster:'standard'},['blade','rotary','emp']],
+ ['BASTION / heavy',{torso:'heavy',head:'heavy',arms:'heavy',legs:'heavy',booster:'heavy'},['guard','dynamo','shield']]
+];
+function reset(){
+ for(const m of models){m.fx.dispose();disposeMech(m.model);}models=[];
+ const cards=PARTS[mode]?Object.entries(PARTS[mode]).map(([id,p])=>[p.name,{[mode]:id},['blade','carbine','emp'],p.appearance||`${p.chassis} chassis`]):mode==='specials'?Object.entries(ABILITIES).map(([id,a])=>[a.name,{booster:'halo'},['dynamo','phaser',id],a.desc]):mode==='weapons'?Object.entries(WEAPONS).map(([id,w])=>[w.name.split(' / ').at(-1),{},[id,id,'emp'],w.role]):loadouts;
+ for(const [i,[name,parts,equipment,detail]] of cards.entries()){
+  const build=cleanBuild({parts,equipment,color:['#ee7950','#b3c9bd','#74adca','#e2d6b4','#b698c1','#d3dadd'][i%6]});
+  const scene=new T.Scene();scene.background=new T.Color(i%2?'#111e2b':'#142331');scene.add(new T.HemisphereLight('#b2d9ef','#343543',2.3));const sun=new T.DirectionalLight('#fff2d7',3.5);sun.position.set(-8,12,-10);scene.add(sun);const rim=new T.DirectionalLight('#66baff',2);rim.position.set(5,8,6);scene.add(rim);
+  const model=makeMech(build);scene.add(model);const floor=new T.Mesh(new T.CylinderGeometry(4,4,.15,48),new T.MeshToonMaterial({color:'#233847'}));floor.position.y=-.15;scene.add(floor);
+  const fx=createEquipmentFX(scene,{fieldScale:mode==='specials'?.33:.2});models.push({scene,model,fx,build,name,detail:detail||equipment.join(' / '),id:'gallery-'+i});
+ }
+ $('labels').style.gridTemplateRows=`repeat(${Math.ceil(models.length/3)},1fr)`;$('labels').innerHTML=models.map(m=>`<article><strong>${m.name}</strong><small>${m.detail}</small></article>`).join('');
+ document.querySelectorAll('[data-mode]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.mode===mode)));
+}
+document.querySelectorAll('[data-mode]').forEach(b=>b.onclick=()=>{mode=b.dataset.mode;reset();});
+$('rotate').onclick=()=>{$('rotate').setAttribute('aria-pressed',String(rotating=!rotating));};
+$('play').onclick=()=>{$('play').setAttribute('aria-pressed',String(playing=!playing));};
+$('cargo').onclick=()=>{$('cargo').setAttribute('aria-pressed',String(carrying=!carrying));};
+$('motion').onclick=()=>{toggleImpactMode();$('motion').textContent='Effects: '+impactMode();};
+let pointer=null;canvas.onpointerdown=e=>{pointer=e.clientX;canvas.setPointerCapture(e.pointerId);};canvas.onpointermove=e=>{if(pointer!==null){yaw+=(e.clientX-pointer)*.01;pointer=e.clientX;rotating=false;}};canvas.onpointerup=()=>pointer=null;
+reset();
+function frame(ms){const t=ms/1000,dt=last?Math.min(.04,t-last):.016;last=t;if(rotating)yaw+=dt*.15;
+ const w=canvas.clientWidth,h=canvas.clientHeight;if(canvas.width!==Math.round(w*renderer.getPixelRatio())||canvas.height!==Math.round(h*renderer.getPixelRatio()))renderer.setSize(w,h,false);
+ const rows=Math.ceil(models.length/3),cw=w/3,ch=h/rows;let calls=0;
+ for(const [i,m]of models.entries()){
+  const elapsed=playing?(t%8):Number($('phase').value),special=m.build.equipment[2],duration=ABILITIES[special].duration,active=mode==='specials'?Math.max(0,duration-Math.min(elapsed,duration)):0;
+  const hands=m.build.equipment.slice(0,2).map(id=>{const weapon=WEAPONS[id],f=(elapsed%1.6)/1.6;return{item:id,railCharge:id==='rail'?f:0,motionCharge:id==='dynamo'?f:0,spin:id==='rotary'?1:0,shot:mode==='weapons'&&!weapon.melee?weapon.rate*(1-f):0,shotCount:mode==='weapons'?Math.floor(t*3):0,meleeTime:mode==='weapons'&&weapon.melee?weapon.rate*(1-f):0,meleeCount:Math.floor(t),guarding:mode==='weapons'&&id==='guard'};});
+  const p={id:m.id,build:m.build,hp:100,x:0,y:0,angle:-Math.PI/2,altitude:0,hands,active,activeAbility:special};animateMech(m.model,p,dt,t);updateItemDetails(m.model.userData.itemDetails,p,t,carrying);m.fx.update({time:t,players:[p]},t,new Map([[m.id,m.model]]));
+  const x=(i%3)*cw,y=h-(Math.floor(i/3)+1)*ch;renderer.setViewport(x,y,cw,ch);renderer.setScissor(x,y,cw,ch);camera.aspect=cw/ch;camera.updateProjectionMatrix();const distance=mode==='specials'?28:Math.max(17,12/camera.aspect);camera.position.set(Math.sin(yaw)*distance,6.5,-Math.cos(yaw)*distance);camera.lookAt(0,3,0);renderer.render(m.scene,camera);calls+=renderer.info.render.calls;
+ }
+ if(!status.className)status.textContent=`${models.length} assemblies · ${calls} draw calls · ${impactMode()} effects · ${mode==='specials'?'EMP / Aegis / Repair usage preview':'same model factory as live play'}`;
+ requestAnimationFrame(frame);
+}requestAnimationFrame(frame);
+</script></html>
