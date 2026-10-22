@@ -1,20 +1,63 @@
 import * as T from './vendor/three.module.min.js';
-const geometry=new T.IcosahedronGeometry(1,1),stamp=new T.Object3D(),up=new T.Vector3(0,1,0),direction=new T.Vector3();
-// Bounded, reusable bursts: irregular fire/cloud volumes and streaks, never flat hit rings.
+import {impactLevel} from './impact-preferences.js';
+import {burstGeometry} from './impact-effects.js';
+
+const MAX_BURSTS=18,FIRE=16,CLOUDS=12,SPARKS=24;
+// Ink, hot core, smoke, debris and pressure arcs batch across all explosions.
 export function createExplosionPool(parent){
- const pool=[];
- function layer(color,count,additive){const material=new T.MeshBasicMaterial({color,transparent:true,depthWrite:false,blending:additive?T.AdditiveBlending:T.NormalBlending});const mesh=new T.InstancedMesh(geometry,material,count);mesh.frustumCulled=false;return mesh;}
- function create(){const group=new T.Group();group.add(layer('#ffb039',12,true),layer('#454859',10,false),layer('#fff4c9',20,true));parent.add(group);return group;}
- return{
- update(events){const bursts=events.filter(e=>e.kind==='explosion').slice(-24);while(pool.length<bursts.length)pool.push(create());pool.forEach((group,i)=>{const e=bursts[i];group.visible=!!e;if(!e)return;const plasma=e.weapon==='plasma',age=Math.max(0,e.max-e.life),progress=age/e.max,radius=e.r*.1,spread=1-Math.exp(-age*9),fade=Math.max(0,1-progress),seed=e.id||0;group.position.set(e.x*.1,Math.max(.2,e.z*.1),e.y*.1);
- const [fire,cloud,sparks]=group.children;fire.material.color.set(plasma?'#ad7bff':age<.12?'#fff1b4':'#ff862c');fire.material.opacity=Math.min(1,fade*2)*(plasma?.4:.6);cloud.material.color.set(plasma?'#7249ae':'#3d4652');cloud.material.opacity=Math.sin(progress*Math.PI)*(plasma?.16:.4);sparks.material.color.set(plasma?'#bdedff':'#ffe3a1');sparks.material.opacity=fade;
- for(let j=0;j<20;j++){const a=j*2.39996+seed*.71,y=Math.sin(j*6.73+seed)*.8;direction.set(Math.cos(a),y,Math.sin(a)).normalize();
- if(j<12){const reach=j===0?0:radius*spread*(.22+(j%4)*.12);stamp.position.copy(direction).multiplyScalar(reach);stamp.rotation.set(a,age*(j%2?2:-2),a*.3);const size=radius*(j===0?.32:.2)*spread*Math.pow(fade,.65)*(1+Math.sin(age*32+j)*.12);stamp.scale.set(size,size*(plasma?.65:1.1),size);stamp.updateMatrix();fire.setMatrixAt(j,stamp.matrix);}
- if(j<10){stamp.position.copy(direction).multiplyScalar(radius*spread*.55);stamp.position.y+=age*radius*.5;stamp.rotation.set(a,0,age);const size=radius*(.15+progress*.2);stamp.scale.set(size,size*.8,size);stamp.updateMatrix();cloud.setMatrixAt(j,stamp.matrix);}
- stamp.position.copy(direction).multiplyScalar(radius*spread*(.6+(j%5)*.1));stamp.position.y-=plasma?0:age*age*radius*.3;stamp.quaternion.setFromUnitVectors(up,direction);const size=Math.max(.01,fade)*radius*.012;stamp.scale.set(size,size*(plasma?16:9),size);stamp.updateMatrix();sparks.setMatrixAt(j,stamp.matrix);
- }
- for(const part of group.children)part.instanceMatrix.needsUpdate=true;
- });},
- dispose(){for(const group of pool){for(const part of group.children){part.material.dispose();part.dispose();}group.removeFromParent();}pool.length=0;}
- };
+  const rock=new T.IcosahedronGeometry(1,0),arc=new T.RingGeometry(.91,1,32,1,0,Math.PI*1.45),star=burstGeometry(12),stamp=new T.Object3D(),direction=new T.Vector3(),up=new T.Vector3(0,1,0),color=new T.Color();
+  function layer(geometry,count,opacity=1){
+    const material=new T.MeshBasicMaterial({color:'#ffffff',transparent:opacity<1,opacity,side:T.DoubleSide,depthWrite:false});
+    const mesh=new T.InstancedMesh(geometry,material,count);mesh.frustumCulled=false;mesh.count=0;parent.add(mesh);return mesh;
+  }
+  const ink=layer(rock,MAX_BURSTS*FIRE),fire=layer(rock,MAX_BURSTS*FIRE),cloud=layer(rock,MAX_BURSTS*CLOUDS,.46),sparks=layer(rock,MAX_BURSTS*SPARKS),pressure=layer(arc,MAX_BURSTS*5,.75),flash=layer(star,MAX_BURSTS);
+  pressure.material.blending=T.AdditiveBlending;
+  const put=(mesh,index,tint)=>{stamp.updateMatrix();mesh.setMatrixAt(index,stamp.matrix);color.set(tint);mesh.setColorAt(index,color);};
+  return {
+    update(events,camera){
+      let flames=0,smoke=0,shards=0,arcs=0,flashes=0,bursts=0;const level=impactLevel();cloud.material.opacity=.15+level*.09;
+      for(let i=events.length-1;i>=0&&bursts<MAX_BURSTS;i--){
+        const e=events[i];if(e.kind!=='explosion')continue;bursts++;
+        const max=Math.max(.01,e.max||.8),age=Math.max(0,max-e.life),progress=Math.min(1,age/max),fade=1-progress;
+        const slam=e.weapon==='slam',plasma=e.weapon==='plasma'||slam,radius=Math.max(.5,e.r*.1)*(.85+level*.7)*(slam?.68:1),spread=1-Math.exp(-age*21),seed=e.id||0;
+        const x=e.x*.1,y=Math.max(.25,(e.z||0)*.1),z=e.y*.1;
+        for(let j=0;j<FIRE;j++){
+          const angle=j*2.39996+seed*.71,lift=Math.sin(j*6.73+seed)*(slam?.15:.65);
+          direction.set(Math.cos(angle),lift,Math.sin(angle)).normalize();
+          stamp.position.set(x,y,z).addScaledVector(direction,radius*spread*(j===0?0:.18+(j%4)*.12));
+          stamp.rotation.set(slam?0:angle,age*(j%2?2:-2),slam?0:angle*.3);
+          const size=radius*(j===0?.64:.32)*Math.max(.05,spread)*Math.pow(fade,.8)*(j%2?.88:1.12)*(.8+level*.2);
+          stamp.scale.set(size*1.14,size*(slam?.3:plasma?.8:1.2)*1.14,size*1.14);put(ink,flames,'#17202c');
+          stamp.scale.multiplyScalar(.86);put(fire,flames,age<.06?'#fffbe6':plasma?(j%3?'#b17dff':'#f2caff'):age<.19?(j%3?'#ffdf86':'#fff6ce'):(j%3?'#f57639':'#ffb64f'));flames++;
+        }
+        // Smoke animates on twos, with a stepped, drawn-cel silhouette.
+        const celAge=Math.floor(age*24)/24;
+        for(let j=0;j<CLOUDS;j++){
+          const angle=j*2.39996+seed*.6,reach=radius*(slam?.7+progress*.55:.32+progress*.65);
+          stamp.position.set(x+Math.cos(angle)*reach,y+celAge*radius*(slam?.12:.3+j%3*.1),z+Math.sin(angle)*reach);
+          stamp.rotation.set(angle,celAge*(j%2?1:-1),angle*.3);
+          const size=radius*(.13+progress*.26)*Math.sin(progress*Math.PI)*(.9+j%3*.15)*(slam?.55:1);
+          stamp.scale.set(size,size*.85,size);put(cloud,smoke,plasma?(j%2?'#4e385d':'#78628b'):(j%2?'#293340':'#58636b'));smoke++;
+        }
+        for(let j=0;j<SPARKS;j++){
+          const angle=j*2.399+seed;
+          direction.set(Math.cos(angle),.15+(j%5)*.23,Math.sin(angle)).normalize();
+          stamp.position.set(x,y,z).addScaledVector(direction,radius*spread*(.65+(j%6)*.22));stamp.position.y-=age*age*radius*.65;
+          stamp.quaternion.setFromUnitVectors(up,direction);
+          const width=radius*.014*fade*level;
+          stamp.scale.set(width,width*(j%3?18:32),width);put(sparks,shards,plasma?'#e4c9ff':j%3?'#ffe8b5':'#17202c');shards++;
+        }
+        for(let j=0;j<5;j++){
+          stamp.position.set(x,j<3||slam?Math.max(.18,y-radius*.15)+j*.06:y,z);stamp.rotation.set(j<3||slam?-Math.PI/2:j*.8,0,j*Math.PI*.7+seed);
+          stamp.scale.setScalar(Math.max(.01,radius*(.15+spread*(1.2+j*.12))*(1-progress*.35)));put(pressure,arcs,plasma?'#cbaaff':'#f4d4a2');color.multiplyScalar(fade*level);pressure.setColorAt(arcs,color);arcs++;
+        }
+        if(level===1&&!slam&&age<.085&&camera){
+          stamp.position.set(x,y,z);stamp.quaternion.copy(camera.quaternion);stamp.rotateZ(seed*2.399);
+          const size=radius*1.9*(1-age/.085);stamp.scale.set(size*1.5,size,.01);put(flash,flashes,'#fff6d5');flashes++;
+        }
+      }
+      for(const [mesh,count]of[[ink,flames],[fire,flames],[cloud,smoke],[sparks,shards],[pressure,arcs],[flash,flashes]]){mesh.count=count;mesh.visible=count>0;mesh.instanceMatrix.needsUpdate=true;if(mesh.instanceColor)mesh.instanceColor.needsUpdate=true;}
+    },
+    dispose(){for(const mesh of[ink,fire,cloud,sparks,pressure,flash]){mesh.removeFromParent();mesh.material.dispose();mesh.dispose();}rock.dispose();arc.dispose();star.dispose();}
+  };
 }

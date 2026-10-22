@@ -1,0 +1,18 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><title>IRONWAKE / Campaign test fixtures</title>
+<style>body{margin:40px auto;max-width:720px;padding:20px;background:#10231c;color:#d4eacb;font:16px/1.6 system-ui}button,input,select{padding:10px;margin:8px;background:#244536;color:#def4d1;border:1px solid #8baf7d}label{display:block}a{color:#b9ee94}output{display:block;padding:15px}</style>
+<h1>Campaign development fixtures</h1><p>This development-only page creates a synthetic completed-round save for testing the actual refit screen. It replaces the campaign on this preview origin. Workshop builds stay saved. It is excluded from deployed game assets.</p>
+<label>Completed rounds <select id="rounds"><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option><option>7</option><option>8</option></select></label>
+<label>Optional teammate callsign <input id="teammate" placeholder="PILOT-Q2W3E4R5"></label>
+<button id="install">Create refit test save</button><output id="status">No fixture installed.</output><a href="/ironwake/">Open the actual campaign ↗</a>
+<script type="module">
+import{newCampaign,recordSortie,cleanCampaign}from '../dist/campaign.js';
+import{MISSIONS}from '../dist/mission-catalog.js';
+import{validCallsign,createCallsign}from '../dist/pilot.js';
+document.getElementById('install').onclick=()=>{
+ if(!['127.0.0.1','localhost'].includes(location.hostname))return;
+ let name=JSON.parse(localStorage.getItem('iw-callsign')||'null');if(!validCallsign(name)){name=createCallsign();localStorage.setItem('iw-callsign',JSON.stringify(name));}
+ const teammate=document.getElementById('teammate').value.trim(),names=[name,...(validCallsign(teammate)&&teammate!==name?[teammate]:[])];let c=newCampaign(42),rounds=Number(document.getElementById('rounds').value);
+ for(let i=0;i<rounds;i++)c=recordSortie(c,'victory',{outcome:'victory',missionId:MISSIONS[i].id,missionName:MISSIONS[i].name,totalObjectives:3,round:true,cleared:3,seconds:80+i*10,kills:40,salvage:600,pilots:names.map(name=>({name,modules:[],kills:20,damage:1200}))});
+ localStorage.setItem('iw-campaign',JSON.stringify(cleanCampaign(c)));document.getElementById('status').textContent=`Synthetic fixture: ${rounds} completed rounds. ${c.pilots[0].credits} choices for ${name}. Open the campaign to test installation and the next deployment.`;
+};
+</script></html>
