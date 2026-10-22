@@ -34,7 +34,7 @@ function spring(time,duration,elastic){
  const t=clamp(time/Math.max(.001,duration));
  return Math.sin(t*Math.PI*(elastic>.6?5:3))*Math.exp(-t*3.5)*(1-smooth(t));
 }
-export function enemyPose(p,{style='anime',reduced=false}={}){
+export function enemyPose(p,{style='anime',reduced=false,time=0}={}){
  const a=ENEMY_ATTACKS[p.attackKind],keys=poses[p.attackKind],profile=ENEMY_MOTION[enemyRole(p)];
  const anime=style==='anime',extras=anime&&!reduced,elapsed=Math.max(0,p.actionTime||0);
  let pose=zero,forward=0,twist=0,squash=0,stretch=0,kick=0,secondary=0,smear=0,brace=0;
@@ -57,6 +57,8 @@ export function enemyPose(p,{style='anime',reduced=false}={}){
   if(anime){pose=[pose[0]*(1+.35*profile.energy),pose[1]*(1+.35*profile.energy),pose[2]*1.45,pose[3],pose[4]];}
  }
  if(p.stun>0){pose=[-.35,.22,.12,0,0];forward=twist=squash=stretch=kick=secondary=smear=brace=0;}
+ const comboAge=time-(p.comboAt??-10);
+ if(anime&&!reduced&&comboAge>=0&&comboAge<.42){const reaction=Math.sin(comboAge/.42*Math.PI)*(1-comboAge/.42);pose[1]-=reaction*.5;pose[2]+=reaction*.28;secondary+=reaction*.4;brace+=reaction*.25;}
  return{height:pose[0],pitch:pose[1],roll:pose[2],turret:pose[3],petals:pose[4],forward,twist,squash,stretch,kick,secondary,smear,brace};
 }
 // Shared by actual siege rendering and the lab, so previews cannot drift from play.

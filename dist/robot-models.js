@@ -44,7 +44,7 @@ export function animateRobot(g,p,dt,t,options={}){
  const u=g.userData,x=p.x*.1,z=p.y*.1,old=u.previous,speed=old?Math.min(100,Math.hypot(x-old.x,z-old.z)/Math.max(.001,dt)):0;u.previous={x,z};
  const f=1-Math.exp(-dt*25);g.position.x=T.MathUtils.lerp(g.position.x,x,f);g.position.z=T.MathUtils.lerp(g.position.z,z,f);g.position.y=(p.altitude||0)*.1;
  const yaw=-p.angle-Math.PI/2;g.rotation.y+=Math.atan2(Math.sin(yaw-g.rotation.y),Math.cos(yaw-g.rotation.y))*f;
- const style=locomotionStyle(p),reduced=options.reduced??impactLevel()<1,anime=(options.style||'anime')==='anime',cosmetic=reduced?0:1,pose=applyEnemyPose(g,p,{...options,reduced}),stunned=p.stun>0;u.phase+=dt*Math.min(24,speed*style.cadence);
+ const style=locomotionStyle(p),reduced=options.reduced??impactLevel()<1,anime=(options.style||'anime')==='anime',cosmetic=reduced?0:1,pose=applyEnemyPose(g,p,{time:t,...options,reduced}),stunned=p.stun>0;u.phase+=dt*Math.min(24,speed*style.cadence);
  const locomoting=!stunned&&(!p.actionPhase||p.actionPhase==='idle'),stride=Math.min(1,speed/18),cycle=u.phase+style.phase;
  if(p.species==='wisp'){u.body.position.y+=Math.sin(t*3+style.phase)*(anime?.55:.3)*cosmetic;u.body.rotation.z+=(Math.sin(t*4+style.phase)*.08+(locomoting?Math.sin(cycle)*.1*stride:0))*cosmetic;u.rotor.rotation.y=t*(stunned?1:8)*(reduced?.35:1);}
  else{

@@ -36,6 +36,18 @@ Rammer, Needle, Bellows and Mender have separate structural models, rather than 
 - A Mender repairs one other living ordinary robot by up to 32 hull after its cast, within 340 units and clear sight. It never heals itself, revives, overheals, or repairs objectives/elites. It has a five-second heal cooldown and remains destructible throughout its cast. Petals and tether disclose the target.
 - Existing incoming-hit recovery, shielding, damage scaling, objective progression and combatant caps still apply. No invulnerability is added to enemies.
 
+## Coordinated packs and team reactions
+
+The host plans small packs at 4 Hz. Up to three Hunters/Rammers share a short rush cue and stagger their release eligibility by 0.08 seconds. Their normal individual windups still play in full. Up to two ranged units take opposite sides of the approach axis, with a third ranged unit suppressing. Flankers move immediately and may start firing after 0.65 seconds even if they have not completed the maneuver. Orders last 2.4 seconds; they update destinations while preserving sides, and abandon downed targets or interrupted members. Separate pilot fronts can have separate packs. Other combatants continue their own behaviors throughout.
+
+Two or more living pilots dealing at least 60 direct damage to one robot within a rolling 0.9-second window trigger **CROSS BREAK**. It gives a 0.28-second stagger subject to the existing stagger protection, plus an anime recoil, cyan impact star, world label and audio accent. It adds no bonus damage and does not pause gameplay. An individual target's break cooldown is 2.4 seconds. A cooperative killing hit produces **TEAM FINISH**, including a finish shortly after a break. Dead enemies never award a second kill. Training targets, mission objectives, damage over time, and unknown/downed owners cannot contribute. The hit ledger is host-only, retains at most 32 recent hits, and is stripped from snapshots. Up to twelve short-lived reaction events replicate to guests.
+
+## Distinct warning audio
+
+Short procedural cues distinguish pounce/bite, aerial bursts, fans/sweeps, charges/stomps, sniper locks, artillery, repair, siege volleys and siege barrages. Pack rushes, Cross Break and Team Finish have their own accents. Stereo pan follows the listener's facing and distance attenuates each sound. No external audio files are needed.
+
+The audio tracker consumes each replicated action once, prioritizes threats aimed at the listener, and admits at most three new cues per 0.12-second window. Each cue has two short synthesis layers. Overflow is discarded immediately, so the game does not play outdated warnings later. Muting consumes events silently, stale windups are ignored, and all transient nodes disconnect after playback. The existing sound toggle controls the additions. Reduced effects remove added visual recoil/stars while retaining audio cues, world labels and gameplay.
+
 ## Encounter integration
 
 Ashgate teaches the original three roles. Glasswater introduces Rammers; Relay Nine introduces Needles. Iron Orchard introduces Menders; Gale Foundry introduces Bellows artillery. Later mixes combine these roles, with support in escort rounds and a broader roster in the final act. Cinderfall adds specialists progressively after the initial beachhead. Siege-leader identity, landing and mission-critical persistence remain intact.
@@ -50,6 +62,9 @@ The room prefix is `ironwake-enemy-behaviors-v1-`; both endpoints need this vers
 - `dist/enemy-flair.js`: eye glints, tapered speed strokes, melee smears and discharge accents. A fixed pool supports 64 enemies in two draws, without actor clones or downloaded textures.
 - `dist/enemy-cues.js`: lane, range, repair, recovery and impact warnings. Buffers are bounded per visible combatant/shell and disposed on cleanup. Essential cues use steady opacity/progress, without warning strobes.
 - `dist/core.js`: existing collision, damage and spawning integration. Host perception and hit sets are omitted from snapshots.
+- `dist/enemy-coordination.js`: short pack orders and opposing flank destinations; planner state stays in a world-keyed weak cache.
+- `dist/team-combos.js`: cooperative hit validation and replicated break/finish events.
+- `dist/combat-audio.js`, `sound-design.js`: event deduplication, voice budget and procedural tells.
 
 Reduced effects remove the added spring oscillations, squash/stretch, glints, smears and speed strokes, and reduce hover/rotor/tail cosmetics while preserving all timing and essential pose/cue information. Hit recoil adds to the authored pose instead of replacing it. No downloaded image or model assets are needed.
 
@@ -59,7 +74,7 @@ Arc System Works describes its [Xrd character visuals](https://www.arcsystemwork
 
 IRONWAKE applies 12-pose-per-second sampling to preparation and 18 to recovery, with a fast continuous release and role-specific secondary motion. These rates are our tuning choices. Strong poses and short graphic accents establish identity without lengthy cinematics, global hit-stop, or added camera interruption. A restrained animation comparison is available in the lab; the game defaults to Anime. Hard cel bands and shared ink shells reinforce the existing art direction while keeping horde rendering batched.
 
-Run `node scripts/preview-server.mjs 4181`, then open [Enemy laboratory](http://127.0.0.1:4181/tests/enemy-lab.html). Inspect each action, compare Anime/Restrained animation, preview locomotion, pause a pose, slow inspection to 0.35x, toggle Reduced effects, fight one archetype or use the mixed squad mode. Live encounters always run at normal speed. Live controls: WASD, Space to fly, Shift to dash, E for EMP, F to fire both hands. The laboratory renders transported snapshots to exercise guest presentation. It is development-only and excluded from published assets.
+Run `node scripts/preview-server.mjs 4181`, then open [Enemy laboratory](http://127.0.0.1:4181/tests/enemy-lab.html). Inspect each action, compare Anime/Restrained animation, preview locomotion, pause a pose, slow inspection to 0.35x, toggle Reduced effects, fight one archetype or use the mixed squad mode. **Sound** enables warning/audio previews through a user gesture. **Team combo drill** supplies a durable enemy and a sparring partner; hold F to fire together. **Four-pilot pressure drill** supplies three sparring partners and replenishes a bounded 20-hostile encounter. Partners fire while F is held; this is a local drill, not networked bot support in the campaign. Live encounters always run at normal speed. Live controls: WASD, Space to fly, Shift to dash, E for EMP, F to fire both hands. The laboratory renders transported snapshots to exercise guest presentation. It is development-only and excluded from published assets.
 
 ## Validation and remaining playtesting
 

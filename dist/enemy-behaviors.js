@@ -1,5 +1,6 @@
 // Host-only decisions; the resulting action/phase/aim also drive guest animation.
 // Seconds and world units. No animation or browser dependency in the simulation.
+import {squadDestination} from './enemy-coordination.js';
 export const ENEMY_ROLES = {
  hunter: {name:'Hunter',role:'PACK FLANKER',hp:90,speed:265,r:18,height:40,range:105,color:'#ff7955',counter:'Sidestep the crouch, punish its landing.'},
  wisp: {name:'Wisp',role:'AERIAL SKIRMISHER',hp:65,speed:175,r:18,height:34,hover:100,range:440,color:'#69dfed',counter:'Close the orbit; bursts lock their aim.'},
@@ -84,12 +85,13 @@ function execute(w,e,a,dt,api){
 }
 function steer(w,e,target,role,dt,api){
  const d=distance(e,target),angle=Math.atan2(target.y-e.y,target.x-e.x),profile=ENEMY_ROLES[role],side=enemySeed(e.id)>.5?1:-1;
- let destination=target,velocity=1;
+ let destination=target,velocity=1;const maneuver=squadDestination(w,e,target);
  if(role==='mender'){const ally=damagedAlly(w,e);if(ally)destination=ally;}
  const visible=api.clear(w,e,destination),legacyGunner=!e.species&&e.type==='gunner',desired=destination===target?(legacyGunner?330:profile.range):220;
  // Station sentries stand on authored perches; do not backpedal off those decks.
- if(legacyGunner&&visible&&d<=desired){e.intent='HOLDING';return;}
- if(visible&&d<desired*.72&&role!=='hunter'&&role!=='rammer'){destination={x:e.x-Math.cos(angle)*200,y:e.y-Math.sin(angle)*200,altitude:e.altitude};e.intent='WITHDRAWING';}
+ if(maneuver){destination=maneuver;velocity=maneuver.speed;e.intent=maneuver.intent;}
+ else if(legacyGunner&&visible&&d<=desired){e.intent='HOLDING';return;}
+ else if(visible&&d<desired*.72&&role!=='hunter'&&role!=='rammer'){destination={x:e.x-Math.cos(angle)*200,y:e.y-Math.sin(angle)*200,altitude:e.altitude};e.intent='WITHDRAWING';}
  else if(visible&&d<desired*1.15){
   if(!legacyGunner&&['wisp','hunter','mender'].includes(role)){const orbit=angle+side*(role==='hunter'?.85:Math.PI/2);destination={x:e.x+Math.cos(orbit)*180,y:e.y+Math.sin(orbit)*180,altitude:e.altitude};velocity=role==='hunter'?.85:.55;e.intent='FLANKING';}
   else {e.intent='HOLDING';return;}
@@ -121,13 +123,15 @@ export function stepEnemy(w,e,dt,api){
  }
  const living=w.players.filter(p=>p.hp>0);if(!living.length){cancelEnemyAction(e);return;}
  // Hysteresis prevents nearest-player oscillation; each enemy favors a different flank.
- const nearest=[...living].sort((a,b)=>distance(a,e)-distance(b,e))[0],previous=living.find(p=>p.id===e.targetId),target=previous&&distance(previous,e)<distance(nearest,e)*1.3+100?previous:nearest;e.targetId=target.id;
+ const nearest=[...living].sort((a,b)=>distance(a,e)-distance(b,e))[0],previous=living.find(p=>p.id===e.targetId),ordered=living.find(p=>p.id===e.squadOrder?.targetId),target=ordered&&distance(e,ordered)<1200?ordered:previous&&distance(previous,e)<distance(nearest,e)*1.3+100?previous:nearest;e.targetId=target.id;
  const d=distance(e,target),kind=selectAttack(w,e,target,role),a=ENEMY_ATTACKS[kind],inRange=kind==='mend'||d<(role==='hunter'?145:role==='rammer'?440:role==='needle'?1150:950);
  const vertical=!a.reach||Math.abs((target.altitude||0)-(e.altitude||0))<60;
  // Count committed actions only: bullets already in flight still overlap.
  const committed=w.enemies.filter(other=>other!==e&&other.hp>0&&other.attackTarget===target.id&&['windup','active'].includes(other.actionPhase)&&other.attackKind!=='mend').length;
  const sightTarget=kind==='mend'?damagedAlly(w,e):target;
- if(e.cd===0&&inRange&&vertical&&sightTarget&&api.clear(w,e,sightTarget)&&(kind==='mend'||committed<enemyAttackSlots(w))){begin(w,e,target,kind,api);return;}
+ const order=e.squadOrder,maneuver=squadDestination(w,e,target);
+ const ready=!order||order.until<=w.time?true:order.kind==='rush'?w.time>=order.rushAt:!maneuver||w.time-order.start>=.65;
+ if(ready&&e.cd===0&&inRange&&vertical&&sightTarget&&api.clear(w,e,sightTarget)&&(kind==='mend'||committed<enemyAttackSlots(w))){begin(w,e,target,kind,api);return;}
  steer(w,e,target,role,dt,api);
  // Bounded separation is locomotion only: never displace a planted warning or active attack.
  let sx=0,sy=0;for(const other of w.enemies){if(other===e||other.hp<=0||other.objective||Math.abs((other.altitude||0)-(e.altitude||0))>40)continue;const apart=distance(e,other),radius=e.r+other.r+10;if(apart<radius){const angle=apart>.01?Math.atan2(e.y-other.y,e.x-other.x):enemySeed(e.id)*Math.PI*2,force=(1-apart/radius)*100;sx+=Math.cos(angle)*force;sy+=Math.sin(angle)*force;}}

@@ -32,6 +32,8 @@ Enemies now use authored windup, attack and recovery phases. Hunters flank and p
 
 Anime animation adds deeper anticipation, fast pose releases, spring recovery, bouncy light robots, articulated knees and secondary motion. Shared ink outlines, cel bands, speed strokes and eye glints sharpen the look. Shorter attack cycles and two-to-five simultaneous attackers per target keep co-op pressure high as living squad size grows. Wisps keep strafing through their bursts. Reduced effects preserve essential warnings and remove the extra deformation and accents.
 
+Small enemy packs now coordinate short rushes, opposite flanks and suppression. Distinct directional audio warns of each attack family. Two pilots landing 60 direct damage within 0.9 seconds trigger **Cross Break**, with a brief protected stagger and anime impact reaction; cooperative kills get **Team Finish**. The lab includes audio previews, a team combo drill and a four-pilot pressure drill with sparring partners. Combat continues at full speed through all feedback.
+
 See [enemy behavior design, research and tuning](docs/enemy-behaviors.md). Run `node scripts/preview-server.mjs 4181` and open **http://127.0.0.1:4181/tests/enemy-lab.html** to inspect every attack or fight individual/mixed enemies. Co-op rooms use **ironwake-enemy-behaviors-v1** so all pilots share the new warning and artillery state.
 
 - **WASD:** horizontal thrust. **Space:** fly upward; release to descend.

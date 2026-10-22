@@ -15,7 +15,12 @@ export function createEnemyFlair(parent){
  function vertex(array,colors,index,x,y,z,fade){if(index>=vertices)return index;array.set([x*.1,z*.1,y*.1],index*3);colors.set([tint.r*fade,tint.g*fade,tint.b*fade],index*3);return index+1;}
  return{update(w,{style='anime',reduced=impactLevel()<1}={}){
   lineCount=smearCount=0;
-  if(style==='anime'&&!reduced){for(const e of w.enemies.slice(0,capacity)){
+  if(style==='anime'&&!reduced){
+   for(const c of (w.teamCombos||[]).slice(-12)){
+    const age=w.time-c.at;if(age<0||age>.45)continue;const fade=1-age/.45,r=(c.kind==='finish'?40:27)+age*100;tint.set(c.kind==='finish'?'#fff0b8':'#b6fbff');
+    for(let i=0;i<8;i++){const a=i*Math.PI/4,b=a+Math.PI/8;for(const [x,y,z]of[[c.x+Math.cos(a)*r,c.y+Math.sin(a)*r,c.z],[c.x+Math.cos(b)*r*.4,c.y+Math.sin(b)*r*.4,c.z+12*fade]])lineCount=vertex(linePositions,lineColors,lineCount,x,y,z,fade);}
+   }
+   for(const e of w.enemies.slice(0,capacity)){
    const a=ENEMY_ATTACKS[e.attackKind];if(e.hp<=0||e.stun>0||!a)continue;
    const time=e.actionTime||0,angle=e.attackAngle||0,fx=Math.cos(angle),fy=Math.sin(angle),sx=-fy,sy=fx,z=(e.altitude||0)+(e.bodyHeight||75)*.7;
    tint.set(ENEMY_ROLES[enemyRole(e)].color);
