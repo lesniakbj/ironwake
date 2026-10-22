@@ -9,4 +9,4 @@ export function createFractureLayout(o){
  }
  return{cells,neighbors,nx,ny,nz,whole:[o]};
 }
-export const boxTouches=(o,x,y,z,r=0,height=0)=>x+r>o.x&&x-r<o.x+o.w&&y+r>o.y&&y-r<o.y+o.h&&z<o.height&&z+height>=(o.baseZ||0);
+export const boxTouches=(o,x,y,z,r=0,height=0)=>x+r>o.x&&x-r<o.x+o.w&&y+r>o.y&&y-r<o.y+o.h&&z<(o.height||100)&&z+height>=(o.baseZ||0);
