@@ -101,6 +101,14 @@ npm run deploy
 
 Deployments use Wrangler authentication stored outside this repository. The checked-in route targets `thorneloe.ai/ironwake*`; change the route and zone for another domain. Workers.dev and preview URLs are disabled. There are **no database bindings, API secrets or account credentials** required by the game. Never commit `.env`, `.dev.vars`, Wrangler state or database exports.
 
+## Continuous integration
+
+[`.github/workflows/ci.yml`](.github/workflows/ci.yml) runs `npm ci`, all Node tests, and the Cloudflare dry-run build on Node.js 24 for PRs targeting `main` and pushes to `main`. You can also run checks manually from **Actions → CI → Run workflow**. New runs cancel superseded checks for the same branch or PR.
+
+Configure a branch rule for `main` requiring **Test and build** before merging. CI does not deploy, reference GitHub secrets, or require Cloudflare credentials or a GitHub deployment environment. The build command uses Wrangler's `--dry-run` option and does not publish the Worker or assets.
+
+Production deployment remains manual: after reviewing and merging changes, update your local `main`, run `npm ci`, `npm test`, and `npm run build`, then run `npm run deploy` using your local Wrangler authentication.
+
 ## Multiplayer
 
 PeerJS provides public room discovery; WebRTC carries game traffic directly between browsers. The squad host runs the authoritative simulation and sends snapshots. PeerJS binary serialization chunks large level and horde messages before transmission; the JSON channel’s 16 KB limit is not suitable for these snapshots. Players join and ready up before deployment. Keep the host tab active.
