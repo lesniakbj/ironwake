@@ -1,3 +1,4 @@
+import {destructionObjective} from './destruction-mission.js';
 import{operationObjective}from './planet-mission.js?v=41';
 import{AI_ARM_TIME}from './core.js?v=41';
 export function taskStatus(w,p,yaw){
@@ -8,6 +9,7 @@ export function taskStatus(w,p,yaw){
  if(w.players.some(q=>q.id!==p.id&&q.hp<=0))return{warning:true,label:'PILOT DOWN',detail:'Move close to your ally to initiate recovery.'};
  if(w.mission.mode==='trial'&&w.time<AI_ARM_TIME)return{warning:true,label:'CONTACT ACTIVE',detail:'One hostile mech · Keep moving · Use both hands'};
  if(w.mission.mode==='trial'&&w.enemies.some(e=>e.windup>0&&e.attackTarget===p.id))return{warning:true,label:'INCOMING '+(w.enemies[0].attackKind==='melee'?'MELEE':'BURST'),detail:'Boost away from the attack.'};
+ if(w.siege)return w.siege.noticeUntil>w.time?{notice:true,label:w.siege.notice,detail:'DESTRUCTION PROTOTYPE / '+w.mission.name}:{label:w.mission.name,detail:destructionObjective(w,p).teamDetail};
  if(w.mission.mode==='trial')return{label:'DEFEAT THE AI MECH',detail:'Strafe, fly, and test your loadout in live combat.'};
  if(w.mission.mode==='sandbox')return{label:'TEST YOUR LOADOUT',detail:'LMB left hand · RMB right hand · Space fly · E special'};
  if(w.operation){if(w.operation.noticeUntil>w.time)return{notice:true,label:w.operation.notice,detail:w.mission.raid?w.mission.name+' · LEVEL '+w.mission.sector:'CINDERFALL · '+(w.operation.phase+1)+' / 5 objectives'};return{label:w.mission.name,detail:operationObjective(w,p).teamDetail};}
@@ -19,6 +21,7 @@ export function taskStatus(w,p,yaw){
 
 // Personal instructions and shared mission progress stay visible independently of warnings.
 export function objectiveStatus(w,p){
+ if(w.siege)return destructionObjective(w,p);
  if(w.operation)return operationObjective(w,p);
  const zones=w.mission.zones||[],zone=zones[w.zoneIndex],cleared=Math.min(zones.length,w.cleared||0),progress=zones.length?Math.round(cleared/zones.length*100):null;
  if(w.mission.mode==='trial'){const down=w.players.some(q=>q.id!==p.id&&q.hp<=0);return{personal:p.hp<=0?'Wait for recovery':down?'Recover your teammate':'Test your mech in combat',personalDetail:p.hp<=0||down?'A nearby ally can revive a disabled mech.':'Use both weapons. Boost clear of incoming fire.',team:w.status==='won'?'AI mech defeated':w.status==='lost'?'Trial failed':'Defeat the AI mech',teamDetail:w.status==='won'?'Combat trial complete.':w.status==='lost'?'Regroup and try again.':'1 hostile · No reinforcements',progress:null};}
