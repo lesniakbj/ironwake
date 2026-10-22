@@ -101,24 +101,13 @@ npm run deploy
 
 Deployments use Wrangler authentication stored outside this repository. The checked-in route targets `thorneloe.ai/ironwake*`; change the route and zone for another domain. Workers.dev and preview URLs are disabled. There are **no database bindings, API secrets or account credentials** required by the game. Never commit `.env`, `.dev.vars`, Wrangler state or database exports.
 
-## CI and production deployment
+## Continuous integration
 
-[`.github/workflows/ci.yml`](.github/workflows/ci.yml) runs `npm ci`, all Node tests, and the Cloudflare dry-run build on Node.js 24 for PRs targeting `main`. PR checks do not need Cloudflare credentials and cannot deploy.
+[`.github/workflows/ci.yml`](.github/workflows/ci.yml) runs `npm ci`, all Node tests, and the Cloudflare dry-run build on Node.js 24 for PRs targeting `main` and pushes to `main`. You can also run checks manually from **Actions → CI → Run workflow**. New runs cancel superseded checks for the same branch or PR.
 
-Every push to `main` (including a merged PR) repeats those checks, then deploys the Worker and `dist/` assets to **https://thorneloe.ai/ironwake/** using the lockfile's Wrangler version. Failed checks block deployment. Main runs are serialized without cancelling an active deployment; when several merges arrive together, the latest pending run replaces older pending runs. After deployment, an HTTP check verifies that the production URL responds; this is not a browser gameplay test and does not automatically roll back a release.
+Configure a branch rule for `main` requiring **Test and build** before merging. CI does not deploy, reference GitHub secrets, or require Cloudflare credentials or a GitHub deployment environment. The build command uses Wrangler's `--dry-run` option and does not publish the Worker or assets.
 
-### One-time setup
-
-1. Create a [Cloudflare API token](https://developers.cloudflare.com/workers/ci-cd/external-cicd/github-actions/) using the **Edit Cloudflare Workers** template. Scope it to the account hosting `ironwake` and the `thorneloe.ai` zone, including permission to edit Worker routes.
-2. In this repository's **Settings → Environments**, create `production`. Restrict deployment branches to `main`. Leave required reviewers disabled for automatic deployment after merging.
-3. Add two environment secrets:
-   - `CLOUDFLARE_API_TOKEN`: the token from step 1.
-   - `CLOUDFLARE_ACCOUNT_ID`: the Cloudflare account ID hosting the Worker.
-4. Once the workflow has run, configure a branch rule for `main` requiring **Test and build** before merging. This prevents merging failing PRs; the workflow itself blocks deployment even without that rule.
-
-Commit and push the workflow to activate it. Missing secrets cause the production job to fail with a setup message; PR checks still work. Local Wrangler login credentials are not available to GitHub Actions.
-
-To retry deployment, use **Actions → CI and production deploy → Run workflow** and select `main`. Manual runs on other branches only run checks. To undo a bad release, revert the offending commit on `main`; the resulting push goes through the same checks and deployment.
+Production deployment remains manual: after reviewing and merging changes, update your local `main`, run `npm ci`, `npm test`, and `npm run build`, then run `npm run deploy` using your local Wrangler authentication.
 
 ## Multiplayer
 
