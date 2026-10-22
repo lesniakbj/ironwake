@@ -17,23 +17,23 @@ test('all seven roles spawn finite, distinct profiles and real host actions',()=
  for(const role of Object.keys(ENEMY_ROLES).filter(k=>k!=='siege')){const{w,e}=make(role,role==='hunter'?110:400);step(w,.01);assert.equal(e.behavior,role);assert.equal(e.max,ENEMY_ROLES[role].hp);assert.ok(ENEMY_ATTACKS[e.attackKind]);assert.equal(e.actionPhase,'windup');assert.equal(w.bullets.length,0);assert.ok([e.x,e.y,e.altitude,e.r,e.speed,e.max].every(Number.isFinite));}
 });
 test('sniper commits aim and target through windup, then exposes a stationary recovery',()=>{
- const{w,e,p}=make();p.recoverUntil=0;step(w,.01);const aim={...e.attackPoint},angle=e.attackAngle,start={x:e.x,y:e.y};p.y+=250;tick(w,1.27);assert.deepEqual(e.attackPoint,aim);assert.equal(e.attackAngle,angle);assert.equal(e.attackTarget,p.id);assert.ok(w.bullets.length>0);assert.equal(e.actionPhase,'recovery');assert.deepEqual({x:e.x,y:e.y},start);assert.equal(p.hp,125);tick(w,1);assert.equal(e.actionPhase,'recovery');
+ const{w,e,p}=make();p.recoverUntil=0;step(w,.01);const aim={...e.attackPoint},angle=e.attackAngle,start={x:e.x,y:e.y};p.y+=250;tick(w,.97);assert.deepEqual(e.attackPoint,aim);assert.equal(e.attackAngle,angle);assert.equal(e.attackTarget,p.id);assert.ok(w.bullets.length>0);assert.equal(e.actionPhase,'recovery');assert.deepEqual({x:e.x,y:e.y},start);assert.equal(p.hp,125);tick(w,.5);assert.equal(e.actionPhase,'recovery');
 });
 test('wisp fires a timed three-shot burst along its committed direction',()=>{
- const{w,e,p}=make('wisp');step(w,.01);tick(w,.61);assert.equal(e.fired,1);p.y+=300;tick(w,.32);assert.equal(e.fired,3);assert.equal(e.actionPhase,'active');const shots=w.bullets.filter(b=>b.owner===e.id);assert.equal(shots.length,3);assert.ok(shots.every(b=>Math.abs(Math.atan2(b.vy,b.vx)-e.attackAngle)<1e-6));
+ const{w,e,p}=make('wisp');step(w,.01);tick(w,.41);assert.equal(e.fired,1);p.y+=300;tick(w,.29);assert.equal(e.fired,3);assert.equal(e.actionPhase,'active');const shots=w.bullets.filter(b=>b.owner===e.id);assert.equal(shots.length,3);assert.ok(shots.every(b=>Math.abs(Math.atan2(b.vy,b.vx)-e.attackAngle)<1e-6));
 });
 test('charge travels over time and cannot hit through cover or turn toward a dodge',()=>{
- const{w,e,p}=make('rammer',300);p.recoverUntil=0;step(w,.01);const angle=e.attackAngle;p.y+=200;tick(w,1.1);assert.equal(e.actionPhase,'active');assert.ok(e.x>700&&e.x<900);assert.equal(e.attackAngle,angle);assert.equal(p.hp,125);
+ const{w,e,p}=make('rammer',300);p.recoverUntil=0;step(w,.01);const angle=e.attackAngle;p.y+=200;tick(w,.81);assert.equal(e.actionPhase,'active');assert.ok(e.x>700&&e.x<900);assert.equal(e.attackAngle,angle);assert.equal(p.hp,125);
  w.mission.obstacles=[{x:900,y:850,w:30,h:400,height:200}];tick(w,.5);assert.ok(e.x<=900-e.r);assert.equal(p.hp,125);assert.equal(e.actionPhase,'recovery');
 });
 test('melee only damages in its active interval and only once per pilot',()=>{
- const{w,e,p}=make('hunter',50);p.recoverUntil=0;step(w,.01);tick(w,.35);assert.equal(p.hp,125);tick(w,.07);assert.ok(p.hp<125);const hp=p.hp;p.recoverUntil=0;tick(w,.08);assert.equal(p.hp,hp);
+ const{w,e,p}=make('hunter',50);p.recoverUntil=0;step(w,.01);tick(w,.27);assert.equal(p.hp,125);tick(w,.07);assert.ok(p.hp<125);const hp=p.hp;p.recoverUntil=0;tick(w,.08);assert.equal(p.hp,hp);
 });
 test('stomp has a dodgeable windup, grounded radius and flight counterplay',()=>{
  for(const fly of[false,true]){const{w,e,p}=make('rammer',90);p.recoverUntil=0;step(w,.01);assert.equal(e.attackKind,'stomp');if(fly)p.altitude=180;for(let i=0;i<95;i++){if(fly)setInput(w,p.id,{fly:true});step(w,.01);}assert.equal(p.hp<125,!fly);}
 });
 test('EMP cancels windup, active bursts and recovery without delayed attacks',()=>{
- for(const when of[0,.62,.98]){const{w,e,p}=make('wisp',180);step(w,.01);tick(w,when);w.bullets=[];setInput(w,p.id,{ability:true});step(w,.01);setInput(w,p.id,{});assert.equal(e.actionPhase,'idle');assert.equal(e.attackKind,null);tick(w,1);assert.equal(w.bullets.length,0);assert.equal(e.windup,0);}
+ for(const when of[0,.42,.76]){const{w,e,p}=make('wisp',180);step(w,.01);tick(w,when);w.bullets=[];setInput(w,p.id,{ability:true});step(w,.01);setInput(w,p.id,{});assert.equal(e.actionPhase,'idle');assert.equal(e.attackKind,null);tick(w,1);assert.equal(w.bullets.length,0);assert.equal(e.windup,0);}
 });
 test('two attacker slots limit simultaneous pressure and death releases a slot',()=>{
  const{w,e}=make('needle');w.enemies=Array.from({length:6},(_,i)=>({...e,id:100+i,x:400,y:900+i*35}));step(w,.01);assert.equal(w.enemies.filter(e=>e.actionPhase==='windup').length,2);w.enemies.find(e=>e.actionPhase==='windup').hp=0;step(w,.01);assert.equal(w.enemies.filter(e=>e.actionPhase==='windup').length,2);
@@ -42,7 +42,7 @@ test('target hysteresis avoids jitter and committed attacks survive a closer sec
  const{w,e,p}=make('needle',500,2);e.cd=5;step(w,.01);assert.equal(e.targetId,p.id);w.players[1].y=1000;w.players[1].x=990;step(w,.01);assert.equal(e.targetId,p.id);e.cd=0;step(w,.01);p.x+=1000;tick(w,.2);assert.equal(e.attackTarget,p.id);
 });
 test('Bellows marks a fixed elevated point, releases a delayed shell, and dies without deleting the shell',()=>{
- const{w,e,p}=make('mortar');p.recoverUntil=0;step(w,.01);const point={...e.attackPoint};tick(w,1.07);assert.equal(w.enemyHazards.length,1);assert.equal(p.hp,125);e.hp=0;tick(w,.2);assert.equal(w.enemies.length,0);assert.equal(w.enemyHazards.length,1);assert.equal(w.enemyHazards[0].x,point.x);tick(w,1);assert.ok(p.hp<125);assert.equal(w.enemyHazards.length,0);
+ const{w,e,p}=make('mortar');p.recoverUntil=0;step(w,.01);const point={...e.attackPoint};tick(w,.75);assert.equal(w.enemyHazards.length,1);assert.equal(p.hp,125);e.hp=0;tick(w,.2);assert.equal(w.enemies.length,0);assert.equal(w.enemyHazards.length,1);assert.equal(w.enemyHazards[0].x,point.x);tick(w,1);assert.ok(p.hp<125);assert.equal(w.enemyHazards.length,0);
 });
 test('artillery respects flight, blast cover and allied/objective immunity',()=>{
  for(const mode of['flight','cover','hit']){const{w,e,p}=make('mortar');p.recoverUntil=0;e.cd=100;w.enemyHazards=[{id:999,owner:e.id,x:p.x-50,y:p.y,z:0,r:120,damage:38,time:.01,max:1}];const hp=e.hp;w.enemies.push({id:'objective',objective:true,hp:500,max:500,x:p.x,y:p.y,altitude:0,r:30});if(mode==='flight'){p.altitude=180;setInput(w,p.id,{fly:true});}if(mode==='cover')w.mission.obstacles=[{x:p.x-25,y:p.y-50,w:10,h:100,height:200}];step(w,.01);assert.equal(p.hp<125,mode==='hit');assert.equal(e.hp,hp);assert.equal(w.enemies.find(e=>e.objective).hp,500);}
@@ -57,7 +57,7 @@ test('mender can support a visible ally while the player is behind a wall',()=>{
  const{w,e,p}=make('mender');const ally={...e,id:'ally',species:'scarab',x:e.x,y:e.y+140,hp:30,max:100,cd:100};w.enemies.push(ally);w.mission.obstacles=[{x:e.x+200,y:e.y-200,w:40,h:400,height:200}];step(w,.01);assert.equal(e.attackKind,'mend');tick(w,.9);assert.equal(ally.hp,62);assert.equal(p.hp,125);
 });
 test('siege switches attacks by range, sequence and health without shortening telegraphs',()=>{
- const{w,e,p}=make('tank');e.elite=true;e.cd=0;step(w,.01);assert.equal(e.attackKind,'siegeFan');cancelEnemyAction(e);e.cd=0;e.actionCount=2;step(w,.01);assert.equal(e.attackKind,'siegeBarrage');cancelEnemyAction(e);e.cd=0;e.x=p.x-100;step(w,.01);assert.equal(e.attackKind,'siegeStomp');assert.equal(e.windup,1);
+ const{w,e,p}=make('tank');e.elite=true;e.cd=0;step(w,.01);assert.equal(e.attackKind,'siegeFan');cancelEnemyAction(e);e.cd=0;e.actionCount=2;step(w,.01);assert.equal(e.attackKind,'siegeBarrage');cancelEnemyAction(e);e.cd=0;e.x=p.x-100;step(w,.01);assert.equal(e.attackKind,'siegeStomp');assert.equal(e.windup,.72);
 });
 test('snapshots retain authored pose, committed aim and shells, without host perception or hit sets',()=>{
  const{w,e}=make('needle');e.cd=1;step(w,.01);e.cd=0;step(w,.01);const remote=JSON.parse(JSON.stringify(snapshot(w)));assert.equal(remote.enemies[0].actionPhase,'windup');assert.deepEqual(remote.enemies[0].attackPoint,e.attackPoint);assert.equal(remote.enemies[0].perception,undefined);assert.equal(remote.enemies[0].actionHits,undefined);assert.deepEqual(enemyPose(remote.enemies[0]),enemyPose(e));

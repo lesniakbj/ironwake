@@ -12,25 +12,27 @@ export const ENEMY_ROLES = {
 };
 const attack=(windup,active,recovery,extra={})=>({windup,active,recovery,...extra});
 export const ENEMY_ATTACKS = {
- pounce:attack(.62,.24,.82,{reach:70,damage:20,travel:380,arc:.7}),
- bite:attack(.4,.12,.6,{reach:78,damage:16,arc:1}),
- burst:attack(.6,.34,.78,{shots:3,interval:.14,speed:650,damage:14}),
- fan:attack(.82,.12,1.15,{shots:3,spread:.16,speed:550,damage:20}),
- sweep:attack(.95,.65,1.25,{shots:5,interval:.14,spread:.14,speed:570,damage:18}),
- charge:attack(.95,.56,1.25,{reach:75,damage:34,travel:650,arc:.8}),
- stomp:attack(.85,.12,1.15,{reach:165,damage:30,arc:Math.PI}),
- snipe:attack(1.15,.1,1.5,{shots:1,speed:1500,damage:38}),
- bombard:attack(1.05,.12,1.8,{radius:120,damage:38,flight:1.1}),
- mend:attack(.85,.1,2,{heal:32,radius:340}),
- siegeFan:attack(.95,.12,1.1,{shots:7,spread:.12,speed:540,damage:32}),
- siegeBarrage:attack(1.2,.64,1.5,{shots:3,interval:.28,radius:135,damage:40,flight:1.3}),
- siegeStomp:attack(1,.15,1.4,{reach:205,damage:48,arc:Math.PI}),
+ pounce:attack(.46,.24,.52,{reach:70,damage:20,travel:380,arc:.7}),
+ bite:attack(.32,.12,.38,{reach:78,damage:16,arc:1}),
+ burst:attack(.4,.34,.45,{shots:3,interval:.14,speed:650,damage:14}),
+ fan:attack(.55,.12,.7,{shots:3,spread:.16,speed:550,damage:20}),
+ sweep:attack(.62,.65,.7,{shots:5,interval:.14,spread:.14,speed:570,damage:18}),
+ charge:attack(.66,.56,.85,{reach:75,damage:34,travel:650,arc:.8}),
+ stomp:attack(.58,.12,.68,{reach:165,damage:30,arc:Math.PI}),
+ snipe:attack(.82,.1,.95,{shots:1,speed:1500,damage:38}),
+ bombard:attack(.72,.12,1.15,{radius:120,damage:38,flight:.9}),
+ mend:attack(.6,.1,1,{heal:32,radius:340}),
+ siegeFan:attack(.7,.12,.75,{shots:7,spread:.12,speed:540,damage:32}),
+ siegeBarrage:attack(.86,.64,1,{shots:3,interval:.28,radius:135,damage:40,flight:1}),
+ siegeStomp:attack(.72,.15,.9,{reach:205,damage:48,arc:Math.PI}),
 };
 const distance=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
 export function enemySeed(id){let h=2166136261;for(const c of String(id))h=Math.imul(h^c.charCodeAt(0),16777619);return(h>>>0)/4294967296;}
 export function enemyRole(e){return e.elite||e.type==='boss'?'siege':e.species||({drone:'hunter',gunner:'wisp',tank:'scarab'}[e.type])||'hunter';}
 export function cancelEnemyAction(e){e.windup=0;e.actionPhase='idle';e.actionTime=0;e.attackKind=null;e.attackPoint=null;e.actionHits=[];e.cd=Math.max(e.cd||0,.55);}
 function phase(e,name){e.actionPhase=name;e.actionTime=0;}
+// More living pilots allow overlapping crossfire, rather than taking turns.
+export const enemyAttackSlots=w=>Math.min(5,Math.max(2,w.players.filter(p=>p.hp>0).length+1));
 function damagedAlly(w,e){return w.enemies.filter(a=>a!==e&&a.hp>0&&a.hp<a.max&&a.species&&!a.objective&&!a.landing&&distance(a,e)<340).sort((a,b)=>a.hp/a.max-b.hp/b.max)[0];}
 function selectAttack(w,e,target,role){
  const d=distance(e,target),n=e.actionCount||0;
@@ -106,6 +108,12 @@ export function stepEnemy(w,e,dt,api){
  if(e.actionPhase&&e.actionPhase!=='idle'){
   const a=ENEMY_ATTACKS[e.attackKind];if(!a){cancelEnemyAction(e);return;}
   e.actionTime+=dt;e.angle=e.attackAngle;
+  // Wisps keep strafing through bursts and the back half of recovery. Only
+  // their local body pose is stepped; world movement and collision stay smooth.
+  if(role==='wisp'&&(e.actionPhase==='active'||e.actionPhase==='recovery'&&e.actionTime>.16)){
+   const side=enemySeed(e.id)>.5?1:-1,angle=e.attackAngle+side*Math.PI/2;
+   api.move(w,e,Math.cos(angle)*e.speed*.5,Math.sin(angle)*e.speed*.5,dt,e.r);
+  }
   if(e.actionPhase==='windup'){e.windup=Math.max(0,a.windup-e.actionTime);if(e.windup<=1e-8){e.windup=0;phase(e,'active');execute(w,e,a,0,api);}}
   else if(e.actionPhase==='active'){execute(w,e,a,dt,api);if(e.actionTime+1e-8>=a.active){phase(e,'recovery');e.intent='RECOVERING';}}
   else if(e.actionTime+1e-8>=a.recovery){phase(e,'idle');e.cd=.12+enemySeed(e.id)*.2;}
@@ -116,10 +124,10 @@ export function stepEnemy(w,e,dt,api){
  const nearest=[...living].sort((a,b)=>distance(a,e)-distance(b,e))[0],previous=living.find(p=>p.id===e.targetId),target=previous&&distance(previous,e)<distance(nearest,e)*1.3+100?previous:nearest;e.targetId=target.id;
  const d=distance(e,target),kind=selectAttack(w,e,target,role),a=ENEMY_ATTACKS[kind],inRange=kind==='mend'||d<(role==='hunter'?145:role==='rammer'?440:role==='needle'?1150:950);
  const vertical=!a.reach||Math.abs((target.altitude||0)-(e.altitude||0))<60;
- // Two committed attackers per pilot (three in four-pilot rooms). Other units maneuver.
+ // Count committed actions only: bullets already in flight still overlap.
  const committed=w.enemies.filter(other=>other!==e&&other.hp>0&&other.attackTarget===target.id&&['windup','active'].includes(other.actionPhase)&&other.attackKind!=='mend').length;
  const sightTarget=kind==='mend'?damagedAlly(w,e):target;
- if(e.cd===0&&inRange&&vertical&&sightTarget&&api.clear(w,e,sightTarget)&&(kind==='mend'||committed<(w.players.length>=4?3:2))){begin(w,e,target,kind,api);return;}
+ if(e.cd===0&&inRange&&vertical&&sightTarget&&api.clear(w,e,sightTarget)&&(kind==='mend'||committed<enemyAttackSlots(w))){begin(w,e,target,kind,api);return;}
  steer(w,e,target,role,dt,api);
  // Bounded separation is locomotion only: never displace a planted warning or active attack.
  let sx=0,sy=0;for(const other of w.enemies){if(other===e||other.hp<=0||other.objective||Math.abs((other.altitude||0)-(e.altitude||0))>40)continue;const apart=distance(e,other),radius=e.r+other.r+10;if(apart<radius){const angle=apart>.01?Math.atan2(e.y-other.y,e.x-other.x):enemySeed(e.id)*Math.PI*2,force=(1-apart/radius)*100;sx+=Math.cos(angle)*force;sy+=Math.sin(angle)*force;}}

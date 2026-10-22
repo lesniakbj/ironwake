@@ -30,6 +30,8 @@ Run **node scripts/preview-server.mjs 4178**, then open **http://127.0.0.1:4178/
 
 Enemies now use authored windup, attack and recovery phases. Hunters flank and pounce, Wisps orbit and burst, and Scarabs alternate fans and sweeps. Four new specialists add charging Rammers, Needle snipers, Bellows artillery and Mender repair units. Siege frames choose wide volleys, ground stomps and delayed barrages. Leave marked lanes/circles, interrupt with EMP or stagger weapons, and punish the pale recovery rings. Specialists enter progressively across the campaign and classic Cinderfall.
 
+Anime animation adds deeper anticipation, fast pose releases, spring recovery, bouncy light robots, articulated knees and secondary motion. Shared ink outlines, cel bands, speed strokes and eye glints sharpen the look. Shorter attack cycles and two-to-five simultaneous attackers per target keep co-op pressure high as living squad size grows. Wisps keep strafing through their bursts. Reduced effects preserve essential warnings and remove the extra deformation and accents.
+
 See [enemy behavior design, research and tuning](docs/enemy-behaviors.md). Run `node scripts/preview-server.mjs 4181` and open **http://127.0.0.1:4181/tests/enemy-lab.html** to inspect every attack or fight individual/mixed enemies. Co-op rooms use **ironwake-enemy-behaviors-v1** so all pilots share the new warning and artillery state.
 
 - **WASD:** horizontal thrust. **Space:** fly upward; release to descend.

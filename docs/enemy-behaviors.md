@@ -27,10 +27,10 @@ Rammer, Needle, Bellows and Mender have separate structural models, rather than 
 
 ## Combat contract
 
-- Every action progresses through `windup`, `active`, `recovery`, then `idle`. Ordinary windups range from 0.4 to 1.15 seconds; siege preparation reaches 1.2 seconds. Nothing damages during preparation. Melee checks only during active time, once per pilot per move, with facing, altitude, range and sightline checks.
+- Every action progresses through `windup`, `active`, `recovery`, then `idle`. Ordinary windups range from 0.32 to 0.82 seconds; siege preparation reaches 0.86 seconds. Recovery ranges from 0.38 to 1.15 seconds. The target is hectic co-op combat with overlapping crossfire and brief local openings. Nothing damages during preparation. Melee checks only during active time, once per pilot per move, with facing, altitude, range and sightline checks.
 - Attacks commit aim and target at preparation start. Prediction is modest, clamped, and based on prior observed positions. Losing a target does not turn a charge or redirect a volley. Living-target selection has distance hysteresis.
-- At most two enemies commit to attacking one pilot at once, or three in a four-pilot room. Others continue maneuvering. Repair does not consume an offensive slot. Recovery releases slots but cannot be canceled into another move. These limits bound active action pressure, not the total number of bullets already in flight.
-- Ground movement preserves cargo clearance around raised decks, uses the existing waypoint/collision system and subdivides charge motion. Flyers retain altitude-aware movement. Separation operates only during locomotion, so it cannot displace a planted warning or shove an attack sideways.
+- At most two, three, four or five enemies commit to attacking one target at once with one, two, three or four living pilots respectively. Others continue maneuvering. Repair does not consume an offensive slot. Recovery releases slots but cannot be canceled into another move. These limits bound active action pressure, not the total number of bullets already in flight. They automatically contract when pilots go down.
+- Ground movement preserves cargo clearance around raised decks, uses the existing waypoint/collision system and subdivides charge motion. Flyers retain altitude-aware movement. Separation operates only during locomotion. Wisps deliberately strafe through active bursts and the latter part of recovery, retaining their committed firing direction as the warning origin moves with them.
 - EMP, lance, hammer, rail and other existing stagger sources cancel the whole action immediately, including unfinished bursts and repair. A canceled action cannot resume. Launched bullets and artillery shells remain dangerous after interruption or death of their owner.
 - Artillery uses a bounded pool of 32 pending shells. It targets the floor/deck at commitment, with a visible flight countdown. Impacts check proximity, vertical distance and blast sightlines; they damage pilots, never allied robots or mission objectives. Redeploy clears pending shells. Flight more than 75 world units above the impact plane avoids them.
 - A Mender repairs one other living ordinary robot by up to 32 hull after its cast, within 340 units and clear sight. It never heals itself, revives, overheals, or repairs objectives/elites. It has a five-second heal cooldown and remains destructible throughout its cast. Petals and tether disclose the target.
@@ -45,14 +45,21 @@ The room prefix is `ironwake-enemy-behaviors-v1-`; both endpoints need this vers
 ## Presentation and authoring
 
 - `dist/enemy-behaviors.js`: role stats, move timing, action selection, host controller and artillery.
-- `dist/enemy-motion.js`: preparation, release, overshoot and settle poses; stable per-instance gait variation.
-- `dist/robot-models.js`: structural silhouettes and articulated animation using shared instanced meshes.
+- `dist/enemy-motion.js`: exaggerated preparation, rapid release, spring recovery, restrained comparison and per-role elasticity. Only body poses use held frames; world movement, projectiles, warnings and gameplay stay at normal update rates.
+- `dist/robot-models.js`: structural silhouettes, articulated knees, antenna/tail/petal follow-through, explicit toon bands and instanced ink shells. Light robots are bouncier; artillery and siege machines brace and recoil with less deformation.
+- `dist/enemy-flair.js`: eye glints, tapered speed strokes, melee smears and discharge accents. A fixed pool supports 64 enemies in two draws, without actor clones or downloaded textures.
 - `dist/enemy-cues.js`: lane, range, repair, recovery and impact warnings. Buffers are bounded per visible combatant/shell and disposed on cleanup. Essential cues use steady opacity/progress, without warning strobes.
 - `dist/core.js`: existing collision, damage and spawning integration. Host perception and hit sets are omitted from snapshots.
 
-Reduced effects reduce hover/rotor/tail cosmetics while preserving all timing and essential pose/cue information. Hit recoil adds to the authored pose instead of replacing it. No downloaded image or model assets are needed.
+Reduced effects remove the added spring oscillations, squash/stretch, glints, smears and speed strokes, and reduce hover/rotor/tail cosmetics while preserving all timing and essential pose/cue information. Hit recoil adds to the authored pose instead of replacing it. No downloaded image or model assets are needed.
 
-Run `node scripts/preview-server.mjs 4181`, then open [Enemy laboratory](http://127.0.0.1:4181/tests/enemy-lab.html). Inspect each action, pause a pose, toggle Reduced effects, fight one archetype or use the mixed squad mode. Live controls: WASD, Space to fly, Shift to dash, E for EMP, F to fire both hands. The laboratory renders transported snapshots to exercise guest presentation. It is development-only and excluded from published assets.
+## Anime direction for fast co-op
+
+Arc System Works describes its [Xrd character visuals](https://www.arcsystemworks.com/game/guilty-gear-xrd-sign/) as deliberately polished 3D animation designed for a hand-drawn anime impression. In the [Strive developer interview](https://www2.unrealengine.com/developer-interviews/how-guilty-gear--strive--hits-an-ultra-combo-with-groundbreaking-visuals-and-gameplay), its artists discuss authored expressions, limited animation, and controlling shading for specific visual goals. The practical lesson here is deliberate pose and timing choices, rather than a generic low frame rate.
+
+IRONWAKE applies 12-pose-per-second sampling to preparation and 18 to recovery, with a fast continuous release and role-specific secondary motion. These rates are our tuning choices. Strong poses and short graphic accents establish identity without lengthy cinematics, global hit-stop, or added camera interruption. A restrained animation comparison is available in the lab; the game defaults to Anime. Hard cel bands and shared ink shells reinforce the existing art direction while keeping horde rendering batched.
+
+Run `node scripts/preview-server.mjs 4181`, then open [Enemy laboratory](http://127.0.0.1:4181/tests/enemy-lab.html). Inspect each action, compare Anime/Restrained animation, preview locomotion, pause a pose, slow inspection to 0.35x, toggle Reduced effects, fight one archetype or use the mixed squad mode. Live encounters always run at normal speed. Live controls: WASD, Space to fly, Shift to dash, E for EMP, F to fire both hands. The laboratory renders transported snapshots to exercise guest presentation. It is development-only and excluded from published assets.
 
 ## Validation and remaining playtesting
 
