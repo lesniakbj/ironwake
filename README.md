@@ -58,7 +58,7 @@ Chassis change assembled armor, ground speed, lift and effective booster capacit
 
 Each chassis has an authored structural model: Scouts include a skeletal runner and four-fan drone; Lights include a layered samurai and aircraft frame; Mediums include a knight, optical-mast sniper and rounded rescue capsule; Heavies include a bunker, furnace rig and VTOL gunship; Gigas include a reactor brawler, four-legged dreadnought and tracked fortress. Heads, hulls, limbs, stance and propulsion change with chassis identity. Replaceable part tiers still affect bulk and component paint.
 
-Chassis data lives in `dist/chassis.js`; visual identities and icons live in `dist/chassis-art.js`, and rigid shells are built by `dist/chassis-models.js`. Equipment retains the shared articulated hand mounts. See [chassis integration notes](docs/chassis-integration.md) for the merge contract with destruction, sortie progression and equipment/special art. PRs #4 and #5 are integrated here; PR #3 remains separate.
+Chassis data lives in `dist/chassis.js`; visual identities and icons live in `dist/chassis-art.js`, and rigid shells are built by `dist/chassis-models.js`. Equipment retains the shared articulated hand mounts. See [chassis integration notes](docs/chassis-integration.md) for the merge contract with destruction, sortie progression and equipment/special art. The destruction branch now integrates main, including chassis, campaign refits, equipment effects and continuous mouse aim. Breakwater remains a separate opt-in lab mission.
 
 Run `node scripts/preview-server.mjs 4177`, then open **http://127.0.0.1:4177/tests/chassis-preview.html** for the true-size roster gallery or **http://127.0.0.1:4177/ironwake/** for the game. The gallery includes class close-ups, front/side/rear angles, bare frames, matching paint, silhouettes, alternate part kits, carried cells, Full/Reduced special effects, walking and flight. Use **Play combined build** to enter normal gameplay. Initial chassis balance still needs full campaign playtesting.
 
@@ -126,6 +126,42 @@ npm version major --no-git-tag-version # 0.1.1 -> 1.0.0
 ```
 
 Commit `package.json` and `package-lock.json` with the release change. The npm version lifecycle also refreshes the local label. Build/deploy hooks embed the current version automatically; deployment remains the manual command described above.
+## Experimental destruction branch
+
+Open `http://localhost:4174/ironwake/?lab=destruction` to opt into the destruction
+console. The ordinary home screen, Cinderfall and campaign flow do not select
+these levels. **Breakwater** is a standalone second operation: breach customs,
+rupture three refinery pumps, collapse the command roof, then extract together.
+The **Breach range** has no hostiles; the **Stress yard** adds dense cargo and
+fuel arrays. The optional demolition kit fits hammer, rockets and repair.
+
+Objects now fracture locally: small per-object grids let bullets punch holes
+without deleting an entire wall or crate. The remaining chunks share exact bounds
+with movement, projectiles, sightlines and camera rays. Disconnected islands
+crumble; severing load-bearing columns cascades the roof. This is not arbitrary
+mesh cutting or a voxelized terrain world. Fuel chains also damage combatants.
+Detached chunks use gravity, tumble, terrain/structure collisions, restitution,
+friction and sleeping. They remain nonblocking and non-damaging to pilots.
+
+`fracture-layout.js` defines shared cell bounds and adjacency;
+`destruction.js` owns the opt-in spatial index, cell HP and support state;
+`destruction-mission.js` authors levels and directs objectives;
+`destruction-scene.js` batches panels, debris and rubble;
+`chunk-physics.js` owns the capped, presentation-only debris simulation;
+`destruction-lab.js` owns the opt-in console and live counters. Definitions stay
+in the initial mission; panel HP, revision, pending work and recent events travel
+in normal host snapshots. Lab invites use an isolated PeerJS protocol prefix.
+Budgets are 64 awake physics chunks, 160 sleeping chunks, 48 recent fracture
+events, 128 pending jobs and 12 structural jobs per simulation step. Chunk physics
+runs at 60 Hz with at most three substeps per rendered frame and no chunk-to-chunk
+collision pairs. Reduced motion lowers the awake budget to 24 and removes tumble.
+Intact objects stay single instances; only damaged objects activate fracture
+cells. Geometry stays instanced and shared; sleeping transforms upload only when
+the sleeping pool changes. Only host hole/support state replicates, not cosmetic
+physics transforms. Counters expose awake/settled chunks, draw calls and renderer
+geometry/texture counts. These are not frame-rate guarantees; low-end/mobile
+hardware still needs measurement.
+
 
 ## Multiplayer
 

@@ -1,6 +1,6 @@
 # Campaign mission first pass
 
-The campaign expansion is on `feature/campaign-mission-roster`, based on the combined chassis/item branch. It includes PR #4's combat module effects, rewards and contracts. Installation timing is changed to the requested **earn during a round, apply between missions** loop. The original 15-minute Cinderfall remains a standalone drill. PR #3's destruction work is not merged.
+The campaign expansion is on `feature/campaign-mission-roster`, based on the combined chassis/item branch. It includes PR #4's combat module effects, rewards and contracts. Installation timing is changed to the requested **earn during a round, apply between missions** loop. The original 15-minute Cinderfall remains a standalone drill. PR #3 now integrates this campaign code; its destruction missions remain opt-in, without campaign rewards or run advancement.
 
 ## Run structure
 
