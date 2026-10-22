@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>IRONWAKE · Enemy laboratory</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#101a22;color:#dce9e1;font:14px system-ui}header{padding:18px 24px;border-bottom:1px solid #3d5757}h1{font:600 19px monospace;letter-spacing:.1em;margin:0 0 10px}nav{display:flex;gap:8px;flex-wrap:wrap}button,select{font:inherit;color:#dce9e1;background:#22343e;border:1px solid #637e7b;padding:8px;cursor:pointer}button[aria-pressed=true]{background:#b3d8c7;color:#142a25}main{display:grid;grid-template-columns:280px 1fr;height:calc(100vh - 125px);min-height:540px}aside{padding:24px;border-right:1px solid #3d5757}h2{font-size:25px;margin:0 0 5px}p{line-height:1.6;color:#a4bdb6}#role{font:12px monospace;color:#f2bb7d}label{display:block;margin:20px 0 8px}select{width:100%}canvas{width:100%;height:100%;display:block;outline:none}#status{font:13px monospace;white-space:pre-line;line-height:1.7}#error{color:#ff927e}a{color:#b3eed8}@media(max-width:650px){main{grid-template-columns:1fr;height:auto}aside{padding:15px}#view{height:550px}}
+</style>
+<header><h1>IRONWAKE / HOSTILE FIELD GUIDE</h1><nav id="roster"></nav></header>
+<main><aside><h2 id="name"></h2><div id="role"></div><p id="counter"></p><label>Preview mode<select id="mode"><option value="inspect">Inspect authored animation</option><option value="live">Live encounter</option><option value="squad">Mixed squad encounter</option></select></label><label>Attack<select id="attack"></select></label><nav><button id="pause" aria-pressed="false">Pause</button><button id="reset">Reset</button><button id="effects">Effects: Full</button></nav><p id="status"></p><p>Live: click the arena to focus. WASD moves, Space flies, Shift dashes, E uses EMP. Hold F to fire both hands. The Mender has a damaged ally to repair.</p><p><a href="/ironwake/">Play campaign</a> · Pale rings mark recovery openings. Amber circles mark incoming shells. Green marks repair.</p><p id="error" role="alert"></p></aside><div id="view"><canvas id="arena" tabindex="0" aria-label="Enemy animation and live combat preview"></canvas></div></main>
+<script type="module">
+import * as T from '../dist/vendor/three.module.min.js';
+import {ENEMY_ROLES,ENEMY_ATTACKS} from '../dist/enemy-behaviors.js';
+import {enemyPose} from '../dist/enemy-motion.js';
+import {newWorld,testPlatform,DEFAULT_BUILD,step,setInput,snapshot} from '../dist/core.js';
+import {makeRobot,animateRobot,createRobotBatch} from '../dist/robot-models.js';
+import {makeMech,animateMech,disposeMech} from '../dist/three-view.js';
+import {createEnemyCues} from '../dist/enemy-cues.js';
+import {toggleImpactMode,impactMode} from '../dist/impact-preferences.js';
+const $=id=>document.getElementById(id),canvas=$('arena');
+window.addEventListener('error',e=>$('error').textContent=e.message);window.addEventListener('unhandledrejection',e=>$('error').textContent=String(e.reason));
+const renderer=new T.WebGLRenderer({canvas,antialias:true});renderer.setPixelRatio(Math.min(devicePixelRatio,1.5));
+const scene=new T.Scene();scene.background=new T.Color('#172832');scene.add(new T.HemisphereLight('#b9e1ed','#3a333d',2.5));const sun=new T.DirectionalLight('#fff1da',3);sun.position.set(-20,50,-30);scene.add(sun);
+const camera=new T.PerspectiveCamera(44,1,.1,600),grid=new T.GridHelper(220,44,'#5a7b78','#2e474c');grid.position.y=-.05;scene.add(grid);
+const cues=createEnemyCues(scene),actors=new T.Group();scene.add(actors);let batch=createRobotBatch(actors),models=new Map(),bullets=[],w,role='hunter',paused=false,last=0,clock=0,keys=new Set();
+const attacks={hunter:['pounce','bite'],wisp:['burst'],scarab:['fan','sweep'],rammer:['charge','stomp'],needle:['snipe','fan'],mortar:['bombard','fan'],mender:['mend','burst'],siege:['siegeFan','siegeBarrage','siegeStomp']};
+$('roster').innerHTML=Object.entries(ENEMY_ROLES).map(([k,p])=>`<button data-role="${k}" aria-pressed="false">${p.name}</button>`).join('');
+function reset(change=true){
+ for(const g of models.values())if(g.userData.jets)disposeMech(g);batch.dispose();actors.clear();batch=createRobotBatch(actors);models.clear();for(const b of bullets){scene.remove(b);b.geometry.dispose();b.material.dispose();}bullets=[];clock=0;keys.clear();
+ const profile=ENEMY_ROLES[role];$('name').textContent=profile.name;$('role').textContent=profile.role;$('counter').textContent=profile.counter||'Bait its stomp, flank the fan, leave the barrage markers.';
+ document.querySelectorAll('[data-role]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.role===role)));
+ if(change)$('attack').innerHTML=attacks[role].map(k=>`<option value="${k}">${k.replace(/([A-Z])/g,' $1').toUpperCase()}</option>`).join('');
+ w=newWorld(testPlatform(),[{id:'pilot',build:DEFAULT_BUILD}]);w.enemies=[];Object.assign(w.players[0],{x:450,y:0,altitude:0,recoverUntil:0});
+ w.spawn=[{time:0,type:role==='siege'?'tank':role,zone:{x:0,y:0,exact:true,operation:true}}];step(w,.01);if(role==='siege'){w.enemies[0].elite=true;w.enemies[0].species=null;w.enemies[0].bodyHeight=75;w.enemies[0].hp=w.enemies[0].max=3600;}
+ if(role==='mender'||$('mode').value==='squad')w.spawn.push({time:0,type:'rammer',zone:{x:-170,y:180,exact:true,operation:true}});
+ if($('mode').value==='squad')for(const[type,x,y]of[['needle',-400,-400],['wisp',100,-450],['hunter',100,350]])w.spawn.push({time:0,type,zone:{x,y,exact:true,operation:true}});
+ step(w,.01);if(role==='mender'&&w.enemies[1])w.enemies[1].hp=80;
+}
+for(const button of document.querySelectorAll('[data-role]'))button.onclick=()=>{role=button.dataset.role;reset();};
+$('mode').onchange=()=>reset(false);$('attack').onchange=()=>reset(false);$('reset').onclick=()=>reset(false);$('pause').onclick=()=>{$('pause').setAttribute('aria-pressed',String(paused=!paused));$('pause').textContent=paused?'Resume':'Pause';};$('effects').onclick=()=>{toggleImpactMode();$('effects').textContent='Effects: '+impactMode();};
+canvas.addEventListener('keydown',e=>{keys.add(e.code);if(['Space','ShiftLeft','KeyE'].includes(e.code))e.preventDefault();});canvas.addEventListener('keyup',e=>keys.delete(e.code));canvas.addEventListener('blur',()=>keys.clear());
+function frame(ms){const dt=Math.min(.05,last?(ms-last)/1000:.016);last=ms;
+ if(!paused){clock+=dt;if($('mode').value==='inspect'){
+  const e=w.enemies[0],attackKind=$('attack').value,a=ENEMY_ATTACKS[attackKind],cycle=clock%(a.windup+a.active+a.recovery+.6);e.attackKind=attackKind;e.actionPhase=cycle<a.windup?'windup':cycle<a.windup+a.active?'active':cycle<a.windup+a.active+a.recovery?'recovery':'idle';e.actionTime=cycle-(e.actionPhase==='active'?a.windup:e.actionPhase==='recovery'?a.windup+a.active:0);e.windup=e.actionPhase==='windup'?a.windup-cycle:0;e.attackAngle=0;e.attackPitch=0;e.angle=0;e.attackPoint={x:role==='mender'?-170:450,y:role==='mender'?180:0,z:0};w.time=clock;
+ }else{const p=w.players[0],e=w.enemies[0],angle=e?Math.atan2(e.y-p.y,e.x-p.x):Math.PI;setInput(w,p.id,{x:(keys.has('KeyD')?1:0)-(keys.has('KeyA')?1:0),y:(keys.has('KeyS')?1:0)-(keys.has('KeyW')?1:0),fly:keys.has('Space'),dash:keys.has('ShiftLeft'),ability:keys.has('KeyE'),left:keys.has('KeyF'),right:keys.has('KeyF'),angle});step(w,dt);}}
+ // Present a transported snapshot, exercising the same state available to guests.
+ const view=snapshot(w),ids=new Set([...view.enemies,view.players[0]].map(p=>p.id));for(const[id,g]of models)if(!ids.has(id)){actors.remove(g);if(g.userData.jets)disposeMech(g);models.delete(id);}
+ for(const p of [...view.enemies,view.players[0]]){let g=models.get(p.id);if(!g){g=p.species?makeRobot(p.species):makeMech(p.build||{frame:'bulwark',color:'#bd614b',weapon:'carbine'},!p.build,'tank');actors.add(g);models.set(p.id,g);}if(p.species)animateRobot(g,p,paused?0:dt,w.time);else{animateMech(g,p,paused?0:dt,w.time);if(p.elite){const pose=enemyPose(p);g.userData.body.position.y=pose.height;g.userData.body.rotation.x=pose.pitch;g.userData.body.rotation.z=pose.roll;}}}
+ batch.update(models);cues.update(view);
+ while(bullets.length<view.bullets.length){const b=new T.Mesh(new T.SphereGeometry(.4,6,4),new T.MeshBasicMaterial({color:'#ffda94'}));scene.add(b);bullets.push(b);}bullets.forEach((b,i)=>{const p=view.bullets[i];b.visible=!!p;if(p)b.position.set(p.x*.1,(p.z||0)*.1,p.y*.1);});
+ const width=canvas.clientWidth,height=canvas.clientHeight;renderer.setSize(width,height,false);camera.aspect=width/height;camera.updateProjectionMatrix();if($('mode').value==='inspect'){camera.position.set(18,15,-24);camera.lookAt(0,4,0);}else{camera.position.set(55,60,-75);camera.lookAt(5,2,0);}renderer.render(scene,camera);
+ const e=view.enemies[0],p=view.players[0];$('status').textContent=e?`${e.actionPhase?.toUpperCase()} / ${e.attackKind||e.intent||'IDLE'}\nHostile hull ${Math.ceil(e.hp)} / ${Math.ceil(e.max)}\nPilot hull ${Math.ceil(p.hp)} / 125\n${view.bullets.length} shots · ${(view.enemyHazards||[]).length} shells\n${renderer.info.render.calls} draw calls`:'Enemy defeated · Reset to fight again';
+ requestAnimationFrame(frame);
+}
+reset();requestAnimationFrame(frame);
+</script></html>
