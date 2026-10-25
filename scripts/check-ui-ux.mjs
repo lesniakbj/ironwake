@@ -1,22 +1,42 @@
 // Real-browser acceptance checks for the redesigned command deck, fitting bay and cockpit.
 // PLAYWRIGHT_MODULE=file:///path/to/playwright/index.mjs node scripts/check-ui-ux.mjs
+// UI_UX_STATIC=1 serves only public dist assets and the campaign fixture through browser routes.
 // Each viewport uses an isolated local save. Campaign fixtures are development-only.
 import assert from 'node:assert/strict';
-import {mkdir,writeFile} from 'node:fs/promises';
+import {mkdir,writeFile,readFile,realpath} from 'node:fs/promises';
 import {spawn} from 'node:child_process';
 import {fileURLToPath} from 'node:url';
-import {resolve} from 'node:path';
+import {resolve,relative,isAbsolute,sep,extname} from 'node:path';
 const {chromium}=await import(process.env.PLAYWRIGHT_MODULE||'playwright');
 const root=fileURLToPath(new URL('../',import.meta.url)),output=resolve(process.env.UI_UX_OUTPUT||resolve(root,'.artifacts/ui-ux'));
 await mkdir(output,{recursive:true});
 const port=process.env.UI_UX_PORT||'4296',base=process.env.UI_UX_BASE_URL||`http://127.0.0.1:${port}/ironwake/`;
+const staticMode=process.env.UI_UX_STATIC==='1',staticOrigin=new URL(base).origin,publicRoot=await realpath(resolve(root,'dist')),fixtureFile=await realpath(resolve(root,'tests/campaign-fixtures.html'));
+const mime={'.html':'text/html','.js':'text/javascript','.css':'text/css','.svg':'image/svg+xml','.ttf':'font/ttf','.woff':'font/woff','.woff2':'font/woff2','.json':'application/json','.png':'image/png','.jpg':'image/jpeg','.jpeg':'image/jpeg','.webp':'image/webp','.ogg':'audio/ogg','.mp3':'audio/mpeg'};
 let server,browser;
 const failures=[],checks=[],errors=[],touchPages=new WeakSet(),touchSessions=new WeakMap();
 const viewports=[{width:1440,height:900},{width:1280,height:720},{width:390,height:844},{width:844,height:390}];
 const hud=['.hull-wing','#combatSlots','.mobility-wing','#objectivesPanel','#squadPanel','#vicinityPanel','#sortieHud','#combatMenu','#joystick'];
-if(!process.env.UI_UX_BASE_URL){
+if(!staticMode&&!process.env.UI_UX_BASE_URL){
  server=spawn(process.execPath,[fileURLToPath(new URL('./preview-server.mjs',import.meta.url)),port],{cwd:root,windowsHide:true});
  await new Promise((done,reject)=>{server.stdout.once('data',done);server.once('error',reject);server.once('exit',code=>reject(Error('Preview exited: '+code)));});
+}
+async function serveStatic(route){
+ const request=route.request(),url=new URL(request.url());
+ if(url.origin!==staticOrigin||request.method()!=='GET')return route.abort('blockedbyclient');
+ try{
+  const path=decodeURIComponent(url.pathname);let file;
+  if(path==='/tests/campaign-fixtures.html')file=fixtureFile;
+  else{
+   const prefix=path.startsWith('/ironwake/')?'/ironwake/':path.startsWith('/dist/')?'/dist/':null;
+   if(!prefix||path.includes('\\'))return route.fulfill({status:404,body:'Not found'});
+   let assetPath=path.slice(prefix.length);if(!assetPath||assetPath.endsWith('/'))assetPath+='index.html';
+   file=await realpath(resolve(publicRoot,assetPath));
+   const within=relative(publicRoot,file);if(within==='..'||within.startsWith('..'+sep)||isAbsolute(within))return route.fulfill({status:403,body:'Forbidden'});
+  }
+  const contentType=mime[extname(file).toLowerCase()];if(!contentType)return route.fulfill({status:404,body:'Not found'});
+  return route.fulfill({status:200,body:await readFile(file),contentType,headers:{'Cache-Control':'no-store'}});
+ }catch{return route.fulfill({status:404,body:'Not found'});}
 }
 async function activate(locator){return touchPages.has(locator.page())?locator.tap():locator.click();}
 async function screenshot(page,name){
@@ -31,8 +51,9 @@ async function touchMode(page){
  assert.equal(await page.evaluate(()=>matchMedia('(pointer:coarse)').matches),true,'A touch capture must use a coarse primary pointer');
 }
 async function openItem(page,selector,menu='#interfaceMenu'){
- if(!await page.locator(selector).isVisible())await activate(page.locator(menu+'>summary'));
- await activate(page.locator(selector));
+ const target=page.locator(menu).locator(selector);assert.equal(await target.count(),1,'Each menu command must have one explicit target: '+selector);
+ if(!await target.isVisible())await activate(page.locator(menu+'>summary'));
+ await activate(target);
  await page.evaluate(s=>{const e=document.querySelector(s);if(e)e.open=false;},menu);
 }
 async function navigate(page,destination){await activate(page.locator(destination==='campaign'?'#campaignNav':'#garageNav'));await page.waitForFunction(d=>document.body.dataset.screen===d,destination==='campaign'?'campaign':'garage');}
@@ -47,13 +68,16 @@ async function checkLayout(page,label,selectors=[],squadFixture=false,{viewportB
   const overlaps=rects.flatMap((a,i)=>rects.slice(i+1).filter(b=>Math.min(a.right,b.right)-Math.max(a.x,b.x)>2&&Math.min(a.bottom,b.bottom)-Math.max(a.y,b.y)>2).map(b=>a.selector+' overlaps '+b.selector));
   const offscreen=viewportBounds?rects.filter(r=>r.x< -1||r.y< -1||r.right>innerWidth+1||r.bottom>innerHeight+1).map(r=>r.selector+' is outside viewport'):[];
   const dialogs=[...document.querySelectorAll('dialog[open]')].map(e=>({id:e.id,client:e.clientWidth,scroll:e.scrollWidth}));
+  const textElements=[...document.querySelectorAll('body *')].filter(e=>visible(e)&&!e.closest('[aria-hidden=true]')&&[...e.childNodes].some(n=>n.nodeType===Node.TEXT_NODE&&n.textContent.trim())),fonts=[...new Set(textElements.map(e=>getComputedStyle(e).fontFamily))],nonArial=textElements.filter(e=>!getComputedStyle(e).fontFamily.toLowerCase().includes('arial')).map(e=>({tag:e.tagName,id:e.id,text:e.textContent.trim().slice(0,70),font:getComputedStyle(e).fontFamily})),visibleOverlines=[...document.querySelectorAll('.overline,.eyebrow')].filter(visible).map(e=>e.textContent.trim());
   if(squadFixture&&squad)squad.innerHTML=previous;
-  return{width:innerWidth,height:innerHeight,coarsePointer:matchMedia('(pointer:coarse)').matches,documentWidth:document.documentElement.scrollWidth,documentHeight:document.documentElement.scrollHeight,squadFixture,rects,overlaps,offscreen,dialogs};
+  return{width:innerWidth,height:innerHeight,coarsePointer:matchMedia('(pointer:coarse)').matches,documentWidth:document.documentElement.scrollWidth,documentHeight:document.documentElement.scrollHeight,squadFixture,rects,overlaps,offscreen,dialogs,fonts,nonArial,visibleOverlines};
  },{selectors,squadFixture,viewportBounds});
  checks.push({label,...result});
  if(result.documentWidth>result.width+1)failures.push(label+': horizontal page overflow');
  for(const d of result.dialogs)if(d.scroll>d.client+1)failures.push(label+': '+d.id+' has horizontal overflow');
  failures.push(...[...result.overlaps,...result.offscreen].map(x=>label+': '+x));
+ if(result.nonArial.length)failures.push(label+': visible text uses another font: '+JSON.stringify(result.nonArial));
+ if(result.visibleOverlines.length)failures.push(label+': redundant overline labels remain visible: '+result.visibleOverlines.join(' / '));
  return result;
 }
 async function openGame(page){await page.waitForFunction(()=>!document.querySelector('#game').hidden&&document.querySelector('#deploymentScreen').hidden,null,{timeout:30000});await page.evaluate(()=>{if(document.pointerLockElement)document.exitPointerLock();});await page.waitForFunction(()=>document.querySelector('#hullValue').textContent!=='—');await touchMode(page);}
@@ -74,7 +98,8 @@ try{
  browser=await chromium.launch({channel:process.env.UI_UX_BROWSER_CHANNEL||'chrome',headless:true,args:['--enable-webgl','--ignore-gpu-blocklist']});
  for(const viewport of viewports){
   const size=viewport.width+'x'+viewport.height,coarse=viewport.width<=844,context=await browser.newContext({viewport,reducedMotion:'reduce',hasTouch:coarse,isMobile:coarse}),page=await context.newPage();
-  if(coarse)touchPages.add(page);page.setDefaultTimeout(15000);page.on('pageerror',e=>errors.push(size+': '+e.message));
+  if(staticMode)await context.route('**/*',serveStatic);
+  if(coarse)touchPages.add(page);page.setDefaultTimeout(15000);page.on('pageerror',e=>errors.push(size+': '+e.message));page.on('console',m=>{if(m.type()==='error')errors.push(size+': '+m.text());});
   try{
    console.log('Checking '+size);
    await page.goto(base);await page.waitForFunction(()=>!!document.querySelector('#feedbackDialog'));await page.locator('#startMission').waitFor({state:'visible'});
@@ -129,6 +154,6 @@ try{
   }catch(error){console.error(size+': '+error.message);failures.push(size+': '+error.message);await screenshot(page,size+'-failure').catch(()=>{});}
   finally{await context.close();}
  }
- failures.push(...errors.map(e=>'JavaScript error: '+e));await writeFile(resolve(output,'report.json'),JSON.stringify({base,viewports,checks,failures},null,2)+'\n');
+ failures.push(...errors.map(e=>'JavaScript error: '+e));await writeFile(resolve(output,'report.json'),JSON.stringify({base,staticMode,viewports,checks,failures},null,2)+'\n');
  assert.deepEqual(failures,[],`UI checks failed:\n${failures.join('\n')}`);console.log(`PASS: ${checks.length} layout/interaction groups across ${viewports.length} viewports. Screenshots: ${output}`);
 }finally{await browser?.close();server?.kill();}

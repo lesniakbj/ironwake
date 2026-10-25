@@ -1,5 +1,5 @@
 import {fillUiIcons} from './ui-icons.js';
-// The shell owns wayfinding; individual screens own their working surfaces.
+// Shared navigation and the title menu's physical selection band.
 fillUiIcons();
 const $=selector=>document.querySelector(selector);
 const menus=[...document.querySelectorAll('.interface-menu')];
@@ -36,9 +36,25 @@ function syncShell(){
  for(const button of document.querySelectorAll('.section-rail .rail-button')){
   if(button.id===active)button.setAttribute('aria-current','page');else button.removeAttribute('aria-current');
  }
- $('#screenContext').textContent={home:'COMMAND DECK',campaign:'OPERATIONS',garage:'FITTING BAY'}[screen]||'COMMAND DECK';
- if(!matchMedia('(prefers-reduced-motion: reduce)').matches)$('#mainContent').animate([{opacity:.3},{opacity:1}],{duration:180,easing:'ease-out'});
+ if(screen==='home')selectHome(homeButtons()[0]);
+ if(!matchMedia('(prefers-reduced-motion: reduce)').matches)$('#mainContent').animate([{opacity:0,transform:'translateY(5px)'},{opacity:1,transform:'translateY(0)'}],{duration:260,easing:'cubic-bezier(.2,.8,.2,1)'});
 }
+const homeButtons=()=>[...document.querySelectorAll('.home-choice')].filter(button=>!button.hidden);
+function selectHome(button){
+ if(!button)return;
+ for(const row of homeButtons())row.classList.toggle('home-selected',row===button);
+ $('#homeSelectionDetail').textContent=button.id==='continueCampaign'?$('#homeResumeDetail').textContent:button.dataset.homeDetail;
+}
+const homeChoices=$('.home-choices');
+homeChoices.addEventListener('pointerover',event=>{const row=event.target.closest('.home-choice');if(row)selectHome(row);});
+homeChoices.addEventListener('focusin',event=>{const row=event.target.closest('.home-choice');if(row)selectHome(row);});
+new MutationObserver(()=>{if(document.body.dataset.screen==='home')selectHome(homeButtons()[0]);}).observe($('#continueCampaign'),{attributes:true,attributeFilter:['hidden']});
+document.addEventListener('keydown',event=>{
+ if(document.body.dataset.screen!=='home'||$('#hangar').hidden||document.querySelector('dialog[open],.interface-menu[open]')||!['ArrowUp','ArrowDown','Home','End'].includes(event.key))return;
+ const rows=homeButtons(),index=Math.max(0,rows.indexOf(document.activeElement));
+ const next=event.key==='Home'?0:event.key==='End'?rows.length-1:(index+(event.key==='ArrowUp'?-1:1)+rows.length)%rows.length;
+ event.preventDefault();rows[next].focus();selectHome(rows[next]);
+});
 new MutationObserver(syncShell).observe(document.body,{attributes:true,attributeFilter:['data-screen']});
 syncShell();
 $('.section-rail').addEventListener('keydown',event=>{
@@ -62,8 +78,7 @@ export function prepareDialog(body){
  $('#modal').classList.toggle('handbook-dialog',!!controls);$('#modal').classList.toggle('armory-dialog',!!body.querySelector('.armory-grid'));
  if(!controls)return;
  const aiming=controls.nextElementSibling,touch=body.lastElementChild;
- body.querySelector('.overline').textContent='PILOT HANDBOOK';
- title.textContent='Make every move count.';
+ title.textContent='Pilot field manual';
  title.after(controls);
  for(const [key,label] of [['H','Controls & help'],['M','Toggle sound'],['TAB','Full map · hold'],['ESC','Release mouse']]){
   const row=document.createElement('span'),kbd=document.createElement('kbd');kbd.textContent=key;row.append(kbd,document.createTextNode(label));controls.append(row);
