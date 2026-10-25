@@ -4,6 +4,7 @@ import { createWorldLabels } from './app/world-labels.js';
 import { createManual } from './app/manual.js';
 import { installPreviewOrbit } from './app/preview-orbit.js';
 import { createFrameCapture, installFeedback } from './feedback.js';
+import { prepareDialog } from './interface-ux.js?v=1';
 import { ENEMY_ROLES } from './enemy-behaviors.js';
 import {
   cleanCareer,
@@ -243,6 +244,7 @@ function modal(html) {
   if (document.pointerLockElement) document.exitPointerLock();
   clearInputs();
   $('#modalBody').innerHTML = html;
+  prepareDialog($('#modalBody'));
   if (!$('#modal').open) $('#modal').showModal();
 }
 $('#closeModal').onclick = () => {
@@ -482,13 +484,19 @@ function updateBuild() {
           : !v.melee),
   );
   const maxWeight = Math.max(...Object.values(socketOptions(activeSlot)).map((v) => v.weight));
-  $('#parts').innerHTML = options
-    .map(([id, v]) => {
-      const chosen = id === current,
-        tier = itemWeightClass(activeSlot, id, v);
-      return `<button class="part-choice ${chosen ? 'selected' : ''}" data-choice="${id}" aria-pressed="${chosen}" aria-label="${escape(v.name.split(' / ').at(-1))}, ${tier}, ${v.weight} tonnes${chosen ? ', fitted' : ''}"><span class="choice-heading"><span class="option-icon" style="--socket-color:${build.partColors[activeSlot] || '#a1d9c2'}">${itemIcon(activeSlot, id, v)}</span><span class="choice-name"><span class="weight-class ${tier}">${tier.toUpperCase()}</span><strong>${v.name.split(' / ').at(-1)}</strong></span></span><span class="component-weight"><b>${v.weight}<small>t</small></b><span>WEIGHT</span></span><span class="weight-comparison" aria-hidden="true"><i style="width:${(v.weight / maxWeight) * 100}%"></i></span>${isPart && v.appearance ? `<small class="equipment-description">${v.appearance}</small>` : ''}${!isPart && slot !== 2 && HEAVY_EQUIPMENT.includes(id) ? '<small class="equipment-description">Requires 1 heavy-rated hand mount</small>' : ''}<span class="choice-detail">${isPart ? (activeSlot === 'booster' ? Math.min(chassis.payload, Math.round(v.capacity * chassis.output)) + 't effective payload' : v.hp + ' armor') : v.role || 'TEAM SPECIAL'}</span>${isPart ? '' : `<small class="equipment-description">${v.desc}</small>`}</button>`;
-    })
-    .join('');
+  const designsExpanded =
+    $('#parts .alternate-designs')?.open &&
+    $('#parts .alternate-designs')?.dataset.frameSlot === activeSlot;
+  const optionCards = options.map(([id, v]) => {
+    const chosen = id === current,
+      tier = itemWeightClass(activeSlot, id, v);
+    return `<button class="part-choice ${chosen ? 'selected' : ''}" data-choice="${id}" aria-pressed="${chosen}" aria-label="${escape(v.name.split(' / ').at(-1))}, ${tier}, ${v.weight} tonnes${chosen ? ', fitted' : ''}"><span class="choice-heading"><span class="option-icon" style="--socket-color:${build.partColors[activeSlot] || '#a1d9c2'}">${itemIcon(activeSlot, id, v)}</span><span class="choice-name"><span class="weight-class ${tier}">${tier.toUpperCase()}</span><strong>${v.name.split(' / ').at(-1)}</strong></span></span><span class="component-weight"><b>${v.weight}<small>t</small></b><span>WEIGHT</span></span><span class="weight-comparison" aria-hidden="true"><i style="width:${(v.weight / maxWeight) * 100}%"></i></span>${isPart && v.appearance ? `<small class="equipment-description">${v.appearance}</small>` : ''}${!isPart && slot !== 2 && HEAVY_EQUIPMENT.includes(id) ? '<small class="equipment-description">Requires 1 heavy-rated hand mount</small>' : ''}<span class="choice-detail">${isPart ? (activeSlot === 'booster' ? Math.min(chassis.payload, Math.round(v.capacity * chassis.output)) + 't effective payload' : v.hp + ' armor') : v.role || 'TEAM SPECIAL'}</span>${isPart ? '' : `<small class="equipment-description">${v.desc}</small>`}</button>`;
+  });
+  $('#parts').innerHTML =
+    isPart && optionCards.length > 3
+      ? optionCards.slice(0, 3).join('') +
+        `<details class="alternate-designs" data-frame-slot="${activeSlot}" ${designsExpanded || options.slice(3).some(([id]) => id === current) ? 'open' : ''}><summary>More frame designs <span>${optionCards.length - 3} alternatives</span></summary><div class="alternate-design-grid">${optionCards.slice(3).join('')}</div></details>`
+      : optionCards.join('');
   $$('[data-choice]').forEach(
     (el) =>
       (el.onclick = () => {
@@ -1473,6 +1481,7 @@ const {
     campaignMissionActive = false;
     endShown = false;
     thrusterPreview = false;
+    $('#combatMenu').open = false;
   },
   onCombat(current) {
     campaignMissionActive = !!current.mission.campaign;
@@ -1754,8 +1763,22 @@ const gameKeys = [
   'Numpad2',
   'Numpad3',
 ];
+$('#combatMenu').addEventListener('toggle', () => {
+  if ($('#combatMenu').open) {
+    if (document.pointerLockElement) document.exitPointerLock();
+    clearInputs();
+  }
+});
 window.addEventListener('keydown', (e) => {
-  if (!playing || $('#modal').open || feedback?.isOpen()) return;
+  if (
+    !playing ||
+    $('#modal').open ||
+    feedback?.isOpen() ||
+    $('#combatMenu').open ||
+    e.target.closest?.('button,summary,input,select,textarea,a,[contenteditable]')
+  )
+    return;
+  if (e.code === 'Tab' && e.target !== $('#battle')) return;
   if (
     e.target.closest?.('#sortieHud button,#fieldOffers button,#fieldInteraction button') &&
     ['Space', 'Enter'].includes(e.code)
@@ -1804,7 +1827,11 @@ document.addEventListener('visibilitychange', () => {
 });
 const mouseLook = createMouseLook({
   canvas: $('#battle'),
-  active: () => playing && !($('#modal').open || feedback?.isOpen()) && $('#levelMapPanel').hidden,
+  active: () =>
+    playing &&
+    !($('#modal').open || feedback?.isOpen()) &&
+    !$('#combatMenu').open &&
+    $('#levelMapPanel').hidden,
   look,
   onLock: (locked) => (view.locked = locked),
   onRelease: clearInputs,

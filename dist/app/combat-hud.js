@@ -72,6 +72,10 @@ export function createCombatHud({ readState, sortieHud, mouseLook, beforeUpdate 
     const task = taskStatus(world, p, view.yaw);
     $('#taskBanner').hidden = !task.warning && !task.notice;
     const objectives = objectiveStatus(world, p);
+    $('#objectivesPanel').classList.toggle(
+      'objectives-duplicate',
+      objectives.personal.trim().toLowerCase() === objectives.team.trim().toLowerCase(),
+    );
     for (const [id, key] of [
       ['personalObjective', 'personal'],
       ['personalObjectiveDetail', 'personalDetail'],
