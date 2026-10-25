@@ -92,7 +92,7 @@ export function installFeedback({capture,context,onOpen,onClose}){
  }
  function close(){if(submitting)return;dialog.close();}
  dialog.addEventListener('cancel',event=>{if(submitting)event.preventDefault();});
- dialog.addEventListener('close',()=>{++recordToken;requesting=false;stopRecording();$('#feedbackAudio').pause();onClose?.();});
+ dialog.addEventListener('close',()=>{++recordToken;requesting=false;stopRecording();$('#feedbackAudio').pause();const label=document.querySelector('#buildLabel');if(label&&label.parentElement===dialog)(document.querySelector('#modal[open]')||document.body).append(label);onClose?.();});
  $('#feedbackClose').onclick=$('#feedbackCancel').onclick=$('#feedbackDone').onclick=close;
  $('#feedbackRetake').onclick=takeScreenshot;$('#feedbackRecord').onclick=record;
  $('#feedbackRemoveAudio').onclick=()=>{revoke('audio');audio=null;$('#feedbackAudio').removeAttribute('src');$('#feedbackAudio').hidden=true;$('#feedbackRemoveAudio').hidden=true;$('#feedbackAudioStatus').textContent='Recording removed. Fill out the text prompts or record again.';sync();};
@@ -116,7 +116,7 @@ export function installFeedback({capture,context,onOpen,onClose}){
  async function open(){
   if(dialog.open)return;
   if(submitted){form.reset();form.hidden=false;$('#feedbackSuccess').hidden=true;submitted=false;uncertain=false;id=crypto.randomUUID();revoke('audio');audio=null;$('#feedbackAudio').hidden=true;$('#feedbackRemoveAudio').hidden=true;setKind('bug');}
-  onOpen();dialog.showModal();status(uncertain?'Check GitHub issues for the previous report before starting another.':'');
+  onOpen();dialog.showModal();const label=document.querySelector('#buildLabel');if(label)dialog.append(label);status(uncertain?'Check GitHub issues for the previous report before starting another.':'');
   if(!uncertain)takeScreenshot();
   try{const response=await fetch(endpoint,{signal:AbortSignal.timeout(5000)});const config=await response.json();available=!!config.available;if(!available)status('Direct reporting is not configured on this server yet. You can prepare a draft here.');}
   catch{available=null;status('Could not check reporting availability. You can prepare a report and retry sending.');}sync();
