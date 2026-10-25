@@ -12,7 +12,7 @@ The application runs **prepare/minimum load hold → gray reveal → insertion �
 
 The host includes a fresh ticket with each `start` packet. Every pilot acknowledges only after preparing and completing their entire intro. The host sends `combat-live` only when every member of that drop has acknowledged. Unknown, duplicate and stale acknowledgements cannot bypass the barrier. A loading failure, changed squad link or 30 second deadline unwinds the drop. Lobby refit/readiness changes and late joins are blocked during deployment.
 
-The room namespace is now `ironwake-cinematic-v2`, because older clients start simulation immediately and cannot participate in the barrier. All squad members must use this build.
+The room namespace is now `ironwake-cinematic-enemies-v2`, because older clients start simulation immediately and cannot participate in the barrier. All squad members must use this build.
 
 Reduced impact effects (including the default system reduced-motion preference) use a short opacity cut and the stable chase camera throughout insertion. The same gray reveal and title reading holds still run in that mode. Loading progress and mission information remain available, with keyboard focus and live status announcements. No flash frames or combat-time camera takeover are introduced.
 
