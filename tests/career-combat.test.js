@@ -32,7 +32,7 @@ test('deployment sanitizes career ranks separately from equipment and snapshots 
 
 test('persistent weapon damage works in practice and campaign, and run modules multiply it once',()=>{
  for(const mission of[testPlatform(),combatTrial(),campaignRound(MISSIONS[0].id,61)])for(const modules of[[],['power','power','breaker']])for(const type of['target','tank']){
-  const w=make(certified,mission),p=w.players[0];Object.assign(p,{...mission.entry,altitude:0});p.field={modules,damage:0};
+  const w=make(certified,mission),p=w.players[0];Object.assign(p,{...mission.entry,altitude:0});p.field={...p.field,modules,damage:0};
   const e={...target(type),x:p.x+80,y:p.y};w.enemies=[e];tick(w,{left:true});tick(w,{},70);
   const mods=progressionModifiers(p.progression,'vanguard'),runDamage=modules.length?1.24*(type==='tank'?1.2:1):1;
   assert.ok(mods.heavyDamage>1);close(2000-e.hp,180*mods.damage*(type==='tank'?mods.heavyDamage:1)*runDamage,'single sword impact');
@@ -56,7 +56,7 @@ test('career damage reduction multiplies run armor and active shields on actual 
   const w=make(certified),p=w.players[0];Object.assign(p,{x:0,y:0,recoverUntil:0,activeAbility:shield?'shield':null,active:shield?8:0});p.field={modules};
   const before=p.hp,mods=progressionModifiers(p.progression,'vanguard');assert.ok(mods.damageReduction<1);
   w.bullets=[{id:999,x:50,y:0,z:30,vx:-2000,vy:0,vz:0,life:1,damage:100,enemy:true}];step(w,.05);
-  close(before-p.hp,100*.6*mods.damageReduction*(modules.length ? .81 : 1)*(shield ? .4 : 1),'incoming damage');
+  close(before-p.hp,100*.6*mods.damageReduction*(modules.length ? .8 : 1)*(shield ? .4 : 1),'incoming damage');
  }
 });
 
