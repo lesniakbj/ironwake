@@ -16,15 +16,15 @@ Rounds target roughly 2–3½ minutes, plus refit time. Each arena has authored 
 
 Campaign missions advance in order. Every layout also has a **Practice** drill that gives no campaign upgrades. The original long Cinderfall operation remains available through **Classic operation**. See [mission design and tuning](docs/campaign-missions.md) for layouts, economy, difficulty and testing notes.
 
-## Earn during combat, install between missions
+## Build your mech during the sortie
 
-Destroy enemies and objectives for shared salvage. Successful extraction grants each present pilot one personal upgrade choice, plus a second when enough salvage was earned. Spend those choices in the campaign refit screen or bank them for later. Choose weapon damage, heavy-target damage, damage reduction, recovery, mobility or special recharge. Each module stacks up to three times, with up to eighteen module slots reserved for future run expansion.
+Combat now offers **18 field upgrades, 18 salvage tech components, and 18 resonance relays**. Every living pilot earns XP from defeated machines, then install one of three personal upgrades with **1 / 2 / 3** while the fight continues. Press **F** near a cache to buy tech with shared salvage, or link a resonance relay for a tactical calibration. Free combat drops collect automatically at close range. Press **B** for your field inventory and timers; **U** releases the cursor for card selection.
 
-Installed modules carry across missions in the same run. They add no loadout weight and never modify saved workshop builds. Combat-time installation requests are rejected. Defeat or withdrawal ends the run; starting a new run clears its modules and retains best mission/contract times. Returning pilots retain their profile; late joiners receive one catch-up choice per secured mission. All surviving pilots must land at extraction for three seconds after the ship arrives.
+Successful extraction carries installed upgrades, salvage tech, XP, and unused level choices into the next campaign mission. Timed and sortie-long relay calibrations reset on deployment. Each pilot also earns the existing refit choices between missions, including the extra choice for enough total earned salvage; spending in the field does not reduce that earnings threshold. Defeat or withdrawal ends the run. Saved workshop builds remain independent.
 
-The host owns progress, contracts and reward validation. Each pilot chooses upgrades independently. Refit, contract and insertion changes clear squad readiness. Duplicate or stale upgrade requests cannot consume another choice. Campaign saves migrate from the earlier outline. Rooms use the isolated **ironwake-enemy-behaviors-v1** protocol; no host migration or mid-mission joining is supported.
+Field technology affects both hands, precision hits, melee, dash, flight, burns, chain arcs, specials, shields, healing, salvage, XP, objectives, and destructible terrain. World hardware has unique procedural models, map markers, and Full/Reduced presentation. The host validates choices and cache purchases, including revision, range, obstruction, cost, and stack limits. Co-op rooms use **ironwake-field-systems-v2**; every pilot must run this build.
 
-Run **node scripts/preview-server.mjs 4178**, then open **http://127.0.0.1:4178/ironwake/**. The arena overview is **http://127.0.0.1:4178/tests/mission-gallery.html**. The development-only campaign fixture page can prepare synthetic completed-round saves for refit testing; it is excluded from deployment. These are playable first-pass missions, with encounter balance and full-run pacing still needing human squad playtests.
+See [the full 54-entry technology catalog, balance rules, and playtest routes](docs/field-progression.md). Run **node scripts/preview-server.mjs 4190** and open **http://127.0.0.1:4190/ironwake/** to start a campaign, or **http://127.0.0.1:4190/tests/field-lab.html** for the live field-systems proving ground.
 
 ## Play
 
@@ -34,7 +34,7 @@ Anime animation adds deeper anticipation, fast pose releases, spring recovery, b
 
 Small enemy packs now coordinate short rushes, opposite flanks and suppression. Distinct directional audio warns of each attack family. Two pilots landing 60 direct damage within 0.9 seconds trigger **Cross Break**, with a brief protected stagger and anime impact reaction; cooperative kills get **Team Finish**. The lab includes audio previews, a team combo drill and a four-pilot pressure drill with sparring partners. Combat continues at full speed through all feedback.
 
-See [enemy behavior design, research and tuning](docs/enemy-behaviors.md). Run `node scripts/preview-server.mjs 4181` and open **http://127.0.0.1:4181/tests/enemy-lab.html** to inspect every attack or fight individual/mixed enemies. Co-op rooms use **ironwake-enemy-behaviors-v1** so all pilots share the new warning and artillery state.
+See [enemy behavior design, research and tuning](docs/enemy-behaviors.md). Run `node scripts/preview-server.mjs 4181` and open **http://127.0.0.1:4181/tests/enemy-lab.html** to inspect every attack or fight individual/mixed enemies. Co-op rooms use **ironwake-field-systems-v2** so all pilots share the new warning and artillery state.
 
 - **WASD:** horizontal thrust. **Space:** fly upward; release to descend.
 - **Mouse:** aim continuously, without holding a weapon button. If capture is unavailable, hover over the battlefield and move to its edge to keep turning. **Esc:** release the cursor / pause aim; click the battlefield to resume.
@@ -43,7 +43,8 @@ See [enemy behavior design, research and tuning](docs/enemy-behaviors.md). Run `
 - **Shift:** directional damaging dash. **E:** rechargeable special.
 - **M:** sound. **H:** controls. Arrow keys turn if mouse capture is unavailable.
 - **V:** switch between Full and Reduced impact effects. The same control is available in the menu and controls dialog.
-- Install earned upgrades on the **campaign refit screen between missions**.
+- **1 / 2 / 3:** select a field upgrade. **F:** open nearby salvage cache or link resonance relay. **B:** field inventory. **U:** release cursor for upgrade cards.
+- Install additional earned modules on the **campaign refit screen between missions**.
 - Mechs and random callsigns persist in browser storage. Saved mechs can be exported and imported as JSON.
 
 Five frame components trade armor against movement speed and booster capacity. Both hand mounts accept ranged, melee or defensive equipment. Overweight mechs remain editable but cannot deploy. Damage, cooldowns, range, area effects and utility vary across weapons.
