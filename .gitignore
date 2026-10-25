@@ -14,3 +14,5 @@ dist/build-info.json
 .DS_Store
 dist/server/
 dist/.openai/
+.voicegen/
+__pycache__/
