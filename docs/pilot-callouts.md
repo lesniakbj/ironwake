@@ -48,3 +48,9 @@ Add a line with a unique lowercase hyphenated `id` and `text` to the appropriate
 ```
 
 Keep text short; do not add unsupported emotion tags to the voice attributes. Listen to new takes before shipping, especially invented attack names. A new event also needs an observation in `pilot-events.js`. Run `node --test tests/*.test.js` after editing the pack; the audio checks verify complete coverage, WAV format, duration, audibility and peak limits, plus gameplay-event and playback behavior. Audio quality and performance style still need human audition.
+
+## Browser integration checks
+
+With Chrome and Playwright available, run `node scripts/check-pilot-feedback.mjs`. Set `PLAYWRIGHT_MODULE` to a module URL if Playwright is installed outside this checkout. The check loads all 96 clips, cancels a pending preview, switches and restores voice preferences, opens reporting from the menu/combat/F8, retains a report draft, captures a game frame, and checks the build label in both dialogs. It also guards against clipped menu buttons and overlapping combat controls at desktop, 390px and 360px widths. Reporting requests are intercepted; the check never creates GitHub issues. Captures are saved in ignored `.openai/pilot-feedback/`.
+
+`node scripts/check-feedback.mjs` separately covers mocked report retries, receipt handling and microphone recording/denial.

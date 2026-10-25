@@ -10,6 +10,10 @@
       "zone_name": "thorneloe.ai"
     }
   ],
+  "r2_buckets": [{"binding":"FEEDBACK_MEDIA","bucket_name":"ironwake-feedback-media"}],
+  "durable_objects": {"bindings":[{"name":"FEEDBACK_REPORTS","class_name":"FeedbackReport"}]},
+  "migrations": [{"tag":"feedback-v1","new_sqlite_classes":["FeedbackReport"]}],
+  "ratelimits": [{"name":"FEEDBACK_RATE_LIMIT","namespace_id":"1001","simple":{"limit":3,"period":60}}],
   "assets": {
     "directory": "./dist",
     "binding": "ASSETS",
