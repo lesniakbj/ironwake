@@ -90,3 +90,38 @@ export function stepHub(state,dt){
 }
 export function nearStation(state,id,stationId){const p=state?.players.find(p=>p.id===id),s=HUB_STATIONS.find(s=>s.id===stationId);return!!p&&!!s&&Math.hypot(p.x-s.x,p.z-s.z)<=HUB_RADIUS;}
 export function hubSnapshot(state){return{players:state.players.map(({id,x,z,angle})=>({id,x,z,angle}))};}
+
+// The fixed deck needs only a small visibility graph around its existing solids.
+// Keep corners 2m beyond movement clearance so the 1m follower tolerance does not
+// cut a detour back through a counter when it advances to the next waypoint.
+export function hubRoute(from,to){
+  const onDeck=p=>p&&Number.isFinite(p.x)&&Number.isFinite(p.z)&&p.x>=-40&&p.x<=40&&p.z>=-22&&p.z<=27&&!blocked(p.x,p.z);
+  if(!onDeck(from)||!onDeck(to))return[];
+  const clamp=(v,min,max)=>Math.max(min,Math.min(max,v)),nodes=[{x:from.x,z:from.z},{x:to.x,z:to.z}],keys=new Set(nodes.map(p=>p.x+','+p.z));
+  for(const o of HUB_SOLIDS)for(const x of[o.x-2.9,o.x+o.w+2.9])for(const z of[o.z-2.9,o.z+o.d+2.9]){
+    const p={x:clamp(x,-40,40),z:clamp(z,-22,27)},key=p.x+','+p.z;
+    if(!keys.has(key)&&onDeck(p)){keys.add(key);nodes.push(p);}
+  }
+  function crosses(a,b,o){
+    let near=0,far=1;
+    for(const [axis,lo,hi]of[['x',o.x-.9,o.x+o.w+.9],['z',o.z-.9,o.z+o.d+.9]]){
+      const d=b[axis]-a[axis];
+      if(Math.abs(d)<1e-9){if(a[axis]<=lo||a[axis]>=hi)return false;continue;}
+      const t0=(lo-a[axis])/d,t1=(hi-a[axis])/d;
+      near=Math.max(near,Math.min(t0,t1));far=Math.min(far,Math.max(t0,t1));if(near>=far)return false;
+    }
+    return far>0&&near<1;
+  }
+  const distance=Array(nodes.length).fill(Infinity),previous=Array(nodes.length).fill(-1),visited=new Set();distance[0]=0;
+  for(let count=0;count<nodes.length;count++){
+    let best=-1;for(let i=0;i<nodes.length;i++)if(!visited.has(i)&&(best<0||distance[i]<distance[best]))best=i;
+    if(best<0||!Number.isFinite(distance[best])||best===1)break;visited.add(best);
+    for(let i=0;i<nodes.length;i++){
+      if(i===best||visited.has(i)||HUB_SOLIDS.some(o=>crosses(nodes[best],nodes[i],o)))continue;
+      const next=distance[best]+Math.hypot(nodes[i].x-nodes[best].x,nodes[i].z-nodes[best].z);
+      if(next<distance[i]){distance[i]=next;previous[i]=best;}
+    }
+  }
+  if(!Number.isFinite(distance[1]))return[];
+  const route=[];for(let i=1;i!==0;i=previous[i]){if(i<0)return[];route.unshift(nodes[i]);}return route;
+}

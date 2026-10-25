@@ -78,3 +78,13 @@ Phone-width checks (390px outer viewport): station purchase passed; no station o
 1:43:26 PM  Actual dist/index.html loaded; PeerJS replaced only inside this local iframe.
 1:43:26 PM  hello accepted for PILOT-YG5EQGPZ; real roster progression retained.
 1:43:27 PM  Actual Join squad controls connected the guest to deterministic local transport.
+
+PR16 navigation review follow-up / 2026-10-25
+- Reproduced review r4372037349 from the real arrival spawn via (10,19), (10,-22), (0,-22): old route remains blocked behind Command after 50 seconds.
+- Added collision-aware hubRoute and follower regressions using actual stepHub, including all five stations, capped frame steps, repeated visits, guest packet cadence and invalid endpoints.
+- Automated coverage: 325/325 tests passed; production Wrangler deployment dry run passed with current main feedback bindings. Syntax and whitespace checks passed.
+- Independent actual-movement sweep: 4,075 routes from every walkable 2m grid point to all five stations, zero stalls or invalid arrivals.
+- Rendered game / local mock PeerJS transport: guest physically walked behind Command, then real station controls reached Parts foundry and The arsenal. Phone-width guest reached Signal archive and opened pilot training. No teleport was used for the rear-strip setup.
+- Feedback compatibility: desktop F8 captured a nonblank 1280x640 hub preview, cancelled local navigation and isolated movement/E input; closing resumed normal station navigation. Phone-width Report access and automatic capture also passed. No feedback report was submitted.
+- Media: hub-rear-deck-navigation.gif records actual guest movement around Command to the chassis research station; hub-feedback-capture.jpg shows the rendered hub report preview. Captures used working changes before the final review commit.
+- These checks use deterministic local host transport. Live WAN squad play, a manually played full campaign and balance tuning remain outstanding; keep PR16 draft.

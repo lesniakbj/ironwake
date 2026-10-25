@@ -1,4 +1,6 @@
 
+import {feedbackRoute} from './feedback.js';
+export {FeedbackReport} from './feedback.js';
 const prefix = '/ironwake';
 export default {
  async fetch(request, env) {
@@ -9,6 +11,7 @@ export default {
   }
   // The wildcard route also matches /ironwake-other. Leave it to the site.
   if (!url.pathname.startsWith(prefix + '/')) return fetch(request);
+  if (url.pathname.startsWith(prefix + '/api/feedback')) return feedbackRoute(request,env);
   url.pathname = url.pathname.slice(prefix.length);
   if (!['GET','HEAD'].includes(request.method)) return new Response('Method not allowed', {status:405,headers:{Allow:'GET, HEAD'}});
   if (url.pathname === '/') url.pathname = '/index.html';

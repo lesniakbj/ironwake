@@ -1,4 +1,4 @@
-import {HUB_STATIONS,HUB_CATALOG,HUB_STORIES,HUB_RADIUS,ownsLicense,nearStation,missingLicenses} from './hub-state.js';
+import {hubRoute,HUB_STATIONS,HUB_CATALOG,HUB_STORIES,HUB_RADIUS,ownsLicense,nearStation,missingLicenses} from './hub-state.js';
 import {createHubScene} from './hub-scene.js';
 import {careerStationMarkup} from './career-view.js';
 import {profileFor,refitOffer} from './campaign.js';
@@ -26,7 +26,8 @@ export function createHubView(root,campaignRoot,actions){
   const $=s=>root.querySelector(s),canvas=$('#hubCanvas'),pressed=new Set(),markerNodes=new Map(),pilotNodes=new Map();
   let station=null,latest,scene,route=[],destination=null,partSlot='torso',hand=0,touch={x:0,z:0},signature='',errorShown=false,careerFeedback='';
   const stationModes={parts:'career',story:'career'},careerSelection={mech:{chassisId:null,branchId:null},pilot:{branchId:null}};
-  const active=()=>document.body.dataset.screen==='hub'&&!document.querySelector('#modal').open&&!document.querySelector('#hangar').hidden;
+  const visible=()=>document.body.dataset.screen==='hub'&&!document.querySelector('#hangar').hidden;
+  const active=()=>visible()&&!actions.inputBlocked?.()&&!document.querySelector('#modal').open;
   function close(){station=null;careerFeedback='';$('#hubVendor').hidden=true;$('#hubCommand').hidden=true;pressed.clear();touch={x:0,z:0};signature='';canvas.focus({preventScroll:true});}
   function open(id){
     if(!latest||!nearStation(latest.state,latest.localId,id))return;
@@ -39,7 +40,7 @@ export function createHubView(root,campaignRoot,actions){
   function walkTo(id){
     if(!latest)return;close();const s=HUB_STATIONS.find(s=>s.id===id),p=latest.state.players.find(p=>p.id===latest.localId);if(!s||!p)return;
     if(nearStation(latest.state,p.id,id)){open(id);return;}
-    route=[{x:0,z:Math.max(-6.5,p.z)},{x:0,z:s.z},{x:s.x,z:s.z}];destination=id;
+    route=hubRoute(p,s);destination=route.length?id:null;
   }
   root.addEventListener('click',event=>{
     const el=event.target.closest('button');if(!el||el.disabled)return;
@@ -133,7 +134,7 @@ export function createHubView(root,campaignRoot,actions){
       return{x:touch.x+Number(pressed.has('KeyD')||pressed.has('ArrowRight'))-Number(pressed.has('KeyA')||pressed.has('ArrowLeft')),z:touch.z+Number(pressed.has('KeyS')||pressed.has('ArrowDown'))-Number(pressed.has('KeyW')||pressed.has('ArrowUp'))};
     },
     draw(time,reduced){
-      if(!latest||!active())return;
+      if(!latest||!visible())return;
       if(!scene&&!errorShown){try{scene=createHubScene(canvas);}catch(error){errorShown=true;$('#hubGraphicsError').hidden=false;$('#hubGraphicsError').textContent='The hub needs WebGL 2. Enable hardware acceleration and reload. '+error.message;}}
       if(!scene)return;
       try{scene.render(latest.state,latest.members,latest.localId,time,latest.save.bestLevel,reduced,station&&station!=='mission'?{station,occlusion:{right:canvas.clientWidth>760?$('#hubVendor').offsetWidth:0,bottom:canvas.clientWidth<=760?$('#hubVendor').offsetHeight:0}}:null);}catch(error){if(!errorShown){errorShown=true;$('#hubGraphicsError').hidden=false;$('#hubGraphicsError').textContent=error.message;}return;}
