@@ -18,6 +18,8 @@ Campaign missions advance in order. Every layout also has a **Practice** drill t
 
 ## Earn during combat, install between missions
 
+**Permanent upgrade trees:** open **Upgrade trees** in the hangar to research your chassis or train your pilot. Every chassis has its own three paths, nine upgrades and point balance; pilot skills follow your callsign across mechs. Start with one point in each tree, then earn one chassis point and one pilot point per successful campaign extraction. Prerequisites and costs shape your build; free respecs let you try another path. Career progression stays saved across new campaigns and uses separate points from run modules, salvage and in-mission upgrades. See [career progression and integration](docs/career-progression.md).
+
 Destroy enemies and objectives for shared salvage. Successful extraction grants each present pilot one personal upgrade choice, plus a second when enough salvage was earned. Spend those choices in the campaign refit screen or bank them for later. Choose weapon damage, heavy-target damage, damage reduction, recovery, mobility or special recharge. Each module stacks up to three times, with up to eighteen module slots reserved for future run expansion.
 
 Installed modules carry across missions in the same run. They add no loadout weight and never modify saved workshop builds. Combat-time installation requests are rejected. Defeat or withdrawal ends the run; starting a new run clears its modules and retains best mission/contract times. Returning pilots retain their profile; late joiners receive one catch-up choice per secured mission. All surviving pilots must land at extraction for three seconds after the ship arrives.
