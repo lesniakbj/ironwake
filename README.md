@@ -115,6 +115,8 @@ Requires Node.js 22.13+ (24 recommended).
 
 ```sh
 npm ci
+npm run format:check
+npm run architecture:check
 npm test
 npm run dev
 ```
@@ -130,7 +132,7 @@ Deployments use Wrangler authentication stored outside this repository. The chec
 
 ## Continuous integration
 
-[`.github/workflows/ci.yml`](.github/workflows/ci.yml) runs `npm ci`, all Node tests, and the Cloudflare dry-run build on Node.js 24 for PRs targeting `main` and pushes to `main`. You can also run checks manually from **Actions → CI → Run workflow**. New runs cancel superseded checks for the same branch or PR.
+[`.github/workflows/ci.yml`](.github/workflows/ci.yml) runs install, formatting and architecture checks, all Node tests, and the Cloudflare dry-run build on Node.js 24 for PRs targeting `main`, pushes to `main`, and merge-queue groups. You can also run checks manually from **Actions → CI → Run workflow**. New runs cancel superseded checks for the same branch or PR.
 
 Configure a branch rule for `main` requiring **Test and build** before merging. CI does not deploy, reference GitHub secrets, or require Cloudflare credentials or a GitHub deployment environment. The build command uses Wrangler's `--dry-run` option and does not publish the Worker or assets.
 
@@ -198,9 +200,14 @@ Public PeerJS signaling and Google STUN require internet. There is no TURN relay
 
 ## Project layout
 
-- `dist/core.js`, `planet-mission.js`: simulation, combat and mission progression.
+- `dist/core.js`: stable public API and explicit simulation tick order.
+- `dist/catalog/`, `dist/builds/`: equipment definitions, build normalization and composed career/field stats.
+- `dist/simulation/`: world/input, movement, weapons, damage, enemies and tick phases.
+- `dist/mission-catalog.js`, `dist/missions/`: compatible mission API, individual mission definitions/layouts, generation and tuning.
 - `dist/three-view.js`, scene/model/effect modules: cel-shaded Three.js rendering.
-- `dist/app.js`: workshop, HUD, input and room lifecycle.
+- `dist/app.js`: session composition, workshop and room lifecycle.
+- `dist/app/`: HUD, world labels, deployment lifecycle, manual and preview controllers.
+- `dist/network/protocol.js`: shared room namespaces for the combined build.
 - `dist/campaign.js`, `campaign-view.js`, `campaign.css`: campaign state, territory board, insertion choices and deployment loadouts.
 - `dist/sortie-progression.js`, `sortie-view.js`, `sortie.css`: shared salvage, field modules, contract selection and sortie reports.
 - `dist/audio.js`, `sound-design.js`: synthesized sound effects.

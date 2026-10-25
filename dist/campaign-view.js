@@ -1,45 +1,147 @@
-import{ENEMY_ROLES}from './enemy-behaviors.js';
-import{CHASSIS,chassisBlueprint}from './chassis.js';
-import{MISSIONS,missionTuning}from './mission-catalog.js';
-import{LANDINGS,profileFor,refitOffer}from './campaign.js';
-import{CONTRACTS,FIELD_MODULES}from './sortie-progression.js';
-import{FIELD_UPGRADES,FIELD_ITEMS}from './field-catalog.js';
-import{debriefMarkup,formatTime}from './sortie-view.js';
-import{cleanBuild,EQUIPMENT,ABILITIES,mechStats,buildKey,validBuild}from './core.js?v=41';
-import{itemIcon}from './workshop-icons.js?v=41';
-const escape=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const short=id=>EQUIPMENT[id].name.split(' / ').at(-1);
-export const CAMPAIGN_MECHS=Object.values(CHASSIS).map(c=>({label:c.name,role:`${c.size.toUpperCase()} / ${c.role}`,build:cleanBuild(chassisBlueprint(c.id))}));
-export function createCampaignView(root,actions){
- let inspected=0,latest,pending=null;
- root.addEventListener('click',event=>{
-  const target=event.target.closest('[data-action],[data-level],[data-contract],[data-refit]');if(!target)return;
-  if(target.dataset.level!==undefined){inspected=Number(target.dataset.level);render(latest);return;}
-  if(target.dataset.contract){actions.contract(target.dataset.contract);return;}
-  if(target.dataset.refit){pending={revision:latest.campaign.revision,id:target.dataset.refit};actions.refit(pending);render(latest);return;}
-  if(target.dataset.action==='focus'){inspected=Math.min(8,latest.campaign.level);render(latest);return;}
-  if(target.dataset.action==='drill'){actions.drill(MISSIONS[inspected].id);return;}
-  actions[target.dataset.action]?.();
- });
- root.addEventListener('change',event=>{if(event.target.id==='campaignMech')actions.mech(event.target.value);if(event.target.id==='campaignSpecial')actions.special(event.target.value);if(event.target.id==='campaignLanding')actions.landing(event.target.value);});
- function render(state){
-  if(!state.campaign){root.innerHTML='';latest=state;return;}
-  if(state.campaign.id!==latest?.campaign?.id||state.campaign.level!==latest?.campaign?.level)inspected=Math.min(8,state.campaign.level);
-  latest=state;const {campaign,build,saved,members,localId,room,isHost,connecting,canChoose,licensed=true,deploymentStats}=state;
-  if(pending&&pending.revision!==campaign.revision)pending=null;
-  const focused=root.contains(document.activeElement)?document.activeElement:null,focusId=focused?.id;
-  const spec=MISSIONS[inspected],current=MISSIONS[Math.min(8,campaign.level)],active=campaign.runState==='active',self=members.find(p=>p.id===localId)||members[0],profile=profileFor(campaign,self.name),offers=refitOffer(campaign,self.name),stats=deploymentStats||mechStats(build),valid=validBuild(build)&&licensed,allReady=members.every(p=>p.ready&&validBuild(p.build));
-  const options=[...CAMPAIGN_MECHS.map((p,i)=>({value:'preset-'+i,label:p.label+' · '+p.role,build:p.build})),...saved.map((b,i)=>({value:'saved-'+i,label:'Saved · '+b.name,build:b}))],match=options.find(p=>buildKey({...p.build,equipment:[...p.build.equipment.slice(0,2),build.equipment[2]]})===buildKey(build)),tuning=missionTuning(inspected,members.length),record=campaign.records[spec.id+':'+campaign.contract];
-  root.innerHTML=`<header class="campaign-heading"><div><p class="overline">KEPLER-9 / ROGUELITE CO-OP</p><h1>The Cinder Front<span class="campaign-live">● ${room?'SQUAD RUN':'SOLO RUN'}</span></h1></div><div class="campaign-totals"><span><b>${Math.min(9,campaign.level)}</b> / 09 MISSIONS</span><button class="text-button" data-action="home">Main menu ↗</button>${canChoose?'<button class="text-button" data-action="newRun">New run ↗</button>':''}</div></header>
+import { ENEMY_ROLES } from './enemy-behaviors.js';
+import { CHASSIS, chassisBlueprint } from './chassis.js';
+import { MISSIONS, missionTuning } from './mission-catalog.js';
+import { LANDINGS, profileFor, refitOffer } from './campaign.js';
+import { CONTRACTS, FIELD_MODULES } from './sortie-progression.js';
+import { FIELD_UPGRADES, FIELD_ITEMS } from './field-catalog.js';
+import { debriefMarkup, formatTime } from './sortie-view.js';
+import { cleanBuild, EQUIPMENT, ABILITIES, mechStats, buildKey, validBuild } from './core.js?v=41';
+import { itemIcon } from './workshop-icons.js?v=41';
+const escape = (s) =>
+  String(s).replace(
+    /[&<>"']/g,
+    (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c],
+  );
+const short = (id) => EQUIPMENT[id].name.split(' / ').at(-1);
+export const CAMPAIGN_MECHS = Object.values(CHASSIS).map((c) => ({
+  label: c.name,
+  role: `${c.size.toUpperCase()} / ${c.role}`,
+  build: cleanBuild(chassisBlueprint(c.id)),
+}));
+export function createCampaignView(root, actions) {
+  let inspected = 0,
+    latest,
+    pending = null;
+  root.addEventListener('click', (event) => {
+    const target = event.target.closest('[data-action],[data-level],[data-contract],[data-refit]');
+    if (!target) return;
+    if (target.dataset.level !== undefined) {
+      inspected = Number(target.dataset.level);
+      render(latest);
+      return;
+    }
+    if (target.dataset.contract) {
+      actions.contract(target.dataset.contract);
+      return;
+    }
+    if (target.dataset.refit) {
+      pending = { revision: latest.campaign.revision, id: target.dataset.refit };
+      actions.refit(pending);
+      render(latest);
+      return;
+    }
+    if (target.dataset.action === 'focus') {
+      inspected = Math.min(8, latest.campaign.level);
+      render(latest);
+      return;
+    }
+    if (target.dataset.action === 'drill') {
+      actions.drill(MISSIONS[inspected].id);
+      return;
+    }
+    actions[target.dataset.action]?.();
+  });
+  root.addEventListener('change', (event) => {
+    if (event.target.id === 'campaignMech') actions.mech(event.target.value);
+    if (event.target.id === 'campaignSpecial') actions.special(event.target.value);
+    if (event.target.id === 'campaignLanding') actions.landing(event.target.value);
+  });
+  function render(state) {
+    if (!state.campaign) {
+      root.innerHTML = '';
+      latest = state;
+      return;
+    }
+    if (
+      state.campaign.id !== latest?.campaign?.id ||
+      state.campaign.level !== latest?.campaign?.level
+    )
+      inspected = Math.min(8, state.campaign.level);
+    latest = state;
+    const {
+      campaign,
+      build,
+      saved,
+      members,
+      localId,
+      room,
+      isHost,
+      connecting,
+      canChoose,
+      licensed = true,
+      deploymentStats,
+    } = state;
+    if (pending && pending.revision !== campaign.revision) pending = null;
+    const focused = root.contains(document.activeElement) ? document.activeElement : null,
+      focusId = focused?.id;
+    const spec = MISSIONS[inspected],
+      current = MISSIONS[Math.min(8, campaign.level)],
+      active = campaign.runState === 'active',
+      self = members.find((p) => p.id === localId) || members[0],
+      profile = profileFor(campaign, self.name),
+      offers = refitOffer(campaign, self.name),
+      stats = deploymentStats || mechStats(build),
+      valid = validBuild(build) && licensed,
+      allReady = members.every((p) => p.ready && validBuild(p.build));
+    const options = [
+        ...CAMPAIGN_MECHS.map((p, i) => ({
+          value: 'preset-' + i,
+          label: p.label + ' · ' + p.role,
+          build: p.build,
+        })),
+        ...saved.map((b, i) => ({ value: 'saved-' + i, label: 'Saved · ' + b.name, build: b })),
+      ],
+      match = options.find(
+        (p) =>
+          buildKey({
+            ...p.build,
+            equipment: [...p.build.equipment.slice(0, 2), build.equipment[2]],
+          }) === buildKey(build),
+      ),
+      tuning = missionTuning(inspected, members.length),
+      record = campaign.records[spec.id + ':' + campaign.contract];
+    root.innerHTML = `<header class="campaign-heading"><div><p class="overline">KEPLER-9 / ROGUELITE CO-OP</p><h1>The Cinder Front<span class="campaign-live">● ${room ? 'SQUAD RUN' : 'SOLO RUN'}</span></h1></div><div class="campaign-totals"><span><b>${Math.min(9, campaign.level)}</b> / 09 MISSIONS</span><button class="text-button" data-action="home">Main menu ↗</button>${canChoose ? '<button class="text-button" data-action="newRun">New run ↗</button>' : ''}</div></header>
   <div class="run-rhythm"><span><b>01</b> FIGHT / UPGRADE IN THE FIELD</span><i>→</i><span><b>02</b> EXTRACT / REFIT</span><i>→</i><span><b>03</b> HARDER MISSION</span><small>2–3½ minute rounds · Upgrades last the run · 1–4 pilots</small></div>
-  ${!active?`<p class="campaign-result" role="status">${campaign.runState==='won'?'THE CROWN ENGINE IS DOWN. Run complete. Start a new run for a fresh build.':'RUN ENDED. Regroup and start a new run. Workshop mechs and mission drill access remain available.'}</p>`:campaign.lastResult==='victory'?`<p class="campaign-result" role="status">MISSION SECURED · Refit your mech, then deploy to ${escape(current.name)}.</p>`:''}
-  <section class="run-refit compact" aria-label="Run supply status"><div class="sortie-section-heading"><div><p class="overline">RUN SUPPLIES / ${escape(self.name)}</p><h2>${profile.credits} refit tokens available</h2></div><button class="button secondary" data-action="supply">Visit Run supplies ↗</button></div><p>Combat XP earns immediate field upgrades; salvage caches contain tech and resonance relays offer tactical boosts. Install earned refit modules at Run supplies before your next drop.</p><div class="run-modules">${([...new Set(profile.upgrades||[])].map(id=>`<span class="module-chip" title="${escape(FIELD_UPGRADES[id].detail)}">${FIELD_UPGRADES[id].name} ×${profile.upgrades.filter(v=>v===id).length}</span>`).join('') + [...new Set(profile.items||[])].map(id=>`<span class="module-chip" title="${escape(FIELD_ITEMS[id].detail)}">${FIELD_ITEMS[id].name} ×${profile.items.filter(v=>v===id).length}</span>`).join('') + [...new Set(profile.modules)].map(id=>`<span class="module-chip">${FIELD_MODULES[id].name} ×${profile.modules.filter(v=>v===id).length}</span>`).join(''))||'<span>Extract to earn personal run modules. Licenses and credits persist at Anchorage.</span>'}</div></section>
-  <div class="campaign-layout"><section class="campaign-theater" aria-label="Campaign mission route"><div class="theater-heading"><span>NINE MISSIONS / THREE ACTS</span><button class="text-button" data-action="focus">Locate current mission ↗</button></div><div class="mission-route">${MISSIONS.map((m,i)=>{const complete=i<campaign.level,available=active&&i===campaign.level;return`<button class="mission-node ${complete?'complete':''} ${available?'current':''}" data-level="${i}" aria-pressed="${inspected===i}" style="--mission-accent:${m.color}"><small>ACT ${m.act} / ${complete?'SECURED':available?'NEXT DROP':'DRILL AVAILABLE'}</small><b>${String(i+1).padStart(2,'0')}</b><strong>${escape(m.name)}</strong><span>${m.kind.toUpperCase()} · ~${m.minutes} MIN</span><svg viewBox="0 0 100 45" aria-hidden="true">${m.points.map(([x,y])=>`<circle cx="${x/26}" cy="${y/50}" r="3"/>`).join('')}<path d="M10 38L30 17 68 12 90 34"/></svg></button>`;}).join('')}</div><button class="text-button" data-action="legacy">Classic operation / Cinderfall ↗</button><p class="map-caption">Campaign advances in order. Inspect any mission and use a drill to practice its layout without campaign rewards.</p></section>
-  <aside class="campaign-briefing" aria-label="Selected battlefield"><p class="overline">LEVEL ${inspected+1} / ACT ${spec.act} / ${spec.kind.toUpperCase()}</p><h2>${escape(spec.name)}</h2><p class="battlefield-tags">${spec.theme.toUpperCase()} · ~${spec.minutes} MIN · 1–4 PILOTS</p><div class="mission-swatch" style="--mission-accent:${spec.color};--mission-floor:${spec.floor}"><span>${spec.layout.toUpperCase()}</span><i></i><i></i><i></i></div><p class="battlefield-description">${escape(spec.brief)}</p><p class="landing-detail">${escape(spec.lesson)}</p><dl class="mission-pressure"><div><dt>Enemy armor</dt><dd>${tuning.health.toFixed(2)}×</dd></div><div><dt>Attack pressure</dt><dd>${tuning.damage.toFixed(2)}×</dd></div><div><dt>Threat mix</dt><dd>${[...new Set(spec.mix)].map(t=>({drone:'Swarm',gunner:'Aerial',tank:'Armor'}[t]||ENEMY_ROLES[t]?.name||t)).join(' / ')}</dd></div><div><dt>Completion salvage</dt><dd>+${spec.reward}</dd></div></dl><p class="landing-detail">${record?'Best extraction: '+formatTime(record):'No extraction record for this mission / contract.'}</p><button class="button secondary" data-action="drill" ${connecting||room&&!isHost?'disabled':''}>Practice ${escape(spec.name)} ↗</button><p class="campaign-scope">Drills award no campaign upgrades. Campaign progression follows the highlighted mission.</p></aside></div>
-  <section class="sortie-contracts" aria-label="Operation contract"><div class="theater-heading"><span>ENCOUNTER CONTRACT</span><span>${canChoose?'HOST SELECTS':'HOST OWNED'}</span></div><div class="contract-grid">${CONTRACTS.map(c=>`<button data-contract="${c.id}" aria-pressed="${campaign.contract===c.id}" ${!canChoose||!active?'disabled':''}><small>${c.tag}</small><strong>${c.name}</strong><span>${c.id==='frontline'?'Standard reinforcement pressure.':c.id==='overrun'?'Shorter breaks between enemy waves.':'More armored enemies in each wave.'}</span><b>${c.reward===1?'STANDARD SALVAGE':'+'+Math.round((c.reward-1)*100)+'% SALVAGE'}</b></button>`).join('')}</div></section>
-  <section class="campaign-loadout" aria-label="Deployment loadout"><div class="loadout-heading"><span>NEXT DROP / ${active?escape(current.name):'RUN FINISHED'}</span><button class="text-button" data-action="workshop">Customize in workshop ↗</button></div><div class="deployment-fitting"><label class="campaign-field" for="campaignMech">MECH<select id="campaignMech"><option value="current" ${!match?'selected':''}>Current / ${escape(build.name)}</option>${options.map(p=>`<option value="${p.value}" ${match?.value===p.value?'selected':''}>${escape(p.label)}</option>`).join('')}</select></label><div class="fitted-hands"><span>${itemIcon('equip0',build.equipment[0],EQUIPMENT[build.equipment[0]])}<small>LEFT HAND</small><strong>${short(build.equipment[0])}</strong></span><span>${itemIcon('equip1',build.equipment[1],EQUIPMENT[build.equipment[1]])}<small>RIGHT HAND</small><strong>${short(build.equipment[1])}</strong></span></div><label class="campaign-field" for="campaignSpecial">SPECIAL / E<select id="campaignSpecial">${Object.entries(ABILITIES).map(([id,item])=>`<option value="${id}" ${build.equipment[2]===id?'selected':''}>${item.name} · ${item.weight}t</option>`).join('')}</select></label><div class="deployment-stats ${valid?'':'overloaded'}"><strong>${stats.weight} / ${stats.capacity}t</strong><span>${valid?`${stats.hp} armor · ${stats.chassisClass||stats.weightClass} · ${stats.heavyUsed}/${stats.heavySlots} heavy`:escape(licensed?stats.issues.join(' '):'License fitted gear at Anchorage vendors before deployment.')}</span></div></div><label class="campaign-field" for="campaignLanding">INSERTION<select id="campaignLanding" ${!canChoose?'disabled':''}>${LANDINGS.map(p=>`<option value="${p.id}" ${p.id===campaign.landing?'selected':''}>${p.name}</option>`).join('')}</select></label><p class="special-detail">${escape(ABILITIES[build.equipment[2]].desc)}</p></section>
-  <section class="campaign-squad" aria-label="Campaign squad"><div class="campaign-squad-heading"><span>ASSEMBLE & DEPLOY <small>${members.length} / 4 PILOTS</small></span><div>${room?`<span class="room-code">ROOM ${escape(room)} · ${isHost?'HOST':'GUEST'}</span><button class="text-button" data-action="invite">Copy invite</button><button class="text-button" data-action="leave">Leave squad</button>`:`<button class="text-button" data-action="host" ${connecting?'disabled':''}>Host friends ＋</button><button class="text-button" data-action="join" ${connecting?'disabled':''}>Join squad ↗</button>`}</div></div><div class="campaign-launch-row"><div class="campaign-pilots">${members.map((p,i)=>`<div class="campaign-pilot${p.ready?' ready':''}"><span class="pilot-index">0${i+1}</span><div><strong>${escape(p.name)}${p.id===localId?' / YOU':''}</strong><small>${escape(p.build.name)}</small><small>${profileFor(campaign,p.name).modules.length} run modules · ${profileFor(campaign,p.name).credits} choices</small></div><em>${p.ready?'READY':'REFITTING'}</em></div>`).join('')}</div><div class="campaign-deploy-actions">${room?`<button class="button secondary" data-action="ready" ${connecting||!valid||!active?'disabled':''}>${self.ready?'Unready':'Mark ready ✓'}</button>`:''}<button class="button primary" data-action="deploy" ${connecting||!active||!valid||room&&(!isHost||!allReady)?'disabled':''}>${active?room?(isHost?'DEPLOY SQUAD ↗':'AWAITING HOST'):'DEPLOY '+escape(current.name).toUpperCase()+' ↗':'RUN FINISHED'}</button></div></div><p class="campaign-network-status" role="status">${connecting?'Connecting…':room?`${members.filter(p=>p.ready).length}/${members.length} ready. Refit or loadout changes clear readiness.`:'Solo is ready. Invite up to three friends. Late joiners earn a catch-up choice per secured mission.'}</p></section>${debriefMarkup(campaign.lastReport,true)}`;
-  if(focusId)root.querySelector('#'+focusId)?.focus({preventScroll:true});
- }
- return{render,focusLanding(c){inspected=Math.min(8,c?.level||0);}};
+  ${!active ? `<p class="campaign-result" role="status">${campaign.runState === 'won' ? 'THE CROWN ENGINE IS DOWN. Run complete. Start a new run for a fresh build.' : 'RUN ENDED. Regroup and start a new run. Workshop mechs and mission drill access remain available.'}</p>` : campaign.lastResult === 'victory' ? `<p class="campaign-result" role="status">MISSION SECURED · Refit your mech, then deploy to ${escape(current.name)}.</p>` : ''}
+  <section class="run-refit compact" aria-label="Run supply status"><div class="sortie-section-heading"><div><p class="overline">RUN SUPPLIES / ${escape(self.name)}</p><h2>${profile.credits} refit tokens available</h2></div><button class="button secondary" data-action="supply">Visit Run supplies ↗</button></div><p>Combat XP earns immediate field upgrades; salvage caches contain tech and resonance relays offer tactical boosts. Install earned refit modules at Run supplies before your next drop.</p><div class="run-modules">${[...new Set(profile.upgrades || [])].map((id) => `<span class="module-chip" title="${escape(FIELD_UPGRADES[id].detail)}">${FIELD_UPGRADES[id].name} ×${profile.upgrades.filter((v) => v === id).length}</span>`).join('') + [...new Set(profile.items || [])].map((id) => `<span class="module-chip" title="${escape(FIELD_ITEMS[id].detail)}">${FIELD_ITEMS[id].name} ×${profile.items.filter((v) => v === id).length}</span>`).join('') + [...new Set(profile.modules)].map((id) => `<span class="module-chip">${FIELD_MODULES[id].name} ×${profile.modules.filter((v) => v === id).length}</span>`).join('') || '<span>Extract to earn personal run modules. Licenses and credits persist at Anchorage.</span>'}</div></section>
+  <div class="campaign-layout"><section class="campaign-theater" aria-label="Campaign mission route"><div class="theater-heading"><span>NINE MISSIONS / THREE ACTS</span><button class="text-button" data-action="focus">Locate current mission ↗</button></div><div class="mission-route">${MISSIONS.map(
+    (m, i) => {
+      const complete = i < campaign.level,
+        available = active && i === campaign.level;
+      return `<button class="mission-node ${complete ? 'complete' : ''} ${available ? 'current' : ''}" data-level="${i}" aria-pressed="${inspected === i}" style="--mission-accent:${m.color}"><small>ACT ${m.act} / ${complete ? 'SECURED' : available ? 'NEXT DROP' : 'DRILL AVAILABLE'}</small><b>${String(i + 1).padStart(2, '0')}</b><strong>${escape(m.name)}</strong><span>${m.kind.toUpperCase()} · ~${m.minutes} MIN</span><svg viewBox="0 0 100 45" aria-hidden="true">${m.points.map(([x, y]) => `<circle cx="${x / 26}" cy="${y / 50}" r="3"/>`).join('')}<path d="M10 38L30 17 68 12 90 34"/></svg></button>`;
+    },
+  ).join(
+    '',
+  )}</div><button class="text-button" data-action="legacy">Classic operation / Cinderfall ↗</button><p class="map-caption">Campaign advances in order. Inspect any mission and use a drill to practice its layout without campaign rewards.</p></section>
+  <aside class="campaign-briefing" aria-label="Selected battlefield"><p class="overline">LEVEL ${inspected + 1} / ACT ${spec.act} / ${spec.kind.toUpperCase()}</p><h2>${escape(spec.name)}</h2><p class="battlefield-tags">${spec.theme.toUpperCase()} · ~${spec.minutes} MIN · 1–4 PILOTS</p><div class="mission-swatch" style="--mission-accent:${spec.color};--mission-floor:${spec.floor}"><span>${spec.layout.toUpperCase()}</span><i></i><i></i><i></i></div><p class="battlefield-description">${escape(spec.brief)}</p><p class="landing-detail">${escape(spec.lesson)}</p><dl class="mission-pressure"><div><dt>Enemy armor</dt><dd>${tuning.health.toFixed(2)}×</dd></div><div><dt>Attack pressure</dt><dd>${tuning.damage.toFixed(2)}×</dd></div><div><dt>Threat mix</dt><dd>${[...new Set(spec.mix)].map((t) => ({ drone: 'Swarm', gunner: 'Aerial', tank: 'Armor' })[t] || ENEMY_ROLES[t]?.name || t).join(' / ')}</dd></div><div><dt>Completion salvage</dt><dd>+${spec.reward}</dd></div></dl><p class="landing-detail">${record ? 'Best extraction: ' + formatTime(record) : 'No extraction record for this mission / contract.'}</p><button class="button secondary" data-action="drill" ${connecting || (room && !isHost) ? 'disabled' : ''}>Practice ${escape(spec.name)} ↗</button><p class="campaign-scope">Drills award no campaign upgrades. Campaign progression follows the highlighted mission.</p></aside></div>
+  <section class="sortie-contracts" aria-label="Operation contract"><div class="theater-heading"><span>ENCOUNTER CONTRACT</span><span>${canChoose ? 'HOST SELECTS' : 'HOST OWNED'}</span></div><div class="contract-grid">${CONTRACTS.map((c) => `<button data-contract="${c.id}" aria-pressed="${campaign.contract === c.id}" ${!canChoose || !active ? 'disabled' : ''}><small>${c.tag}</small><strong>${c.name}</strong><span>${c.id === 'frontline' ? 'Standard reinforcement pressure.' : c.id === 'overrun' ? 'Shorter breaks between enemy waves.' : 'More armored enemies in each wave.'}</span><b>${c.reward === 1 ? 'STANDARD SALVAGE' : '+' + Math.round((c.reward - 1) * 100) + '% SALVAGE'}</b></button>`).join('')}</div></section>
+  <section class="campaign-loadout" aria-label="Deployment loadout"><div class="loadout-heading"><span>NEXT DROP / ${active ? escape(current.name) : 'RUN FINISHED'}</span><button class="text-button" data-action="workshop">Customize in workshop ↗</button></div><div class="deployment-fitting"><label class="campaign-field" for="campaignMech">MECH<select id="campaignMech"><option value="current" ${!match ? 'selected' : ''}>Current / ${escape(build.name)}</option>${options.map((p) => `<option value="${p.value}" ${match?.value === p.value ? 'selected' : ''}>${escape(p.label)}</option>`).join('')}</select></label><div class="fitted-hands"><span>${itemIcon('equip0', build.equipment[0], EQUIPMENT[build.equipment[0]])}<small>LEFT HAND</small><strong>${short(build.equipment[0])}</strong></span><span>${itemIcon('equip1', build.equipment[1], EQUIPMENT[build.equipment[1]])}<small>RIGHT HAND</small><strong>${short(build.equipment[1])}</strong></span></div><label class="campaign-field" for="campaignSpecial">SPECIAL / E<select id="campaignSpecial">${Object.entries(
+    ABILITIES,
+  )
+    .map(
+      ([id, item]) =>
+        `<option value="${id}" ${build.equipment[2] === id ? 'selected' : ''}>${item.name} · ${item.weight}t</option>`,
+    )
+    .join(
+      '',
+    )}</select></label><div class="deployment-stats ${valid ? '' : 'overloaded'}"><strong>${stats.weight} / ${stats.capacity}t</strong><span>${valid ? `${stats.hp} armor · ${stats.chassisClass || stats.weightClass} · ${stats.heavyUsed}/${stats.heavySlots} heavy` : escape(licensed ? stats.issues.join(' ') : 'License fitted gear at Anchorage vendors before deployment.')}</span></div></div><label class="campaign-field" for="campaignLanding">INSERTION<select id="campaignLanding" ${!canChoose ? 'disabled' : ''}>${LANDINGS.map((p) => `<option value="${p.id}" ${p.id === campaign.landing ? 'selected' : ''}>${p.name}</option>`).join('')}</select></label><p class="special-detail">${escape(ABILITIES[build.equipment[2]].desc)}</p></section>
+  <section class="campaign-squad" aria-label="Campaign squad"><div class="campaign-squad-heading"><span>ASSEMBLE & DEPLOY <small>${members.length} / 4 PILOTS</small></span><div>${room ? `<span class="room-code">ROOM ${escape(room)} · ${isHost ? 'HOST' : 'GUEST'}</span><button class="text-button" data-action="invite">Copy invite</button><button class="text-button" data-action="leave">Leave squad</button>` : `<button class="text-button" data-action="host" ${connecting ? 'disabled' : ''}>Host friends ＋</button><button class="text-button" data-action="join" ${connecting ? 'disabled' : ''}>Join squad ↗</button>`}</div></div><div class="campaign-launch-row"><div class="campaign-pilots">${members.map((p, i) => `<div class="campaign-pilot${p.ready ? ' ready' : ''}"><span class="pilot-index">0${i + 1}</span><div><strong>${escape(p.name)}${p.id === localId ? ' / YOU' : ''}</strong><small>${escape(p.build.name)}</small><small>${profileFor(campaign, p.name).modules.length} run modules · ${profileFor(campaign, p.name).credits} choices</small></div><em>${p.ready ? 'READY' : 'REFITTING'}</em></div>`).join('')}</div><div class="campaign-deploy-actions">${room ? `<button class="button secondary" data-action="ready" ${connecting || !valid || !active ? 'disabled' : ''}>${self.ready ? 'Unready' : 'Mark ready ✓'}</button>` : ''}<button class="button primary" data-action="deploy" ${connecting || !active || !valid || (room && (!isHost || !allReady)) ? 'disabled' : ''}>${active ? (room ? (isHost ? 'DEPLOY SQUAD ↗' : 'AWAITING HOST') : 'DEPLOY ' + escape(current.name).toUpperCase() + ' ↗') : 'RUN FINISHED'}</button></div></div><p class="campaign-network-status" role="status">${connecting ? 'Connecting…' : room ? `${members.filter((p) => p.ready).length}/${members.length} ready. Refit or loadout changes clear readiness.` : 'Solo is ready. Invite up to three friends. Late joiners earn a catch-up choice per secured mission.'}</p></section>${debriefMarkup(campaign.lastReport, true)}`;
+    if (focusId) root.querySelector('#' + focusId)?.focus({ preventScroll: true });
+  }
+  return {
+    render,
+    focusLanding(c) {
+      inspected = Math.min(8, c?.level || 0);
+    },
+  };
 }

@@ -38,12 +38,15 @@
     import{cleanDeploymentProgression}from '../dist/career-progression.js';
     import{HUB_PROTOCOL,HUB_STATIONS,newHubSave,inheritArmory,purchaseAtStation,rewardHub,missingLicenses,syncHubPlayers,setHubInput,stepHub,nearStation,hubSnapshot}from '../dist/hub-state.js';
     import{validCallsign}from '../dist/pilot.js';
+    import{createDeploymentGate}from '../dist/cinematic.js';
 
     const $=id=>document.getElementById(id),frame=$('game'),HOST='fixture-host',GUEST='fixture-guest',ROOM='TEST23',HOST_NAME='PILOT-ABCDEFGH';
     const clone=value=>JSON.parse(JSON.stringify(value));
     let campaign=newCampaign(86025),armory=inheritArmory(newHubSave(),[chassisBlueprint('vanguard')]),roster=[],hub=syncHubPlayers(null,[]),hostWorld=null;
     let phase='loading',connection=null,peer=null,gameReady=false,joinAfterLoad=false,reloadCareer=null,guestPilot='',expectedCareer=null,lastHubPacket=0,lastWorldPacket=0,lastTick=performance.now();
     let rearWalk=null,rearWalkStatus='idle',rearWalkDeadline=0,lastDeckDisplay=0;
+    let deployment=null,lastDeploymentTicket='';
+    const deploymentTickets=new Set();
     const events=[];
     function log(message){events.push(new Date().toLocaleTimeString()+'  '+message);$('events').textContent=events.slice(-65).join('\n');$('events').scrollTop=$('events').scrollHeight;}
     function assert(condition,message){log((condition?'PASS  ':'FAIL  ')+message);if(!condition)$('status').dataset.failed='true';return condition;}
@@ -60,6 +63,10 @@
     }
     function refresh(){
       const connected=!!connection?.open,member=guest(),profile=profileFor(campaign,guestPilot);
+      $('status').dataset.phase=phase;
+      $('status').dataset.ticket=deployment?.ticket||lastDeploymentTicket;
+      $('status').dataset.readyCount=String(deployment?.gate.readyCount||0);
+      $('status').dataset.worldTime=String(hostWorld?.time||0);
       $('connect').disabled=!gameReady||connected||phase==='loading';
       $('rearDeck').disabled=!connected||phase!=='hub'||!!rearWalk;
       $('deploy').disabled=!connected||phase!=='hub'||campaign.runState!=='active'||!member?.ready;
@@ -73,8 +80,32 @@
     function deliver(data){if(connection?.open)connection.emit('data',clone(data));}
     function lobby(){hub=syncHubPlayers(hub,roster);deliver({type:'lobby',room:ROOM,roster,mission:campaignMission(campaign),campaign,armory,hub:hubSnapshot(hub)});refresh();}
     function unready(){roster.forEach(member=>member.ready=false);}
+    function cancelDeployment(reason,notify=true){
+      if(!deployment)return;
+      clearTimeout(deployment.timeout);deployment=null;hostWorld=null;unready();hub=syncHubPlayers(null,roster);
+      phase=connection?.open?'hub':'disconnected';
+      if(notify)deliver({type:'return',mission:campaignMission(campaign),roster,campaign,armory,hub:hubSnapshot(hub)});
+      log(reason+' Campaign remains '+campaign.runState+'; readiness cleared.');refresh();
+    }
+    function launchDeployment(){
+      if(!deployment?.gate.complete)return;
+      const ticket=deployment.ticket;clearTimeout(deployment.timeout);deployment.launched=true;deployment=null;
+      phase='playing';lastWorldPacket=performance.now();
+      deliver({type:'combat-live',ticket});
+      log('Matching deployment-ready released combat for ticket '+ticket+'.');refresh();
+    }
     function receive(data){
       if(!data||typeof data!=='object')return;
+      if(data.type==='deployment-ready'){
+        if(!deployment||phase!=='deploying'||!deployment.gate.acknowledge(GUEST,data.ticket)){
+          log('Ignored stale or unexpected deployment-ready ticket.');return;
+        }
+        launchDeployment();return;
+      }
+      if(data.type==='deployment-failed'){
+        if(data.ticket===deployment?.ticket)cancelDeployment('Guest cancelled battlefield preparation.');
+        return;
+      }
       if(data.type==='hello'){
         stopRearWalk();
         if(!validCallsign(data.callsign)){log('Rejected invalid fixture hello callsign.');return;}
@@ -114,7 +145,7 @@
     class LocalConnection extends Emitter{
       constructor(){super();this.peer=HUB_PROTOCOL+ROOM;this.open=false;this.bufferSize=0;}
       send(data){if(this.open)receive(clone(data));}
-      close(){if(!this.open)return;stopRearWalk();this.open=false;phase='disconnected';log('mock connection closed; real app resets its network state.');this.emit('close');refresh();}
+      close(){if(!this.open)return;stopRearWalk();this.open=false;cancelDeployment('Guest disconnected during deployment.',false);phase='disconnected';log('mock connection closed; real app resets its network state.');this.emit('close');refresh();}
     }
     function installPeer(){
       const win=frame.contentWindow;
@@ -145,9 +176,15 @@
       stopRearWalk();
       roster.find(member=>member.id===HOST).ready=true;
       hostWorld=newWorld(campaignMission(campaign),roster);expectedCareer=careerSave();phase='deploying';refresh();
-      deliver({type:'start',world:snapshot(hostWorld)});
-      await waitFor(()=>{const doc=frame.contentDocument;return !doc.getElementById('game').hidden&&doc.getElementById('deploymentScreen').hidden;},'the real mission to finish loading');
-      phase='playing';lastWorldPacket=performance.now();
+      const ticket=crypto.randomUUID(),pending={ticket,gate:createDeploymentGate(ticket,roster.map(member=>member.id)),launched:false};
+      assert(!deploymentTickets.has(ticket),'every deployment uses a distinct ticket.');deploymentTickets.add(ticket);lastDeploymentTicket=ticket;deployment=pending;
+      pending.gate.acknowledge(HOST,ticket);
+      pending.timeout=setTimeout(()=>{if(deployment===pending)cancelDeployment('Deployment timed out.');},30000);
+      log('Preparing ticket '+ticket+'; combat waits for the real guest intro.');refresh();
+      deliver({type:'start',ticket,world:snapshot(hostWorld)});
+      await waitFor(()=>pending.launched||deployment!==pending,'the guest deployment acknowledgement',35000);
+      if(!pending.launched)return;
+      await waitFor(()=>{const doc=frame.contentDocument;return !doc.getElementById('game').hidden&&!doc.getElementById('game').hasAttribute('data-arrival')&&doc.getElementById('sceneFlow').dataset.phase==='idle';},'the real mission to enter combat');
       const player=hostWorld.players.find(player=>player.id===GUEST);
       assert(JSON.stringify(player.progression)===JSON.stringify(guest().progression),'deployment preserves the actual purchased career ranks.');
       assert(JSON.stringify(player.field.modules)===JSON.stringify(profileFor(campaign,guestPilot).modules),'deployment carries the guest run modules.');
