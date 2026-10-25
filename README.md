@@ -22,11 +22,19 @@ Destroy enemies and objectives for shared salvage. Successful extraction grants 
 
 Installed modules carry across missions in the same run. They add no loadout weight and never modify saved workshop builds. Combat-time installation requests are rejected. Defeat or withdrawal ends the run; starting a new run clears its modules and retains best mission/contract times. Returning pilots retain their profile; late joiners receive one catch-up choice per secured mission. All surviving pilots must land at extraction for three seconds after the ship arrives.
 
-The host owns progress, contracts and reward validation. Each pilot chooses upgrades independently. Refit, contract and insertion changes clear squad readiness. Duplicate or stale upgrade requests cannot consume another choice. Campaign saves migrate from the earlier outline. Rooms use the isolated **ironwake-campaign-rounds-v1** protocol; no host migration or mid-mission joining is supported.
+The host owns progress, contracts and reward validation. Each pilot chooses upgrades independently. Refit, contract and insertion changes clear squad readiness. Duplicate or stale upgrade requests cannot consume another choice. Campaign saves migrate from the earlier outline. Rooms use the isolated **ironwake-enemy-behaviors-v1** protocol; no host migration or mid-mission joining is supported.
 
 Run **node scripts/preview-server.mjs 4178**, then open **http://127.0.0.1:4178/ironwake/**. The arena overview is **http://127.0.0.1:4178/tests/mission-gallery.html**. The development-only campaign fixture page can prepare synthetic completed-round saves for refit testing; it is excluded from deployment. These are playable first-pass missions, with encounter balance and full-run pacing still needing human squad playtests.
 
 ## Play
+
+Enemies now use authored windup, attack and recovery phases. Hunters flank and pounce, Wisps orbit and burst, and Scarabs alternate fans and sweeps. Four new specialists add charging Rammers, Needle snipers, Bellows artillery and Mender repair units. Siege frames choose wide volleys, ground stomps and delayed barrages. Leave marked lanes/circles, interrupt with EMP or stagger weapons, and punish the pale recovery rings. Specialists enter progressively across the campaign and classic Cinderfall.
+
+Anime animation adds deeper anticipation, fast pose releases, spring recovery, bouncy light robots, articulated knees and secondary motion. Shared ink outlines, cel bands, speed strokes and eye glints sharpen the look. Shorter attack cycles and two-to-five simultaneous attackers per target keep co-op pressure high as living squad size grows. Wisps keep strafing through their bursts. Reduced effects preserve essential warnings and remove the extra deformation and accents.
+
+Small enemy packs now coordinate short rushes, opposite flanks and suppression. Distinct directional audio warns of each attack family. Two pilots landing 60 direct damage within 0.9 seconds trigger **Cross Break**, with a brief protected stagger and anime impact reaction; cooperative kills get **Team Finish**. The lab includes audio previews, a team combo drill and a four-pilot pressure drill with sparring partners. Combat continues at full speed through all feedback.
+
+See [enemy behavior design, research and tuning](docs/enemy-behaviors.md). Run `node scripts/preview-server.mjs 4181` and open **http://127.0.0.1:4181/tests/enemy-lab.html** to inspect every attack or fight individual/mixed enemies. Co-op rooms use **ironwake-enemy-behaviors-v1** so all pilots share the new warning and artillery state.
 
 - **WASD:** horizontal thrust. **Space:** fly upward; release to descend.
 - **Mouse:** aim continuously, without holding a weapon button. If capture is unavailable, hover over the battlefield and move to its edge to keep turning. **Esc:** release the cursor / pause aim; click the battlefield to resume.
@@ -113,6 +121,23 @@ Configure a branch rule for `main` requiring **Test and build** before merging. 
 
 Production deployment remains manual: after reviewing and merging changes, update your local `main`, run `npm ci`, `npm test`, and `npm run build`, then run `npm run deploy` using your local Wrangler authentication.
 
+## Version and build identity
+
+The bottom-left label stays visible across menus, dialogs, deployment and combat. `package.json` is the version source; this release is **0.1.1**. For example, `v0.1.1 · local.12 · a1b2c3d` identifies local build 12 and its source commit. `+dirty` means the checkout had uncommitted changes when the build was prepared.
+
+`npm run dev`, `npm run build`, `npm run deploy`, and `npm run preview -- 4178` automatically generate `dist/build-info.json`. Starting `node scripts/preview-server.mjs 4178` directly does the same. Each invocation increments this checkout's `.local-build-number`; both generated files are ignored by Git. `npm run build:info` refreshes the identity when using another static server. A raw source checkout served without generation displays **Development build**.
+
+GitHub Actions uses `github.<run number>.<attempt>` instead, such as `github.42.2` for the second attempt of CI run 42. The run number advances automatically, and reruns have distinct attempt numbers. CI records the identity and full source SHA in the job summary and uploads `build-info.json` as an artifact. Local and GitHub counters are separate; version numbers advance deliberately when preparing a release.
+
+To increment the release version and keep the lockfile synchronized, run one of:
+
+```sh
+npm version patch --no-git-tag-version # 0.1.1 -> 0.1.2
+npm version minor --no-git-tag-version # 0.1.1 -> 0.2.0
+npm version major --no-git-tag-version # 0.1.1 -> 1.0.0
+```
+
+Commit `package.json` and `package-lock.json` with the release change. The npm version lifecycle also refreshes the local label. Build/deploy hooks embed the current version automatically; deployment remains the manual command described above.
 ## Experimental destruction branch
 
 Open `http://localhost:4174/ironwake/?lab=destruction` to opt into the destruction
