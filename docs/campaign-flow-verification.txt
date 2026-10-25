@@ -1,0 +1,90 @@
+Actual game iframe; local mock PeerJS host and synthetic outcomes. Desktop checks.
+
+1:37:33 PM  Actual dist/index.html loaded; PeerJS replaced only inside this local iframe.
+1:37:44 PM  hello accepted for PILOT-YG5EQGPZ; real roster progression retained.
+1:37:45 PM  Actual Join squad controls connected the guest to deterministic local transport.
+1:38:54 PM  loadout received; guest readiness cleared; progression {"mech":[],"pilot":["tactics.1","tactics.2","systems.1","systems.2"]}
+1:38:55 PM  loadout received; guest readiness cleared; progression {"mech":["vanguard.frame.1"],"pilot":["tactics.1","tactics.2","systems.1","systems.2"]}
+1:38:55 PM  ready received: true (campaign revision 2).
+1:39:00 PM  loadout received; guest readiness cleared; progression {"mech":["vanguard.frame.1","vanguard.frame.2"],"pilot":["tactics.1","tactics.2","systems.1","systems.2"]}
+1:39:01 PM  ready received: true (campaign revision 2).
+1:39:01 PM  PASS  deployment preserves the actual purchased career ranks.
+1:39:01 PM  PASS  deployment carries the guest run modules.
+1:39:01 PM  Host start message deployed ASHGATE DEPOT through the actual startView path.
+1:39:06 PM  PASS  the real final-snapshot handler saves one deduplicated guest career reward.
+1:39:06 PM  Saved totals: 8 vanguard research, 8 pilot points.
+1:39:06 PM  Synthetic victory settled with the real campaign/armory models. Use Host returns to hub separately.
+1:39:06 PM  PASS  return does not award the same career round twice.
+1:39:06 PM  PASS  the real guest return handler enters Anchorage.
+1:39:06 PM  Guest returned; real Command, Run supplies, Parts foundry and Signal archive controls are available.
+1:39:45 PM  refit installed through real Run supplies UI; squad readiness cleared.
+1:39:46 PM  mock connection closed; real app resets its network state.
+1:39:46 PM  PASS  career purchases and rewards survive an actual game reload.
+1:39:46 PM  Actual dist/index.html loaded; PeerJS replaced only inside this local iframe.
+1:39:46 PM  hello accepted for PILOT-YG5EQGPZ; real roster progression retained.
+1:39:47 PM  Actual Join squad controls connected the guest to deterministic local transport.
+1:39:57 PM  ready received: true (campaign revision 4).
+1:39:57 PM  PASS  deployment preserves the actual purchased career ranks.
+1:39:57 PM  PASS  deployment carries the guest run modules.
+1:39:57 PM  Host start message deployed GLASSWATER SPILLWAY through the actual startView path.
+1:39:57 PM  PASS  the real final-snapshot handler saves one deduplicated guest career reward.
+1:39:57 PM  Saved totals: 9 vanguard research, 9 pilot points.
+1:39:57 PM  Synthetic victory settled with the real campaign/armory models. Use Host returns to hub separately.
+1:39:57 PM  PASS  return does not award the same career round twice.
+1:39:57 PM  PASS  the real guest return handler enters Anchorage.
+1:39:57 PM  Guest returned; real Command, Run supplies, Parts foundry and Signal archive controls are available.
+1:40:19 PM  ready received: true (campaign revision 5).
+1:40:20 PM  PASS  deployment preserves the actual purchased career ranks.
+1:40:20 PM  PASS  deployment carries the guest run modules.
+1:40:20 PM  Host start message deployed RELAY NINE through the actual startView path.
+1:40:20 PM  PASS  defeat gives no career reward.
+1:40:20 PM  Saved totals: 9 vanguard research, 9 pilot points.
+1:40:20 PM  Synthetic defeat settled with the real campaign/armory models. Use Host returns to hub separately.
+1:40:20 PM  PASS  return does not award the same career round twice.
+1:40:20 PM  PASS  the real guest return handler enters Anchorage.
+1:40:20 PM  Guest returned; real Command, Run supplies, Parts foundry and Signal archive controls are available.
+1:40:20 PM  Started a fresh synthetic host campaign; personal career and shared armory remain.
+
+Phone-width checks (390px outer viewport): station purchase passed; no station overflow. Mark ready after defeat: disabled; after a fresh host run: enabled without reloading.
+
+1:42:54 PM  mock connection closed; real app resets its network state.
+1:42:54 PM  PASS  career purchases and rewards survive an actual game reload.
+1:42:54 PM  Actual dist/index.html loaded; PeerJS replaced only inside this local iframe.
+1:42:54 PM  hello accepted for PILOT-YG5EQGPZ; real roster progression retained.
+1:42:55 PM  Actual Join squad controls connected the guest to deterministic local transport.
+1:42:57 PM  ready received: true (campaign revision 2).
+1:42:57 PM  PASS  deployment preserves the actual purchased career ranks.
+1:42:57 PM  PASS  deployment carries the guest run modules.
+1:42:57 PM  Host start message deployed ASHGATE DEPOT through the actual startView path.
+1:42:58 PM  PASS  defeat gives no career reward.
+1:42:58 PM  Saved totals: 9 vanguard research, 9 pilot points.
+1:42:58 PM  Synthetic defeat settled with the real campaign/armory models. Use Host returns to hub separately.
+1:42:58 PM  PASS  return does not award the same career round twice.
+1:42:58 PM  PASS  the real guest return handler enters Anchorage.
+1:42:58 PM  Guest returned; real Command, Run supplies, Parts foundry and Signal archive controls are available.
+1:42:58 PM  Started a fresh synthetic host campaign; personal career and shared armory remain.
+1:42:58 PM  ready received: true (campaign revision 2).
+1:42:59 PM  PASS  deployment preserves the actual purchased career ranks.
+1:42:59 PM  PASS  deployment carries the guest run modules.
+1:42:59 PM  Host start message deployed ASHGATE DEPOT through the actual startView path.
+1:42:59 PM  PASS  the real final-snapshot handler saves one deduplicated guest career reward.
+1:42:59 PM  Saved totals: 10 vanguard research, 10 pilot points.
+1:42:59 PM  Synthetic victory settled with the real campaign/armory models. Use Host returns to hub separately.
+1:42:59 PM  PASS  return does not award the same career round twice.
+1:42:59 PM  PASS  the real guest return handler enters Anchorage.
+1:42:59 PM  Guest returned; real Command, Run supplies, Parts foundry and Signal archive controls are available.
+1:43:26 PM  mock connection closed; real app resets its network state.
+1:43:26 PM  PASS  career purchases and rewards survive an actual game reload.
+1:43:26 PM  Actual dist/index.html loaded; PeerJS replaced only inside this local iframe.
+1:43:26 PM  hello accepted for PILOT-YG5EQGPZ; real roster progression retained.
+1:43:27 PM  Actual Join squad controls connected the guest to deterministic local transport.
+
+PR16 navigation review follow-up / 2026-10-25
+- Reproduced review r4372037349 from the real arrival spawn via (10,19), (10,-22), (0,-22): old route remains blocked behind Command after 50 seconds.
+- Added collision-aware hubRoute and follower regressions using actual stepHub, including all five stations, capped frame steps, repeated visits, guest packet cadence and invalid endpoints.
+- Automated coverage: 325/325 tests passed; production Wrangler deployment dry run passed with current main feedback bindings. Syntax and whitespace checks passed.
+- Independent actual-movement sweep: 4,075 routes from every walkable 2m grid point to all five stations, zero stalls or invalid arrivals.
+- Rendered game / local mock PeerJS transport: guest physically walked behind Command, then real station controls reached Parts foundry and The arsenal. Phone-width guest reached Signal archive and opened pilot training. No teleport was used for the rear-strip setup.
+- Feedback compatibility: desktop F8 captured a nonblank 1280x640 hub preview, cancelled local navigation and isolated movement/E input; closing resumed normal station navigation. Phone-width Report access and automatic capture also passed. No feedback report was submitted.
+- Media: hub-rear-deck-navigation.gif records actual guest movement around Command to the chassis research station; hub-feedback-capture.jpg shows the rendered hub report preview. Captures used working changes before the final review commit.
+- These checks use deterministic local host transport. Live WAN squad play, a manually played full campaign and balance tuning remain outstanding; keep PR16 draft.
