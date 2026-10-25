@@ -14,7 +14,7 @@ document.addEventListener('click',event=>{
  for(const menu of menus){
   if(!menu.open)continue;
   if(!menu.contains(event.target)){closeMenu(menu);continue;}
-  const action=event.target.closest('[data-menu-action],[data-view],[data-feedback],#gameHelp,#exitGame');
+  const action=event.target.closest('[data-menu-action],[data-view],[data-feedback],#gameHelp,#exitGame,#pilotVoiceSettings,#voiceSettings');
   if(action)closeMenu(menu);
  }
  const destination=event.target.closest('[data-menu-action]')?.dataset.menuAction;

@@ -1,6 +1,7 @@
 /* Combat has three primary readings: integrity, equipped hands, and recovery. */
 #game{--hud-ink:#eeeade;--hud-muted:#b1b5a7;--hud-line:#e5dfca40;--hud-surface:#12180fd9;--hud-accent:#d95e3f;--hud-danger:#ff8c73;--hud-cyan:#eeeade;--hud-amber:#d95e3f;--phosphor:var(--hud-ink);--soft:var(--hud-muted);--bright:var(--hud-ink);color:var(--hud-ink);font-family:Arial,Helvetica,sans-serif}
 #game .terminal-panel{color:var(--hud-ink);font-family:inherit;text-shadow:none;border:0;border-radius:0;box-shadow:none;backdrop-filter:none}
+#game{-webkit-tap-highlight-color:#eeeade20}
 #game button:focus-visible,#game summary:focus-visible{outline:2px solid var(--hud-ink);outline-offset:3px}
 #game .combat-sr-only{position:absolute!important;clip:rect(0,0,0,0);clip-path:inset(50%);width:1px!important;height:1px!important;overflow:hidden;white-space:nowrap;padding:0!important;margin:0!important;border:0!important}
 #game .game-top{display:none}

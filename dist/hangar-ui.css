@@ -68,6 +68,13 @@ body[data-screen=home] .home-choice{padding-left:16px;min-height:50px}
 .topbar>.pilot{margin-left:auto}
 dialog h2,.handbook-content h3{font-size:30px;letter-spacing:-.02em}
 .overline,.eyebrow{display:none!important}
+.pilot-voice-options{min-width:0}
+.pilot-voice-options legend{font-size:14px}
+.pilot-voice-options label{border-radius:0;min-width:0}
+.pilot-voice-options label:has(input:checked){border-color:var(--paper);background:#ded9c814}
+.pilot-voice-options label>span{min-width:0}
+.pilot-voice-options small{font-size:14px;line-height:1.45}
+.pilot-voice-options input{width:20px;height:20px;min-height:20px;padding:0;accent-color:var(--paper)}
 .rail-button b{font-size:13px}.rail-button>span svg{width:19px;height:19px}
 .menu-input-hint{font-size:10px;gap:8px}.menu-input-hint kbd{font-size:11px;min-width:21px;padding:4px}
 @media(max-width:700px){body[data-screen=home] .home-menu h1{font-size:48px}.title-insignia{left:0;top:-44px;width:21px;height:28px}.title-lockup{margin-bottom:30px}.home-choice>strong{font-size:19px}.home-selection-note p{font-size:13px}.home-machine-caption{display:none}}

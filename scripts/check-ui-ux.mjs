@@ -12,7 +12,7 @@ const root=fileURLToPath(new URL('../',import.meta.url)),output=resolve(process.
 await mkdir(output,{recursive:true});
 const port=process.env.UI_UX_PORT||'4296',base=process.env.UI_UX_BASE_URL||`http://127.0.0.1:${port}/ironwake/`;
 const staticMode=process.env.UI_UX_STATIC==='1',staticOrigin=new URL(base).origin,publicRoot=await realpath(resolve(root,'dist')),fixtureFile=await realpath(resolve(root,'tests/campaign-fixtures.html'));
-const mime={'.html':'text/html','.js':'text/javascript','.css':'text/css','.svg':'image/svg+xml','.ttf':'font/ttf','.woff':'font/woff','.woff2':'font/woff2','.json':'application/json','.png':'image/png','.jpg':'image/jpeg','.jpeg':'image/jpeg','.webp':'image/webp','.ogg':'audio/ogg','.mp3':'audio/mpeg'};
+const mime={'.html':'text/html','.js':'text/javascript','.css':'text/css','.svg':'image/svg+xml','.ttf':'font/ttf','.woff':'font/woff','.woff2':'font/woff2','.json':'application/json','.png':'image/png','.jpg':'image/jpeg','.jpeg':'image/jpeg','.webp':'image/webp','.ogg':'audio/ogg','.mp3':'audio/mpeg','.wav':'audio/wav'};
 let server,browser;
 const failures=[],checks=[],errors=[],touchPages=new WeakSet(),touchSessions=new WeakMap();
 const viewportCatalog=[{width:1440,height:900},{width:1280,height:720},{width:390,height:844},{width:844,height:390}],requestedViewports=process.env.UI_UX_VIEWPORTS?.split(',').map(s=>s.trim()).filter(Boolean),viewports=requestedViewports?viewportCatalog.filter(v=>requestedViewports.includes(v.width+'x'+v.height)):viewportCatalog;
@@ -66,7 +66,11 @@ async function checkLayout(page,label,selectors=[],squadFixture=false,{viewportB
   if(squadFixture&&squad)squad.innerHTML=Array.from({length:4},(_,i)=>`<div class="squad-channel"><span>0${i+1}</span><b>PILOT ABC${i}${i?'':' / YOU'}</b><small>ONLINE</small></div>`).join('');
   const visible=e=>{if(!e||!e.getClientRects().length||getComputedStyle(e).visibility==='hidden'||Number(getComputedStyle(e).opacity)===0||e.closest('.combat-sr-only,[hidden]'))return false;const closed=e.closest('details:not([open])');if(closed&&e!==closed&&!closed.querySelector(':scope>summary')?.contains(e))return false;const r=e.getBoundingClientRect();return r.width>1&&r.height>1;};
   const elements=selectors.map(selector=>({selector,e:document.querySelector(selector)})).filter(({e})=>visible(e));
-  const rects=elements.map(({selector,e})=>{const r=e.getBoundingClientRect();return{selector,x:r.x,y:r.y,width:r.width,height:r.height,right:r.right,bottom:r.bottom};});
+  const rects=elements.map(({selector,e})=>{
+   const r=e.getBoundingClientRect();let x=r.x,y=r.y,right=r.right,bottom=r.bottom;
+   for(let p=e.parentElement;p;p=p.parentElement){const s=getComputedStyle(p),b=p.getBoundingClientRect();if(/hidden|clip|auto|scroll/.test(s.overflowX)){x=Math.max(x,b.x);right=Math.min(right,b.right);}if(/hidden|clip|auto|scroll/.test(s.overflowY)){y=Math.max(y,b.y);bottom=Math.min(bottom,b.bottom);}}
+   return{selector,x,y,width:Math.max(0,right-x),height:Math.max(0,bottom-y),right,bottom};
+  }).filter(r=>r.width>1&&r.height>1);
   const overlaps=rects.flatMap((a,i)=>rects.slice(i+1).filter(b=>{const ae=elements.find(x=>x.selector===a.selector).e,be=elements.find(x=>x.selector===b.selector).e;return !ae.contains(be)&&!be.contains(ae)&&Math.min(a.right,b.right)-Math.max(a.x,b.x)>2&&Math.min(a.bottom,b.bottom)-Math.max(a.y,b.y)>2;}).map(b=>a.selector+' overlaps '+b.selector));
   const offscreen=viewportBounds?rects.filter(r=>r.x< -1||r.y< -1||r.right>innerWidth+1||r.bottom>innerHeight+1).map(r=>r.selector+' is outside viewport'):[];
   const dialogs=[...document.querySelectorAll('dialog[open]')].map(e=>({id:e.id,client:e.clientWidth,scroll:e.scrollWidth}));
