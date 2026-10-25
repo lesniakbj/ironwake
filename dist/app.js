@@ -1,7 +1,6 @@
 import{ENEMY_ROLES}from './enemy-behaviors.js';
 import {destructionMission,destructionMarkers} from './destruction-mission.js';
 import {createDestructionLab,destructionLabEnabled} from './destruction-lab.js';
-import{playTransitionSound}from './audio.js?v=41';
 import{createSceneFlow}from './scene-flow.js';
 import{createDeploymentGate,MIN_LOADING_SECONDS,deploymentIntro}from './cinematic.js';
 import{campaignRound}from './mission-catalog.js';
@@ -29,7 +28,7 @@ import{drawMap}from'./render.js?v=41';
 import{destructionGraphics,drawHomeBattle3D,rotatePreview,zoomPreview,resetPreviewOrbit,drawPreview3D,drawBattle3D,initBattle,prepareBattle,graphicsError,resetBattle,getAim,projectWorld}from'./three-view.js?v=impact-1';
 import{view,look,resetView,setStrafe,movementInput,mouseButtons}from'./view-controls.js?v=41';
 import{createMouseLook}from'./mouse-look.js';
-import{initAudio,resetSound,updateSound,toggleSound,updateBoostSound,updateChargeSound,updatePreviewSound}from'./audio.js?v=41';
+import{playTransitionSound,initAudio,resetSound,updateSound,toggleSound,updateBoostSound,updateChargeSound,updatePreviewSound}from'./audio.js?v=41';
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)],escape=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const read=(k,f)=>{try{return JSON.parse(localStorage.getItem(k))??f;}catch{return f;}},write=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v));return true;}catch{toast('Storage unavailable. Export your mech to keep a copy.');return false;}};
 const randomSeed=()=>crypto.getRandomValues(new Uint32Array(1))[0];let build=cleanBuild(read('iw-active',chassisBlueprint('vanguard'))),saved=read('iw-builds',[]);if(!Array.isArray(saved))saved=[];saved=saved.slice(0,12).map(cleanBuild);let pilot=read('iw-callsign',null),m=planetMission(randomSeed()),localId='local',peer=null,hostConn=null,isHost=false,room='',roster=[],connections=new Map(),world=null,playing=false,endShown=false,connecting=false,joinTimeout=null,lastSnapshot=0,receivedAt=0,netFrames=0,toastTimeout;
