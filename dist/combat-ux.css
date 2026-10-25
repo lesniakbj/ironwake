@@ -1,468 +1,199 @@
-/* Combat keeps the battlefield central and puts decisions at the edges.
-   Loaded after the legacy instrument styles so every combat surface shares
-   the same type scale, contrast, spacing and state language. */
-#game {
-  --hud-surface: #0d151ef0;
-  --hud-line: #b2c0ca30;
-  --hud-ink: #f2f0e9;
-  --hud-muted: #b2c0ca;
-  --hud-cyan: #91dcd9;
-  --hud-amber: #f0be78;
-  --phosphor: var(--hud-ink);
-  --bright: var(--hud-ink);
-  --soft: var(--hud-muted);
-  --dim-green: var(--hud-muted);
-  color: var(--hud-ink);
-  font-family: var(--ui, "Segoe UI Variable Text", "Segoe UI", sans-serif);
+/* Instrument hierarchy: mission, world, integrity, hands, movement and special. */
+#game{--hud-surface:#10161ddc;--hud-line:#ced8dc38;--hud-ink:#f2ede4;--hud-muted:#b1bec6;--hud-cyan:#a9d6ce;--hud-amber:#ffb35c;--hud-danger:#ff7469;--phosphor:var(--hud-ink);--bright:var(--hud-ink);--soft:var(--hud-muted);--dim-green:var(--hud-muted);color:var(--hud-ink);font-family:var(--ui,"Segoe UI",sans-serif)}
+#game .terminal-panel{color:var(--hud-ink);font-family:inherit;text-shadow:none;border:0;border-radius:0;box-shadow:none;backdrop-filter:none}
+#game button:focus-visible,#game summary:focus-visible{outline:2px solid var(--hud-amber);outline-offset:4px}
+#game kbd{font-family:inherit}
+#game .combat-sr-only{position:absolute!important;clip:rect(0,0,0,0);clip-path:inset(50%);width:1px!important;height:1px!important;overflow:hidden;white-space:nowrap;padding:0!important;border:0!important}
+#game .game-top{display:none}
+#game #objectivesPanel{position:absolute;z-index:12;left:max(28px,env(safe-area-inset-left));top:max(26px,env(safe-area-inset-top));right:auto;bottom:auto;width:360px;padding:0;background:linear-gradient(105deg,#121b24f5,#121b24c7);border-left:3px solid var(--hud-amber);pointer-events:auto}
+#game #objectivesPanel>summary{display:flex;align-items:center;gap:15px;min-height:88px;padding:15px 16px;cursor:pointer;list-style:none}
+#game #objectivesPanel>summary::-webkit-details-marker{display:none}
+#game .objective-marker{display:grid;place-items:center;flex:none;width:30px;height:30px;color:var(--hud-amber);font-size:35px;line-height:1}
+#game .objective-summary{display:grid;gap:7px;min-width:0;flex:1}
+#game .objective-eyebrow{display:flex;gap:10px;align-items:center;font:700 10px/1.2 var(--ui,"Segoe UI",sans-serif);letter-spacing:.12em;color:var(--hud-amber)}
+#game #objectiveMode{color:var(--hud-muted);font-size:10px;font-weight:500;letter-spacing:.02em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:130px}
+#game #personalObjective{color:var(--hud-ink);font:700 21px/1.1 var(--display,"Bahnschrift",sans-serif);letter-spacing:0}
+#game .objective-expand{display:grid;place-items:center;width:28px;height:28px;flex:none;border:1px solid var(--hud-line);color:var(--hud-muted);font:22px/1 sans-serif;transition:transform .18s,background .18s}
+#game #objectivesPanel[open] .objective-expand{transform:rotate(180deg);background:#ffffff13}
+#game #objectivesPanel>summary:hover .objective-expand{color:var(--hud-amber);border-color:var(--hud-amber)}
+#game .objective-details{padding:0 20px 19px 61px}
+#game .objective-details p{font:14px/1.5 var(--ui,"Segoe UI",sans-serif);color:var(--hud-muted);margin:0}
+#game .objective-section{display:grid;gap:7px;padding-top:14px;margin-top:14px;border-top:1px solid var(--hud-line)}
+#game .objective-section h3{color:var(--hud-cyan);font:700 10px/1.2 var(--ui,"Segoe UI",sans-serif);letter-spacing:.1em;margin:0}
+#game .objective-section strong{font:650 16px/1.25 var(--ui,"Segoe UI",sans-serif);color:var(--hud-ink)}
+#game .objective-progress{height:4px;background:#ffffff1a;margin-top:3px}
+#game .objective-progress i{background:var(--hud-cyan)}
+#game #objectivesPanel.objectives-duplicate .team-objective>h3,#game #objectivesPanel.objectives-duplicate #teamObjective,#game.sandbox .team-objective{display:none}
+#game #combatMenu{position:absolute;z-index:30;top:max(26px,env(safe-area-inset-top));right:max(28px,env(safe-area-inset-right));pointer-events:auto}
+#combatMenu>summary{display:flex;align-items:center;justify-content:center;gap:10px;min-height:44px;padding:9px 14px;border:1px solid var(--hud-line);border-radius:0;color:var(--hud-ink);background:var(--hud-surface);font:600 13px/1.2 var(--ui,"Segoe UI",sans-serif);list-style:none;cursor:pointer}
+#combatMenu>summary::-webkit-details-marker{display:none}#combatMenu>summary::before{content:none}
+#combatMenu>summary svg{width:18px;height:18px;stroke:currentColor;stroke-width:1.7;fill:none}
+#combatMenu[open]>summary{border-color:var(--hud-amber);color:var(--hud-amber)}
+#combatMenu .interface-menu-panel{position:absolute;top:calc(100% + 8px);right:0;display:grid;gap:5px;width:270px;padding:9px;border:1px solid var(--hud-line);border-radius:0;background:#141c24fa;box-shadow:0 15px 50px #0008;max-height:calc(100svh - 90px);overflow-y:auto}
+#combatMenu .interface-menu-panel button,#combatMenu .interface-menu-panel #gameHelp,#combatMenu .interface-menu-panel #soundToggle,#combatMenu .interface-menu-panel #exitGame{position:static;display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:46px;width:100%;padding:11px 13px;margin:0;border:1px solid transparent;border-radius:0;background:#ffffff07;color:var(--hud-ink);font:500 14px/1.3 var(--ui,"Segoe UI",sans-serif);transform:none;text-align:left}
+#combatMenu .interface-menu-panel button:hover{border-color:var(--hud-line);background:#ffffff13}
+#combatMenu .interface-menu-panel #exitGame{color:var(--hud-amber);border-top-color:var(--hud-line);margin-top:6px}
+#combatMenu kbd{color:var(--hud-muted);padding:3px 5px;font:11px var(--ui,"Segoe UI",sans-serif);border-color:var(--hud-line)}
+#combatMenu #audioControls{position:static;display:grid;gap:10px;width:100%;padding:10px 12px;border:0;background:none;font:13px var(--ui,"Segoe UI",sans-serif)}
+#combatMenu #audioControls label{display:grid;gap:6px;font-size:13px;color:var(--hud-muted)}#combatMenu #audioControls input{width:100%;accent-color:var(--hud-cyan)}
+#game #vicinityPanel{position:absolute;z-index:7;left:auto;right:28px;top:88px;bottom:auto;width:160px;padding:0;background:none}
+#game #vicinityPanel h2{display:flex;align-items:center;justify-content:space-between;font:700 10px/1.2 var(--ui,"Segoe UI",sans-serif);letter-spacing:.12em;color:var(--hud-muted);padding:0 0 9px;margin:0;border:0;text-shadow:0 2px 4px #000}
+#game #vicinityPanel h2 span{font:500 10px/1.2 var(--ui,"Segoe UI",sans-serif);color:inherit;letter-spacing:0}
+#game .radar-bezel{position:relative;aspect-ratio:1;border:1px solid #a9d6ce60;clip-path:polygon(16px 0,100% 0,100% calc(100% - 16px),calc(100% - 16px) 100%,0 100%,0 16px);background:#10161dbb;padding:6px}
+#game .radar-north{position:absolute;z-index:2;top:6px;left:50%;transform:translateX(-50%);font:700 9px var(--ui,"Segoe UI",sans-serif);color:var(--hud-cyan)}
+#game #vicinityPanel #radar{display:block;width:100%;height:100%;max-width:none;aspect-ratio:1;border:0;border-radius:0;margin:0;opacity:.94;clip-path:polygon(12px 0,100% 0,100% calc(100% - 12px),calc(100% - 12px) 100%,0 100%,0 12px)}
+#game .radar-key{display:none}
+#game #mapToggle{position:static;display:flex;justify-content:space-between;align-items:center;gap:6px;min-height:36px;width:100%;padding:7px 0;margin:0;border:0;border-bottom:1px solid var(--hud-line);background:transparent;color:var(--hud-ink);font:600 12px/1.2 var(--ui,"Segoe UI",sans-serif);text-shadow:0 2px 4px #000}
+#game #mapToggle kbd{font-size:9px;padding:2px 3px;border-color:var(--hud-line);color:var(--hud-muted)}#game #mapToggle>span{color:var(--hud-cyan);font-size:17px}
+#game #levelMapPanel{width:min(850px,calc(100vw - 40px));padding:20px;background:#111a23f5;border:1px solid var(--hud-line);border-top:3px solid var(--hud-cyan);border-radius:0;color:var(--hud-ink)}
+#game #levelMapPanel p{font:14px/1.5 var(--ui,"Segoe UI",sans-serif);color:var(--hud-muted);margin-bottom:0}
+#game #loadoutPanel{position:absolute;z-index:10;left:28px;right:28px;bottom:max(24px,env(safe-area-inset-bottom));display:grid;grid-template-columns:minmax(200px,1fr) auto minmax(250px,1fr);gap:32px;align-items:end;width:auto;padding:0;border:0;border-radius:0;background:none;box-shadow:none;pointer-events:none;font-family:var(--ui,"Segoe UI",sans-serif)}
+#game #loadoutPanel::before,#game #loadoutPanel::after{content:none}
+#game .hull-wing{width:min(100%,300px);padding:0 18px 14px 0;background:linear-gradient(90deg,#10161de8,#10161d80 80%,transparent);color:var(--hud-ink)}
+#game .hull-identity{display:flex;align-items:center;gap:12px;margin-bottom:15px}
+#game .hull-emblem{display:block;width:31px;height:36px;color:var(--hud-cyan);flex:none}#game .hull-emblem svg{width:100%;height:100%;fill:currentColor}
+#game .hull-identity>div{display:grid;gap:5px;min-width:0}#game .hull-identity small{color:var(--hud-muted);font:700 9px/1 var(--ui,"Segoe UI",sans-serif);letter-spacing:.14em}
+#game #hudName{font:700 16px/1.2 var(--display,"Bahnschrift",sans-serif);color:var(--hud-ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#game #hullHealth{margin:0;color:var(--hud-ink)}
+#game .hull-heading{display:flex;justify-content:space-between;align-items:end;gap:10px;margin-bottom:9px;color:inherit;font:700 10px/1 var(--ui,"Segoe UI",sans-serif);letter-spacing:.12em}
+#game .hull-heading strong{color:inherit;font:700 30px/.95 var(--display,"Bahnschrift",sans-serif);letter-spacing:-.025em;font-variant-numeric:tabular-nums;white-space:nowrap}
+#game #hullMeter{position:relative;height:10px;padding:0;background:#ffffff26;border:0;border-radius:0;overflow:hidden;clip-path:polygon(0 0,100% 0,calc(100% - 7px) 100%,0 100%)}
+#game #hullMeter::after{content:"";position:absolute;inset:0;background:repeating-linear-gradient(90deg,transparent 0,transparent calc(10% - 3px),#10161d calc(10% - 3px),#10161d 10%);pointer-events:none}
+#game #hullFill{height:100%;display:block;background:var(--hud-cyan);border-radius:0;transition:width .15s linear}
+#game #hullHealth[data-state=damaged] #hullFill{background:var(--hud-amber)}
+#game #hullHealth[data-state=critical],#game #hullHealth[data-state=offline]{color:var(--hud-danger);animation:none}
+#game #hullHealth[data-state=critical] #hullFill,#game #hullHealth[data-state=offline] #hullFill{background:var(--hud-danger)}
+#game #loadoutPanel .combat-slots{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;width:380px;margin:0}
+#game #loadoutPanel .combat-slots button{position:relative;display:grid;grid-template-columns:1fr 52px;grid-template-rows:22px auto 18px;align-content:center;align-items:center;gap:7px 6px;min-width:0;min-height:122px;padding:14px 16px 15px;text-align:left;border:0;border-top:2px solid #ffb35c90;border-radius:0;background:linear-gradient(135deg,#28313bf5,#141c24f2);box-shadow:inset 0 -4px 0 #0005;color:var(--hud-ink);clip-path:polygon(0 0,calc(100% - 13px) 0,100% 13px,100% 100%,13px 100%,0 calc(100% - 13px));pointer-events:auto;touch-action:none;transition:background .12s,transform .12s,border-color .12s}
+#game #loadoutPanel .combat-slots button::after{content:"";position:absolute;top:0;right:0;width:20px;height:20px;background:var(--hud-amber);clip-path:polygon(0 0,100% 0,100% 100%);opacity:.7}
+#game #loadoutPanel .combat-slots .hand-binding{grid-column:1/-1;grid-row:1;display:flex;align-items:center;justify-content:space-between;gap:8px;margin:0;color:var(--hud-muted);font:700 9px/1.1 var(--ui,"Segoe UI",sans-serif);letter-spacing:.1em}
+#game #loadoutPanel .combat-slots .hand-binding>span{font:inherit;letter-spacing:inherit;color:inherit}
+#game #loadoutPanel .combat-slots kbd{color:var(--hud-ink);border:1px solid var(--hud-line);border-bottom-width:2px;padding:3px 5px;border-radius:2px;font:700 10px/1 var(--ui,"Segoe UI",sans-serif);letter-spacing:.03em}
+#game #loadoutPanel .combat-slots .hand-name{grid-column:1;grid-row:2;display:block;color:inherit;font:700 22px/.98 var(--display,"Bahnschrift",sans-serif);letter-spacing:0;overflow-wrap:normal;white-space:normal;margin:0}
+#game #loadoutPanel .combat-slots button>b{grid-column:1;grid-row:3;display:flex;align-items:center;gap:6px;font:700 9px/1.1 var(--ui,"Segoe UI",sans-serif);letter-spacing:.06em;color:var(--hud-amber);opacity:1;white-space:nowrap}
+#game #loadoutPanel .combat-slots button>b::before{content:"";width:4px;height:4px;background:currentColor;flex:none}
+#game #loadoutPanel .combat-slots .hand-icon{grid-column:2;grid-row:2/4;display:block;width:52px;height:52px;margin:0;color:var(--hud-cyan);font-size:0;transform:rotate(-12deg);opacity:.86}
+#game .hand-icon svg{display:block;width:100%;height:100%;fill:none;stroke:currentColor;stroke-width:2;stroke-linejoin:round;stroke-linecap:round}
+#game .hand-activity{position:absolute;bottom:0;left:0;width:100%;height:3px;background:var(--hud-amber);transform:scaleX(.14);transform-origin:left;transition:transform .14s}
+#game #loadoutPanel .combat-slots button:hover{background:linear-gradient(135deg,#384452f8,#202a35fa);border-top-color:var(--hud-amber);transform:translateY(-3px)}
+#game #loadoutPanel .combat-slots button.active{background:linear-gradient(135deg,#355a59f8,#19363af7);border-top-color:var(--hud-cyan);color:var(--hud-ink);transform:translateY(2px);box-shadow:inset 0 3px 0 #0006}
+#game #loadoutPanel .combat-slots button.active::after{background:var(--hud-cyan)}#game #loadoutPanel .combat-slots button.active>b{color:var(--hud-cyan)}
+#game #loadoutPanel .combat-slots button.active .hand-activity{transform:scaleX(1);background:var(--hud-cyan)}
+#game #loadoutPanel .combat-slots button[data-state=charging]:not(.active){border-top-color:#86959d70}#game #loadoutPanel .combat-slots button[data-state=charging]:not(.active)>b{color:var(--hud-muted)}
+#game .mobility-wing{justify-self:end;display:flex;align-items:end;gap:22px;pointer-events:auto}
+#game #loadoutPanel .tactical-moves{display:grid;gap:7px;width:126px;margin:0;padding-bottom:4px}
+#game #loadoutPanel .tactical-moves button{position:relative;display:grid;grid-template-columns:40px 1fr;grid-template-rows:16px 14px;align-items:center;gap:1px 8px;min-height:51px;padding:8px 8px 8px 11px;border:0;border-left:2px solid #a9d6ce7a;border-radius:0;background:linear-gradient(90deg,#18252de8,#111a22b8);font:500 12px/1 var(--ui,"Segoe UI",sans-serif);color:var(--hud-ink);opacity:1;pointer-events:auto;touch-action:none;overflow:hidden;transition:background .12s,transform .12s}
+#game #loadoutPanel .tactical-moves button kbd{grid-column:1;grid-row:1;padding:0;border:0;font:700 9px/1 var(--ui,"Segoe UI",sans-serif);color:var(--hud-muted)}
+#game #loadoutPanel .tactical-moves button svg{grid-column:1;grid-row:2;width:30px;height:19px;stroke:var(--hud-cyan);stroke-width:1.8;fill:none}
+#game #loadoutPanel .tactical-moves button>span{grid-column:2;grid-row:1;font:700 13px/1 var(--ui,"Segoe UI",sans-serif);color:var(--hud-ink);text-align:left;letter-spacing:0}
+#game #loadoutPanel .tactical-moves button>b{grid-column:2;grid-row:2;font:600 9px/1 var(--ui,"Segoe UI",sans-serif);text-align:left;color:var(--hud-cyan)}
+#game #loadoutPanel .tactical-moves button>i{position:absolute;left:0;bottom:0;height:2px;background:var(--hud-cyan)}
+#game #loadoutPanel .tactical-moves button:disabled{opacity:.72}#game #loadoutPanel .tactical-moves button:disabled>b{color:var(--hud-muted)}
+#game #loadoutPanel .tactical-moves button.active,#game #loadoutPanel .tactical-moves button.engaged{background:#27504ff2;border-color:var(--hud-cyan);transform:translateY(1px)}
+#game #loadoutPanel .tactical-moves button:hover:not(:disabled){background:#293c45ef}
+#game #loadoutPanel .ability-panel{display:flex;flex-direction:column;align-items:center;gap:7px;width:116px;margin:0;pointer-events:auto}
+#game #loadoutPanel .ability-panel #abilityButton{position:relative;isolation:isolate;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:5px;width:100px;height:100px;min-height:100px;padding:0;border:0;border-radius:50%;color:var(--hud-amber);background:conic-gradient(from -90deg,var(--hud-amber) var(--charge,100%),#ffffff26 0);box-shadow:0 0 0 4px #10161dcc;transition:transform .15s,filter .15s;cursor:pointer}
+#game #loadoutPanel #abilityButton::before{content:"";position:absolute;z-index:-1;inset:5px;border-radius:50%;border:1px solid #ffb35c4d;background:radial-gradient(circle at 40% 30%,#35352d,#131b23 75%)}
+#game #loadoutPanel #abilityButton>kbd{display:block;padding:0;border:0;color:inherit;font:750 39px/.9 var(--display,"Bahnschrift",sans-serif);grid-column:auto;grid-row:auto}
+#game #loadoutPanel #abilityCd{color:inherit;font:750 10px/1 var(--ui,"Segoe UI",sans-serif);letter-spacing:.08em;grid-column:auto;grid-row:auto;text-align:center}
+#game #loadoutPanel #abilityButton[data-state=ready]{color:var(--hud-amber);background:conic-gradient(from -90deg,var(--hud-amber) var(--charge,100%),#ffffff26 0);box-shadow:0 0 0 4px #10161dcc,0 0 25px #ffb35c21;animation:special-ready 3s ease-in-out infinite}
+#game #loadoutPanel #abilityButton[data-state=ready]:hover{filter:brightness(1.2);transform:scale(1.05)}
+#game #loadoutPanel #abilityButton[data-state=charging]{color:#c2cbd0;background:conic-gradient(from -90deg,var(--hud-amber) var(--charge,100%),#ffffff26 0)}
+#game #loadoutPanel #abilityButton[data-state=charging]>kbd{color:var(--hud-muted);font-size:32px}
+#game #loadoutPanel #abilityButton.engaged{color:var(--hud-cyan);background:conic-gradient(from -90deg,var(--hud-cyan) var(--charge,100%),#ffffff26 0);box-shadow:0 0 0 4px #10161dcc,0 0 24px #a9d6ce24}
+#game #loadoutPanel #abilityButton.engaged::before{background:#19363b;border-color:#a9d6ce70}
+#game #loadoutPanel #abilityButton[data-state=offline],#game #loadoutPanel #abilityButton[data-state=unavailable]{color:var(--hud-muted);background:#75818b50;box-shadow:0 0 0 4px #10161dcc}
+#game #loadoutPanel .ultimate-heading{display:grid;gap:5px;width:130px;text-align:center;font-family:var(--ui,"Segoe UI",sans-serif);text-shadow:0 2px 5px #000}
+#game .ultimate-heading small{font:700 8px/1 var(--ui,"Segoe UI",sans-serif);letter-spacing:.12em;color:var(--hud-muted)}
+#game #loadoutPanel #abilityLabel{display:block;margin:0;color:var(--hud-ink);font:700 12px/1.1 var(--display,"Bahnschrift",sans-serif);letter-spacing:.025em;text-align:center}
+@keyframes special-ready{50%{box-shadow:0 0 0 4px #10161dcc,0 0 26px #ffb35c42}}
+#game #squadPanel{position:absolute;top:240px;left:28px;right:auto;bottom:auto;width:220px;padding:0;background:none}
+#game #squadPanel:has(#squadHud>:only-child),#game #squadPanel:has(#squadHud:empty){display:none}
+#game #squadPanel h2{display:flex;justify-content:space-between;align-items:center;gap:10px;margin:0 0 12px;padding:0;border:0;color:var(--hud-muted);font:700 10px/1 var(--ui,"Segoe UI",sans-serif);letter-spacing:.1em;text-shadow:0 1px 5px #000}
+#game #squadPanel h2 span{font:inherit;color:inherit;letter-spacing:0}
+#game #squadHud{position:static;display:grid;gap:9px;margin:0;width:auto;font-family:var(--ui,"Segoe UI",sans-serif)}
+#game .squad-channel{display:grid;grid-template-columns:20px 1fr;gap:4px 9px;padding:9px 11px;background:linear-gradient(90deg,#101a22d9,transparent);border:0;border-left:2px solid var(--hud-cyan);font-family:var(--ui,"Segoe UI",sans-serif)}
+#game .squad-channel>span{grid-column:1;grid-row:1/3;color:var(--hud-cyan);font:700 11px/1.3 var(--ui,"Segoe UI",sans-serif);align-self:center}
+#game .squad-channel>b{color:var(--hud-ink);font:650 12px/1.2 var(--ui,"Segoe UI",sans-serif)}
+#game .squad-channel>small{display:block;grid-column:2;color:var(--hud-cyan);font:500 10px/1.2 var(--ui,"Segoe UI",sans-serif)}
+#game .squad-channel.downed{border-left-color:var(--hud-danger)}#game .squad-channel.downed>small{color:var(--hud-danger)}
+#game #sortieHud{position:absolute;left:28px;top:132px;right:auto;bottom:auto;width:250px;padding:10px 12px;border:0;border-left:2px solid #a9d6ce70;border-radius:0;background:linear-gradient(90deg,#101a22d9,transparent);color:var(--hud-ink);font:13px/1.4 var(--ui,"Segoe UI",sans-serif)}
+#game #sortieHud .field-heading{display:flex;justify-content:space-between;gap:10px;color:var(--hud-muted);font-size:9px;letter-spacing:.05em}
+#game #sortieHud .field-heading b{font-size:9px;white-space:nowrap;font-weight:600}
+#game #sortieHud p{font:700 15px/1.2 var(--display,"Bahnschrift",sans-serif);color:var(--hud-cyan);margin:7px 0 0}
+#game #sortieHud small,#game #sortieHud .field-fitted{display:none}
+#game #fieldOffers{top:50%;bottom:auto;left:50%;transform:translate(-50%,-50%);width:min(760px,calc(100% - 48px));max-height:calc(100svh - 48px);overflow-y:auto;padding:24px;background:#121b24fc;border:1px solid var(--hud-line);border-top:3px solid var(--hud-amber);border-radius:0;color:var(--hud-ink);box-shadow:0 16px 80px #0009}
+#game .field-offer-heading{font:700 18px/1.3 var(--ui,"Segoe UI",sans-serif)}#game .field-offer-heading span{font:400 14px/1.5 var(--ui,"Segoe UI",sans-serif);color:var(--hud-muted)}
+#game .field-offer-heading button{min-height:44px;padding:10px;color:var(--hud-muted);font:600 14px/1.3 var(--ui,"Segoe UI",sans-serif)}#game .field-cards{gap:12px}
+#game .field-cards>button{gap:12px;padding:18px;border:1px solid var(--hud-line);border-radius:0;background:#ffffff07;color:var(--hud-ink)}#game .field-cards>button:hover{background:#ffb35c14;border-color:var(--hud-amber)}
+#game .field-cards small{color:var(--hud-cyan);font:700 11px/1.4 var(--ui,"Segoe UI",sans-serif)}#game .field-cards strong{color:var(--hud-ink);font:700 25px/1 var(--display,"Bahnschrift",sans-serif)}#game .field-cards span{font:400 14px/1.5 var(--ui,"Segoe UI",sans-serif)}#game .field-cards b{color:var(--hud-amber);font:600 12px/1.4 var(--ui,"Segoe UI",sans-serif)}
+#game #taskBanner,#game #taskBanner.warning,#game #taskBanner.heavy-arrival{top:28px;left:50%;right:auto;bottom:auto;transform:translateX(-50%);width:min(470px,calc(100vw - 850px));padding:0;border:0;background:none;box-shadow:none;backdrop-filter:none;text-align:center;color:var(--hud-ink)}
+#game #taskBanner .task-tag{display:none}#game #taskBanner #levelLabel{display:block;color:var(--hud-amber);font:750 26px/1 var(--display,"Bahnschrift",sans-serif);letter-spacing:.015em;text-shadow:0 2px 8px #000}
+#game #taskBanner.warning #levelLabel,#game #taskBanner.heavy-arrival #levelLabel{color:var(--hud-danger)}
+#game #taskBanner #objectiveText{display:block;margin-top:8px;color:var(--hud-ink);font:500 13px/1.4 var(--ui,"Segoe UI",sans-serif);text-shadow:0 2px 8px #000}
+#game #taskBanner .progress-track{display:none}
+#game #viewHint{bottom:170px;left:50%;width:max-content;max-width:480px;padding:8px 14px;border:0;border-radius:0;background:#10161db8;color:var(--hud-muted);white-space:normal;text-align:center;font:500 12px/1.4 var(--ui,"Segoe UI",sans-serif);transform:translateX(-50%)}
+#game #crosshair i,#game #crosshair b{background:var(--hud-ink)}#game #motionReticle{color:var(--hud-amber)}#game .motion-fill{stroke:var(--hud-amber)}#game #motionReticle[data-ready=true]{color:var(--hud-cyan)}#game #motionReticle[data-ready=true] .motion-fill{stroke:var(--hud-cyan)}
+#game .world-label{border:0;border-left:2px solid var(--hud-cyan);border-radius:0;background:#10161dbb;color:var(--hud-ink);font:600 13px/1.3 var(--ui,"Segoe UI",sans-serif);text-shadow:0 1px 4px #000}#game .world-label.damage-number{font:750 28px/1 var(--display,"Bahnschrift",sans-serif);border:0;background:none}
+body:has(#game:not([hidden])) #toast{top:124px;bottom:auto;left:50%;right:auto;transform:translateX(-50%);width:max-content;max-width:min(440px,calc(100vw - 760px));padding:11px 16px;border:0;border-left:3px solid #a9d6ce;border-radius:0;background:#101a22ee;color:#f2ede4;text-align:left;font:500 13px/1.4 var(--ui,"Segoe UI",sans-serif);box-shadow:0 6px 24px #0004}
+body:has(#game:not([hidden])) #toast.show{pointer-events:auto}#game #touchFire,#game #touchMelee{display:none!important}
+@media(pointer:coarse){#game #joystick{left:30px;bottom:170px;width:112px;height:112px;border:1px solid #a9d6ce75;background:#10161d66;box-shadow:inset 0 0 0 10px #10161d33,0 0 0 6px #10161d26}#game #joystick::before,#game #joystick::after{content:"";position:absolute;background:#a9d6ce33;pointer-events:none}#game #joystick::before{top:50%;left:12px;right:12px;height:1px}#game #joystick::after{left:50%;top:12px;bottom:12px;width:1px}#game #joystick i{width:42px;height:42px;top:34px;left:34px;background:#a9d6ce9c;border:1px solid #d2f2ed99}}
+@media(max-width:1150px),(max-height:650px) and (orientation:landscape){
+ #game #loadoutPanel{left:18px;right:18px;bottom:16px;grid-template-columns:minmax(150px,1fr) auto minmax(200px,1fr);gap:20px}
+ #game .hull-wing{width:min(100%,240px);padding:0 10px 12px 0}#game .hull-identity{gap:9px;margin-bottom:11px}#game .hull-emblem{width:25px;height:30px}#game #hudName{font-size:14px}#game .hull-heading strong{font-size:25px}
+ #game #loadoutPanel .combat-slots{width:320px;gap:8px}#game #loadoutPanel .combat-slots button{min-height:106px;grid-template-columns:1fr 42px;gap:6px 4px;padding:10px 12px}#game #loadoutPanel .combat-slots .hand-icon{width:42px;height:42px}#game #loadoutPanel .combat-slots .hand-name{font-size:20px}
+ #game .mobility-wing{gap:14px}#game #loadoutPanel .tactical-moves{width:106px;gap:5px}#game #loadoutPanel .tactical-moves button{grid-template-columns:34px 1fr;min-height:47px;padding:7px 5px 7px 8px;gap:1px 4px}
+ #game #loadoutPanel .ability-panel{width:90px;gap:6px}#game #loadoutPanel .ability-panel #abilityButton{width:82px;height:82px;min-height:82px}#game #loadoutPanel #abilityButton>kbd{font-size:31px}#game #loadoutPanel #abilityCd{font-size:9px}#game #loadoutPanel .ultimate-heading{width:108px}#game #loadoutPanel #abilityLabel{font-size:11px}#game .ultimate-heading small{font-size:7px}
+ #game #objectivesPanel{left:18px;top:18px;width:320px}#game #objectivesPanel>summary{padding:12px 14px;min-height:78px;gap:12px}#game #personalObjective{font-size:19px}
+ #game #combatMenu{top:18px;right:18px}#game #vicinityPanel{right:18px;top:78px;width:132px}#game #vicinityPanel h2{font-size:9px}#game #sortieHud{left:18px;top:114px;width:228px}#game #squadPanel{left:18px;top:212px;width:210px}
+ #game #taskBanner,#game #taskBanner.warning,#game #taskBanner.heavy-arrival{left:358px;right:174px;top:22px;transform:none;width:auto}#game #taskBanner #levelLabel{font-size:23px}#game #taskBanner #objectiveText{font-size:12px}#game #viewHint{bottom:145px;max-width:380px;font-size:11px}
+ body:has(#game:not([hidden])) #toast{top:110px;left:358px;right:174px;transform:none;width:auto;max-width:440px;font-size:12px}
 }
-
-#game .terminal-panel,
-#game #sortieHud {
-  color: var(--hud-ink);
-  background: var(--hud-surface);
-  border: 1px solid var(--hud-line);
-  border-radius: 12px;
-  box-shadow: 0 8px 24px #0002;
-  backdrop-filter: blur(12px);
-  font-family: var(--ui, "Segoe UI Variable Text", "Segoe UI", sans-serif);
-  text-shadow: none;
+@media(max-height:550px) and (orientation:landscape){
+ #game #loadoutPanel{left:14px;right:14px;bottom:10px;grid-template-columns:minmax(120px,1fr) auto minmax(170px,1fr);gap:16px}
+ #game .hull-wing{width:min(100%,205px);padding-bottom:8px}#game .hull-identity{margin-bottom:8px}#game .hull-emblem{width:20px;height:25px}#game .hull-identity small{font-size:8px}#game #hudName{font-size:12px}#game .hull-heading{font-size:8px;margin-bottom:6px}#game .hull-heading strong{font-size:22px}#game #hullMeter{height:7px}
+ #game #loadoutPanel .combat-slots{width:274px;gap:8px}#game #loadoutPanel .combat-slots button{min-height:86px;grid-template-columns:1fr 36px;grid-template-rows:15px auto 13px;gap:4px;padding:9px 10px 11px}#game #loadoutPanel .combat-slots .hand-name{font-size:18px}#game #loadoutPanel .combat-slots .hand-icon{width:36px;height:36px}#game #loadoutPanel .combat-slots .hand-binding{font-size:7px;letter-spacing:.06em}#game #loadoutPanel .combat-slots kbd{font-size:8px;padding:2px 3px}#game #loadoutPanel .combat-slots button>b{font-size:8px}
+ #game .mobility-wing{gap:12px}#game #loadoutPanel .tactical-moves{width:96px;gap:5px;padding-bottom:0}#game #loadoutPanel .tactical-moves button{min-height:39px;grid-template-rows:13px 11px;padding:6px 5px 6px 8px}#game #loadoutPanel .tactical-moves button>span{font-size:11px}#game #loadoutPanel .tactical-moves button>b,#game #loadoutPanel .tactical-moves button kbd{font-size:8px}
+ #game #loadoutPanel .ability-panel{width:74px;gap:5px}#game #loadoutPanel .ability-panel #abilityButton{width:66px;height:66px;min-height:66px;gap:3px}#game #loadoutPanel #abilityButton>kbd{font-size:27px}#game #loadoutPanel #abilityCd{font-size:8px;letter-spacing:0}#game #loadoutPanel .ultimate-heading{width:92px;gap:3px}#game .ultimate-heading small{display:none}#game #loadoutPanel #abilityLabel{font-size:10px}
+ #game #objectivesPanel{left:14px;top:12px;width:286px}#game #objectivesPanel>summary{min-height:65px;padding:10px 12px;gap:10px}#game .objective-marker{width:23px;height:23px;font-size:28px}#game .objective-eyebrow{font-size:8px;gap:8px}#game #objectiveMode{font-size:8px;max-width:112px}#game #personalObjective{font-size:18px}#game .objective-expand{width:24px;height:24px;font-size:18px}#game .objective-details{padding:0 14px 14px 46px}#game .objective-details p{font-size:12px}
+ #game #combatMenu{top:12px;right:14px}#combatMenu>summary{min-height:40px;padding:8px 11px}#game #vicinityPanel{right:14px;top:66px;width:102px}#game #vicinityPanel h2{display:none}#game #mapToggle{min-height:30px;font-size:10px}#game #mapToggle kbd{display:none}
+ #game #sortieHud{left:14px;top:92px;width:210px;padding:8px 10px}#game #sortieHud .field-heading,#game #sortieHud .field-heading b{font-size:8px}#game #sortieHud p{font-size:13px}
+ #game #squadPanel{left:14px;top:174px;width:186px;max-height:96px;overflow-y:auto}#game #squadPanel h2{display:none}#game #squadHud{gap:5px}#game .squad-channel{padding:6px 8px}#game .squad-channel>b{font-size:10px}#game .squad-channel>small{display:none}#game .squad-channel.downed>small{display:block;font-size:9px}
+ #game #taskBanner,#game #taskBanner.warning,#game #taskBanner.heavy-arrival{top:16px;left:320px;right:134px}#game #taskBanner #levelLabel{font-size:21px}#game #taskBanner #objectiveText{font-size:11px;margin-top:5px}#game #viewHint{bottom:111px;font-size:10px;max-width:320px;padding:6px 10px}
+ #game #joystick{left:230px;bottom:120px;width:88px;height:88px}#game #joystick i{left:22px;top:22px}
+ body:has(#game:not([hidden])) #toast{top:84px;left:320px;right:134px;padding:8px 10px;font-size:11px}
 }
-
-#game .terminal-panel h2 {
-  padding: 0 0 10px;
-  margin: 0;
-  border-color: var(--hud-line);
-  color: var(--hud-muted);
-  font: 600 13px/1.3 var(--ui, "Segoe UI", sans-serif);
-  letter-spacing: .055em;
+@media(max-width:760px) and (orientation:portrait){
+ #game #objectivesPanel{top:16px;left:14px;right:126px;bottom:auto;width:auto}#game #objectivesPanel>summary{min-height:82px;padding:12px 11px;gap:8px}#game .objective-marker{display:none}#game .objective-eyebrow{display:grid;gap:5px;font-size:8px;letter-spacing:.1em}#game #objectiveMode{font-size:9px;max-width:none}#game #personalObjective{font-size:20px;line-height:1.03}#game .objective-expand{width:24px;height:28px;font-size:19px}#game .objective-details{padding:0 13px 14px}#game .objective-details p{font-size:13px}#game .objective-section{gap:6px;padding-top:12px;margin-top:12px}#game .objective-section strong{font-size:14px}
+ #game #combatMenu{top:16px;right:14px}#combatMenu>summary{min-height:44px;gap:7px;padding:9px 11px;font-size:12px}#combatMenu>summary svg{width:16px;height:16px}#combatMenu .interface-menu-panel{width:min(290px,calc(100vw - 28px))}
+ #game #vicinityPanel{top:76px;right:14px;left:auto;bottom:auto;width:96px}#game #vicinityPanel h2{display:none}#game #mapToggle{min-height:36px;font-size:10px}#game #mapToggle kbd{display:none}
+ #game #sortieHud{top:116px;left:14px;width:calc(100vw - 152px);max-width:220px;padding:9px 10px}#game #sortieHud .field-heading{font-size:8px;letter-spacing:0;display:grid;gap:5px}#game #sortieHud .field-heading b{font-size:8px}#game #sortieHud p{font-size:14px;margin-top:7px}
+ #game #squadPanel{left:14px;top:236px;width:180px;max-height:170px;overflow-y:auto}#game #squadPanel h2{margin-bottom:9px;font-size:9px}#game #squadHud{gap:6px}#game .squad-channel{grid-template-columns:16px 1fr;gap:3px 7px;padding:7px 8px}#game .squad-channel>b,#game .squad-channel>span{font-size:10px}#game .squad-channel>small{font-size:9px}
+ #game #loadoutPanel{left:0;right:0;bottom:0;display:block;height:226px;width:100%;padding:0;pointer-events:none}
+ #game .hull-wing{position:absolute;left:14px;bottom:20px;width:calc(100vw - 230px);padding:8px 0;background:linear-gradient(90deg,#10161dcf,#10161d80)}#game .hull-identity{display:none}#game .hull-heading{display:grid;gap:6px;margin-bottom:8px;font-size:9px;letter-spacing:.12em}#game .hull-heading strong{font-size:24px;line-height:1}#game #hullMeter{height:8px}
+ #game #loadoutPanel .combat-slots{position:absolute;right:14px;bottom:126px;width:200px;gap:8px;margin:0;pointer-events:auto}
+ #game #loadoutPanel .combat-slots button{display:grid;min-height:94px;padding:10px 10px 12px;grid-template-columns:1fr 27px;grid-template-rows:16px auto 12px;gap:5px 3px;clip-path:polygon(0 0,calc(100% - 10px) 0,100% 10px,100% 100%,10px 100%,0 calc(100% - 10px))}
+ #game #loadoutPanel .combat-slots button::after{width:15px;height:15px}#game #loadoutPanel .combat-slots .hand-binding{font-size:7px;letter-spacing:.035em;gap:3px}#game #loadoutPanel .combat-slots .hand-binding>span{font-size:7px}#game #loadoutPanel .combat-slots kbd{display:none}#game #loadoutPanel .combat-slots .hand-name{font-size:18px;line-height:1}#game #loadoutPanel .combat-slots .hand-icon{width:27px;height:38px;opacity:.85}#game #loadoutPanel .combat-slots button>b{grid-column:1/-1;font-size:7px;letter-spacing:.025em;gap:4px}#game #loadoutPanel .combat-slots button>b::before{width:3px;height:3px}
+ #game .mobility-wing{position:absolute;right:14px;bottom:22px;display:flex;align-items:center;gap:10px;width:200px;pointer-events:auto}
+ #game #loadoutPanel .tactical-moves{display:grid;grid-template-columns:1fr 1fr;gap:6px;width:114px;margin:0;padding:0}#game #loadoutPanel .tactical-moves button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;width:54px;min-height:74px;padding:9px 3px;border-left-width:1px;background:#16232ce6}#game #loadoutPanel .tactical-moves button kbd{display:none}#game #loadoutPanel .tactical-moves button svg{width:25px;height:24px}#game #loadoutPanel .tactical-moves button>span{font-size:11px}#game #loadoutPanel .tactical-moves button>b{font-size:8px}
+ #game #loadoutPanel .ability-panel{width:76px;gap:5px;position:relative}#game #loadoutPanel .ability-panel #abilityButton{width:74px;height:74px;min-height:74px;gap:4px}#game #loadoutPanel #abilityButton>kbd,#game #loadoutPanel #abilityButton[data-state=charging]>kbd{font-size:30px;display:block}#game #loadoutPanel #abilityCd{font-size:8px;letter-spacing:0}#game #loadoutPanel .ultimate-heading{position:absolute;top:calc(100% + 7px);width:90px;gap:0}#game .ultimate-heading small{display:none}#game #loadoutPanel #abilityLabel{font-size:9px;line-height:1}
+ #game #joystick{left:20px;bottom:136px;width:106px;height:106px;display:block}#game #joystick i{left:31px;top:31px;width:42px;height:42px}
+ #game #taskBanner,#game #taskBanner.warning,#game #taskBanner.heavy-arrival{top:224px;left:50%;right:auto;width:calc(100% - 48px);transform:translateX(-50%)}#game #taskBanner #levelLabel{font-size:24px}#game #taskBanner #objectiveText{font-size:12px;line-height:1.4}#game #viewHint{display:none}
+ #game #fieldOffers{width:calc(100% - 28px);max-height:calc(100svh - 28px);padding:18px}#game .field-offer-heading{align-items:flex-start;gap:8px}#game .field-cards{grid-template-columns:1fr}#game .field-cards>button{gap:8px;padding:15px}#game #levelMapPanel{width:calc(100vw - 28px);padding:14px}
+ body:has(#game:not([hidden])) #toast{top:auto;bottom:252px;left:14px;right:14px;transform:none;width:auto;max-width:none;padding:10px 12px;font-size:12px}
 }
-
-#game .terminal-panel h2 span {
-  color: var(--hud-muted);
-  font: 500 13px/1.3 var(--ui, "Segoe UI", sans-serif);
-  letter-spacing: 0;
+@media(max-width:380px) and (orientation:portrait){
+ #game #objectivesPanel{right:118px}#game #personalObjective{font-size:18px}#game #vicinityPanel{width:88px}
+ #game #loadoutPanel .combat-slots{width:180px;gap:6px}#game #loadoutPanel .combat-slots button{padding:9px 8px 12px;grid-template-columns:1fr 23px}#game #loadoutPanel .combat-slots .hand-name{font-size:16px}#game #loadoutPanel .combat-slots .hand-icon{width:23px}
+ #game .mobility-wing{width:180px;gap:8px}#game #loadoutPanel .tactical-moves{width:102px;gap:4px}#game #loadoutPanel .tactical-moves button{width:49px}#game #loadoutPanel .ability-panel{width:70px}#game #loadoutPanel .ability-panel #abilityButton{width:68px;height:68px;min-height:68px}#game .hull-wing{width:calc(100vw - 216px)}#game .hull-heading strong{font-size:20px}#game #joystick{left:17px;width:94px;height:94px}#game #joystick i{left:25px;top:25px}
 }
-
-/* Identical personal and shared tasks need one title; keep shared progress. */
-#game #objectivesPanel.objectives-duplicate .team-objective > h3,
-#game #objectivesPanel.objectives-duplicate #teamObjective { display: none; }
-
-#game button:focus-visible,
-#game summary:focus-visible,
-#game [tabindex="0"]:focus-visible {
-  outline: 2px solid var(--hud-cyan);
-  outline-offset: 4px;
-}
-
-/* A single menu replaces the four competing corner utility actions. */
-#combatMenu {
-  position: absolute;
-  z-index: 30;
-  top: max(24px, env(safe-area-inset-top));
-  right: max(24px, env(safe-area-inset-right));
-  color: var(--hud-ink);
-  pointer-events: auto;
-}
-
-#combatMenu > summary {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  min-height: 44px;
-  min-width: 94px;
-  padding: 10px 16px;
-  border: 1px solid var(--hud-line);
-  border-radius: 9px;
-  background: var(--hud-surface);
-  font: 600 14px/1.3 var(--ui, "Segoe UI", sans-serif);
-  cursor: pointer;
-  list-style: none;
-}
-
-#combatMenu > summary::-webkit-details-marker { display: none; }
-#combatMenu > summary::before { content: "☰"; color: var(--hud-amber); font-size: 17px; }
-#combatMenu[open] > summary { border-color: var(--hud-amber); }
-#combatMenu[open] > summary::before { content: "×"; font-size: 23px; line-height: .8; }
-#combatMenu > summary kbd { font: inherit; }
-
-#combatMenu .interface-menu-panel {
-  display: grid;
-  gap: 6px;
-  position: absolute;
-  top: calc(100% + 10px);
-  right: 0;
-  width: 260px;
-  max-height: calc(100svh - 100px);
-  overflow-y: auto;
-  padding: 10px;
-  border: 1px solid var(--hud-line);
-  border-radius: 12px;
-  background: #0d151efc;
-  box-shadow: 0 12px 40px #0007;
-}
-
-#combatMenu .interface-menu-panel #gameHelp,
-#combatMenu .interface-menu-panel #soundToggle,
-#combatMenu .interface-menu-panel #gameReport,
-#combatMenu .interface-menu-panel #exitGame,
-#combatMenu .interface-menu-panel button {
-  position: static;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  width: 100%;
-  min-height: 44px;
-  margin: 0;
-  padding: 11px 13px;
-  border: 1px solid transparent;
-  border-radius: 7px;
-  color: var(--hud-ink);
-  background: #ffffff07;
-  font: 500 14px/1.4 var(--ui, "Segoe UI", sans-serif);
-  text-align: left;
-  transform: none;
-}
-
-#combatMenu .interface-menu-panel button:hover { background: #ffffff13; border-color: var(--hud-line); }
-#combatMenu .interface-menu-panel #gameHelp span { display: inline; }
-#combatMenu .interface-menu-panel #exitGame { color: var(--hud-amber); margin-top: 4px; border-top-color: var(--hud-line); }
-#combatMenu .interface-menu-panel #audioControls { position: static; display: grid; width: 100%; gap: 10px; padding: 10px 12px; background: none; border: 0; font: 13px var(--ui, "Segoe UI", sans-serif); }
-#combatMenu #audioControls label { display: grid; gap: 6px; color: var(--hud-muted); font-size: 13px; }
-#combatMenu #audioControls input { width: 100%; accent-color: var(--hud-cyan); }
-
-/* Objectives remain readable at a glance; supporting prose is available on
-   pointer hover or keyboard/touch focus rather than permanently filling HUD. */
-#game #objectivesPanel {
-  top: max(24px, env(safe-area-inset-top));
-  left: max(24px, env(safe-area-inset-left));
-  right: auto;
-  width: 340px;
-  padding: 16px 18px;
-  z-index: 9;
-  pointer-events: auto;
-  border-top: 2px solid var(--hud-amber);
-}
-
-#game #objectivesPanel h2 { gap: 16px; }
-#game #objectiveMode { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: right; }
-#game .objective-section { display: grid; grid-template-columns: 50px minmax(0, 1fr); gap: 5px 10px; padding-top: 12px; }
-#game .objective-section h3 { margin: 2px 0 0; color: var(--hud-muted); font: 600 13px/1.4 var(--ui, "Segoe UI", sans-serif); letter-spacing: .04em; }
-#game .objective-section strong { color: var(--hud-ink); font: 600 16px/1.4 var(--ui, "Segoe UI", sans-serif); }
-#game .objective-section p { grid-column: 2; display: none; color: var(--hud-muted); font: 400 14px/1.5 var(--ui, "Segoe UI", sans-serif); margin: 0; }
-#game #objectivesPanel:is(:hover, :focus, :focus-within) .objective-section p { display: block; }
-#game .team-objective { margin-top: 12px; border-color: var(--hud-line); }
-#game .objective-progress { grid-column: 2; height: 4px; margin: 4px 0 0; border-radius: 4px; background: #ffffff18; }
-#game .objective-progress i { background: var(--hud-cyan); border-radius: inherit; }
-#game.sandbox .team-objective { display: none; }
-
-/* A solo pilot needs no squad roster repeating their own callsign. */
-#game #squadPanel:has(#squadHud > :only-child),
-#game #squadPanel:has(#squadHud:empty) { display: none; }
-#game #squadPanel { left: auto; right: 24px; top: 86px; width: 260px; padding: 14px 16px; }
-#game #squadHud { margin-top: 12px; gap: 10px; }
-#game .squad-channel { grid-template-columns: minmax(0, 1fr) auto; gap: 8px; font: 14px/1.3 var(--ui, "Segoe UI", sans-serif); }
-#game .squad-channel > span { display: none; }
-#game .squad-channel b { font: 500 14px/1.3 var(--ui, "Segoe UI", sans-serif); }
-#game .squad-channel small { display: block; color: var(--hud-cyan); font: 500 12px/1.3 var(--ui, "Segoe UI", sans-serif); }
-#game .squad-channel.downed { padding-left: 8px; border-color: var(--hud-amber); }
-#game .squad-channel.downed small { color: var(--hud-amber); }
-
-/* Clear health, two independent hands, then mobility and the ultimate. */
-#game #loadoutPanel { right: max(24px, env(safe-area-inset-right)); bottom: max(24px, env(safe-area-inset-bottom)); width: 324px; padding: 16px; }
-#game #loadoutPanel > h2,
-#game #loadoutPanel .mech-diagram,
-#game #loadoutPanel .weapon-state { display: none; }
-#game #hullHealth { margin: 0 0 14px; color: var(--hud-ink); }
-#game .hull-heading { margin-bottom: 8px; color: inherit; font: 600 13px/1.3 var(--ui, "Segoe UI", sans-serif); letter-spacing: .06em; }
-#game .hull-heading strong { color: inherit; font: 700 21px/1.1 var(--display, "Bahnschrift", "Arial Narrow", sans-serif); letter-spacing: .015em; font-variant-numeric: tabular-nums; }
-#game #hullMeter { height: 9px; padding: 0; border: 0; border-radius: 5px; overflow: hidden; background: #ffffff1c; }
-#game #hullFill { border-radius: inherit; background: var(--hud-cyan); }
-#game #hullHealth[data-state="damaged"] #hullFill { background: var(--hud-amber); }
-#game #hullHealth[data-state="critical"],
-#game #hullHealth[data-state="offline"] { color: #ffac96; animation: none; }
-#game #hullHealth[data-state="critical"] #hullFill,
-#game #hullHealth[data-state="offline"] #hullFill { background: #ffac96; }
-#game #hullHealth[data-state="critical"] #hullMeter { box-shadow: 0 0 0 1px #ffac9660; }
-
-#game #loadoutPanel .combat-slots { gap: 8px; margin: 0 0 10px; }
-#game #loadoutPanel .combat-slots button { display: grid; align-content: start; align-items: start; gap: 7px; min-width: 0; min-height: 94px; padding: 12px; border: 1px solid var(--hud-line); border-radius: 8px; background: #ffffff06; color: var(--hud-ink); }
-#game #loadoutPanel .combat-slots kbd { color: var(--hud-muted); font: 600 13px/1.2 var(--ui, "Segoe UI", sans-serif); letter-spacing: .015em; }
-#game #loadoutPanel .combat-slots span { color: inherit; font: 650 17px/1.2 var(--display, "Bahnschrift", "Arial Narrow", sans-serif); overflow-wrap: anywhere; }
-#game #loadoutPanel .combat-slots button b { color: var(--hud-cyan); opacity: 1; font: 500 13px/1.25 var(--ui, "Segoe UI", sans-serif); }
-#game #loadoutPanel .combat-slots button.active { background: #91dcd91b; border-color: var(--hud-cyan); color: var(--hud-ink); }
-#game #loadoutPanel .combat-slots button:disabled { opacity: .6; }
-
-#game #loadoutPanel .tactical-moves { margin: 0 0 10px; }
-#game #loadoutPanel .tactical-moves button { grid-template-columns: 48px minmax(0, 1fr) auto; grid-template-rows: auto; gap: 8px; min-height: 40px; padding: 9px 11px; border: 1px solid var(--hud-line); border-radius: 7px; background: #ffffff06; color: var(--hud-ink); opacity: 1; font: 500 13px/1.3 var(--ui, "Segoe UI", sans-serif); }
-#game #loadoutPanel .tactical-moves button kbd { grid-column: 1; grid-row: 1; padding: 0; border: 0; color: var(--hud-muted); font: 600 13px/1.3 var(--ui, "Segoe UI", sans-serif); }
-#game #loadoutPanel .tactical-moves button span { grid-column: 2; grid-row: 1; font: inherit; }
-#game #loadoutPanel .tactical-moves button b { grid-column: 3; grid-row: 1; color: var(--hud-cyan); font: inherit; }
-#game #loadoutPanel .tactical-moves button:disabled b { color: var(--hud-muted); }
-#game #loadoutPanel .tactical-moves button.active { border-color: var(--hud-cyan); background: #91dcd91b; }
-#game #loadoutPanel .tactical-moves i { height: 2px; background: var(--hud-cyan); }
-
-#game #loadoutPanel .ability-panel { display: grid; grid-template-columns: 1fr; gap: 8px; margin-top: 0; }
-#game #loadoutPanel .ability-panel #flightButton { display: none; }
-#game #loadoutPanel .ability-panel #abilityButton { display: grid; grid-template-columns: 30px minmax(0, 1fr) auto; grid-template-rows: auto auto 4px; align-items: center; gap: 6px 10px; min-height: 88px; padding: 12px; border: 1px solid var(--hud-line); border-radius: 8px; color: var(--hud-ink); background: #ffffff06; box-shadow: none; }
-#game #loadoutPanel .ability-panel #abilityButton[data-state="ready"] { border-color: #f0be7890; background: #f0be7814; }
-#game #loadoutPanel .ability-panel #abilityButton.engaged { border-color: var(--hud-cyan); background: #91dcd91b; }
-#game #loadoutPanel #abilityButton > kbd { display: block; grid-column: 1; grid-row: 1/3; padding: 6px; border: 1px solid #f0be7870; border-radius: 5px; color: var(--hud-amber); font: 600 17px/1.1 var(--ui, "Segoe UI", sans-serif); text-align: center; }
-#game #loadoutPanel #abilityButton .ultimate-heading { grid-column: 2; grid-row: 1; color: var(--hud-muted); font: 600 12px/1.2 var(--ui, "Segoe UI", sans-serif); letter-spacing: .04em; }
-#game #loadoutPanel #abilityButton .ultimate-heading::before { content: none; }
-#game #loadoutPanel #abilityLabel { color: var(--hud-ink); font: 650 17px/1.2 var(--display, "Bahnschrift", "Arial Narrow", sans-serif); letter-spacing: 0; margin-top: 4px; }
-#game #loadoutPanel #abilityCd { grid-column: 3; grid-row: 1/3; color: var(--hud-amber); font: 650 18px/1.2 var(--display, "Bahnschrift", "Arial Narrow", sans-serif); }
-#game #loadoutPanel #abilityStatus { grid-column: 2; grid-row: 2; color: var(--hud-muted); font: 400 13px/1.3 var(--ui, "Segoe UI", sans-serif); letter-spacing: 0; }
-#game #loadoutPanel #ultimateMeter { grid-column: 1/-1; grid-row: 3; height: 4px; border: 0; border-radius: 3px; background: #ffffff16; }
-#game #ultimateFill { background: var(--hud-amber); border-radius: inherit; }
-
-/* Radar carries the same visual language without an always-present legend. */
-#game #vicinityPanel { left: max(24px, env(safe-area-inset-left)); bottom: max(24px, env(safe-area-inset-bottom)); width: 172px; padding: 12px; }
-#game #vicinityPanel h2 { padding-bottom: 8px; }
-#game #vicinityPanel h2 span { font-size: 12px; }
-#game #vicinityPanel #radar { display: block; width: 100%; max-width: none; height: auto; aspect-ratio: 1; margin: 10px 0; border-color: var(--hud-line); border-radius: 6px; opacity: 1; }
-#game .radar-key { display: none; }
-#game #mapToggle { min-height: 32px; margin-top: 0; padding-top: 8px; border-color: var(--hud-line); color: var(--hud-muted); font: 500 13px/1.3 var(--ui, "Segoe UI", sans-serif); }
-#game #levelMapPanel { width: min(850px, calc(100vw - 40px)); padding: 20px; background: #0d151efa; border: 1px solid var(--hud-line); border-radius: 12px; color: var(--hud-ink); }
-#game #levelMapPanel p { margin-bottom: 0; color: var(--hud-muted); font: 14px/1.5 var(--ui, "Segoe UI", sans-serif); }
-
-/* Progression stays brief until the pilot requests the module offer. */
-#game #sortieHud { left: 24px; top: 214px; width: 272px; padding: 13px 16px; border-left: 2px solid var(--hud-cyan); font: 13px/1.4 var(--ui, "Segoe UI", sans-serif); }
-#game #sortieHud .field-heading { gap: 12px; color: var(--hud-muted); font-size: 12px; }
-#game #sortieHud .field-heading b { font-weight: 600; white-space: nowrap; }
-#game #sortieHud p { margin: 7px 0 0; color: var(--hud-ink); font: 600 16px/1.3 var(--ui, "Segoe UI", sans-serif); }
-#game #sortieHud small { display: none; }
-#game #sortieHud .field-fitted { display: none; }
-#game #sortieHud:hover .field-fitted { display: block; }
-#game #sortieHud .field-fitted > span { padding-top: 8px; margin-top: 8px; font-size: 13px; border-color: var(--hud-line); color: var(--hud-muted); }
-#game #sortieHud .field-fitted b { color: var(--hud-cyan); }
-#game #fieldOffers { top: 50%; bottom: auto; left: 50%; transform: translate(-50%, -50%); width: min(760px, calc(100% - 48px)); max-height: calc(100svh - 48px); overflow-y: auto; padding: 22px; background: #0d151efc; border: 1px solid #f0be7870; border-radius: 14px; color: var(--hud-ink); box-shadow: 0 16px 80px #0009; }
-#game .field-offer-heading { font: 600 16px/1.4 var(--ui, "Segoe UI", sans-serif); }
-#game .field-offer-heading span { font: 400 14px/1.5 var(--ui, "Segoe UI", sans-serif); color: var(--hud-muted); }
-#game .field-offer-heading button { min-height: 44px; padding: 10px; color: var(--hud-muted); font: 500 14px/1.3 var(--ui, "Segoe UI", sans-serif); }
-#game .field-cards { gap: 12px; }
-#game .field-cards > button { gap: 12px; padding: 16px; border: 1px solid var(--hud-line); border-radius: 9px; background: #ffffff07; color: var(--hud-ink); }
-#game .field-cards > button:hover { background: #f0be7814; border-color: var(--hud-amber); }
-#game .field-cards small { color: var(--hud-cyan); font: 600 13px/1.4 var(--ui, "Segoe UI", sans-serif); }
-#game .field-cards strong { color: var(--hud-ink); font: 650 23px/1.2 var(--display, "Bahnschrift", "Arial Narrow", sans-serif); }
-#game .field-cards span { font: 400 14px/1.5 var(--ui, "Segoe UI", sans-serif); }
-#game .field-cards b { color: var(--hud-amber); font: 500 13px/1.4 var(--ui, "Segoe UI", sans-serif); }
-
-/* Notifications stay above the crosshair rather than covering a target. */
-#game #taskBanner,
-#game #taskBanner.warning,
-#game #taskBanner.heavy-arrival { top: 28px; left: 50%; right: auto; bottom: auto; transform: translateX(-50%); width: min(540px, calc(100vw - 790px)); padding: 0; border: 0; background: none; box-shadow: none; backdrop-filter: none; color: var(--hud-ink); }
-#game #taskBanner #levelLabel,
-#game #taskBanner.warning #levelLabel,
-#game #taskBanner.heavy-arrival #levelLabel { color: var(--hud-amber); font: 650 clamp(20px, 2vw, 30px)/1.15 var(--display, "Bahnschrift", "Arial Narrow", sans-serif); letter-spacing: .025em; }
-#game #taskBanner #objectiveText,
-#game #taskBanner.warning #objectiveText,
-#game #taskBanner.heavy-arrival #objectiveText { margin-top: 8px; color: var(--hud-ink); font: 500 14px/1.5 var(--ui, "Segoe UI", sans-serif); }
-#game #viewHint { bottom: 28px; left: 50%; width: max-content; max-width: min(460px, calc(100vw - 740px)); padding: 10px 14px; border: 1px solid var(--hud-line); border-radius: 8px; background: #0d151ed9; color: var(--hud-muted); white-space: normal; text-align: center; font: 400 14px/1.45 var(--ui, "Segoe UI", sans-serif); }
-#game #crosshair i,
-#game #crosshair b { background: var(--hud-ink); }
-#game #motionReticle { color: var(--hud-amber); }
-#game .motion-fill { stroke: var(--hud-amber); }
-#game #motionReticle[data-ready="true"] { color: var(--hud-cyan); }
-#game #motionReticle[data-ready="true"] .motion-fill { stroke: var(--hud-cyan); }
-#game .world-label { color: var(--hud-ink); background: #0d151edb; border: 1px solid var(--hud-line); font: 600 14px/1.35 var(--ui, "Segoe UI", sans-serif); border-radius: 5px; text-shadow: 0 1px 3px #0009; }
-#game .world-label.damage-number { font: 700 26px/1 var(--display, "Bahnschrift", "Arial Narrow", sans-serif); border: 0; background: none; }
-
-/* Toasts use a reserved notification area. On tight screens they temporarily
-   replace a passive hint or introductory banner instead of stacking over it. */
-body:has(#game:not([hidden])) #toast {
-  top: 116px;
-  bottom: auto;
-  left: 50%;
-  right: auto;
-  transform: translateX(-50%);
-  width: max-content;
-  max-width: min(440px, calc(100vw - 760px));
-  padding: 11px 16px;
-  border: 1px solid #b2c0ca55;
-  border-left: 3px solid #91dcd9;
-  border-radius: 8px;
-  background: #0d151efa;
-  color: #f2f0e9;
-  text-align: left;
-  font: 500 14px/1.45 var(--ui, "Segoe UI", sans-serif);
-  box-shadow: 0 6px 24px #0004;
-}
-body:has(#game:not([hidden])) #toast.show { pointer-events: auto; }
-
-@media (pointer: coarse) {
-  #game #loadoutPanel .ability-panel { grid-template-columns: 50px minmax(0, 1fr); }
-  #game #loadoutPanel .ability-panel #flightButton { display: flex; justify-content: center; gap: 5px; min-height: 76px; padding: 8px 3px; border: 1px solid var(--hud-line); border-radius: 8px; background: #ffffff06; color: var(--hud-cyan); }
-  #game #loadoutPanel .ability-panel #flightButton :is(kbd, span, b) { color: inherit; font: 600 12px/1.3 var(--ui, "Segoe UI", sans-serif); }
-  #game #loadoutPanel .ability-panel #flightButton kbd { display: none; }
-  #game #loadoutPanel .ability-panel #flightButton.engaged { border-color: var(--hud-cyan); background: #91dcd920; }
-  #game #loadoutPanel .ability-panel #abilityButton { grid-template-columns: minmax(0, 1fr) auto; gap: 6px; }
-  #game #loadoutPanel #abilityButton > kbd { display: none; }
-  #game #loadoutPanel #abilityButton .ultimate-heading,
-  #game #loadoutPanel #abilityStatus { grid-column: 1; }
-  #game #loadoutPanel #abilityCd { grid-column: 2; }
-  #game #touchFire,
-  #game #touchMelee { display: none; }
-  #game #joystick { left: 216px; bottom: 24px; width: 96px; height: 96px; border-color: #b2c0ca80; background: #0d151e80; }
-  #game #joystick i { left: 28px; top: 28px; background: #91dcd9a0; }
-  #game #loadoutPanel .tactical-moves #dashButton { min-height: 44px; }
-}
-
-/* Compact landscape keeps all of the aim area clear without shrinking type. */
-@media (max-width: 1100px), (max-height: 650px) and (orientation: landscape) {
-  body:has(#game:not([hidden])) #toast { top: auto; bottom: 14px; left: 292px; right: 318px; width: auto; max-width: 440px; padding: 10px 12px; transform: none; font-size: 13px; }
-  body:has(#game:not([hidden])):has(#toast.show) #viewHint { visibility: hidden; }
-  #game #objectivesPanel { left: 14px; top: 14px; width: 286px; padding: 12px 14px; }
-  #game .objective-section { grid-template-columns: 48px minmax(0, 1fr); gap: 4px 8px; padding-top: 9px; }
-  #game .objective-section strong { font-size: 15px; }
-  #game .team-objective { margin-top: 9px; }
-  #game #sortieHud { left: 14px; top: 184px; width: 250px; padding: 10px 12px; }
-  #game #squadPanel { right: 14px; top: 74px; width: 240px; padding: 12px; }
-  #game #loadoutPanel { right: 14px; bottom: 14px; width: 290px; padding: 12px; }
-  #game #hullHealth { margin-bottom: 10px; }
-  #game #loadoutPanel .combat-slots button { min-height: 80px; padding: 10px; gap: 5px; }
-  #game #loadoutPanel .combat-slots span { font-size: 17px; }
-  #game #loadoutPanel .tactical-moves button { min-height: 36px; padding: 8px 10px; }
-  #game #loadoutPanel .ability-panel #abilityButton { min-height: 78px; padding: 10px; gap: 5px 8px; }
-  #game #loadoutPanel #abilityStatus { font-size: 12px; }
-  #game #vicinityPanel { left: 14px; bottom: 14px; width: 146px; padding: 10px; }
-  #game #vicinityPanel h2 span { display: none; }
-  #game #vicinityPanel #radar { margin: 8px 0; }
-  #game #joystick { left: 178px; bottom: 14px; }
-  #combatMenu { top: 14px; right: 14px; }
-  #game #taskBanner,
-  #game #taskBanner.warning,
-  #game #taskBanner.heavy-arrival { left: 320px; right: 148px; top: 16px; transform: none; width: auto; }
-  #game #taskBanner #levelLabel { font-size: 23px; }
-  #game #taskBanner #objectiveText { font-size: 13px; }
-  #game #viewHint { left: calc(50% - 65px); bottom: 14px; max-width: calc(100vw - 494px); padding: 8px 10px; font-size: 13px; }
-}
-
-@media (max-height: 550px) and (orientation: landscape) {
-  body:has(#game:not([hidden])) #toast { top: auto; bottom: 14px; left: max(254px, calc(50% - 210px)); right: 304px; width: auto; max-width: 420px; padding: 9px 12px; transform: none; font-size: 13px; }
-  body:has(#game:not([hidden])):has(#toast.show) #viewHint { visibility: hidden; }
-  #game #objectivesPanel { width: 270px; }
-  #game #objectivesPanel h2 { padding-bottom: 7px; }
-  #game .objective-section h3 { font-size: 12px; }
-  #game .objective-section strong { font-size: 14px; }
-  #game #sortieHud { left: 304px; top: 88px; width: calc(100vw - 594px); max-width: 250px; }
-  #game #sortieHud .field-heading { font-size: 12px; }
-  #game #sortieHud p { font-size: 14px; margin-top: 5px; }
-  #game #loadoutPanel { width: 276px; padding: 10px; }
-  #game #hullHealth { margin-bottom: 9px; }
-  #game .hull-heading { margin-bottom: 6px; }
-  #game .hull-heading strong { font-size: 19px; }
-  #game #loadoutPanel .combat-slots { margin-bottom: 8px; gap: 6px; }
-  #game #loadoutPanel .combat-slots button { min-height: 69px; padding: 8px; gap: 4px; }
-  #game #loadoutPanel .combat-slots span { font-size: 16px; }
-  #game #loadoutPanel .combat-slots kbd,
-  #game #loadoutPanel .combat-slots button b { font-size: 12px; }
-  #game #loadoutPanel .tactical-moves { margin-bottom: 8px; }
-  #game #loadoutPanel .tactical-moves button { min-height: 34px; padding: 7px 8px; }
-  #game #loadoutPanel .ability-panel #abilityButton { min-height: 68px; padding: 8px; gap: 4px 6px; }
-  #game #loadoutPanel #abilityStatus { display: none; }
-  #game #loadoutPanel #abilityLabel { font-size: 16px; }
-  #game #loadoutPanel #abilityCd { font-size: 16px; }
-  #game #loadoutPanel .ability-panel #flightButton { min-height: 68px; }
-  #game #vicinityPanel { width: 122px; padding: 8px; }
-  #game #vicinityPanel h2 { display: none; }
-  #game #vicinityPanel #radar { margin: 0 0 4px; }
-  #game #mapToggle { min-height: 29px; font-size: 12px; }
-  #game #joystick { left: 152px; bottom: 14px; width: 88px; height: 88px; }
-  #game #joystick i { left: 24px; top: 24px; }
-  #game #squadPanel { top: 68px; right: 14px; width: 240px; max-height: max(28px, calc(100svh - 356px)); overflow: auto; }
-  #game #squadPanel h2 { display: none; }
-  #game #squadHud { margin-top: 0; gap: 7px; }
-  #game .squad-channel small { font-size: 12px; }
-  #game #taskBanner,
-  #game #taskBanner.warning,
-  #game #taskBanner.heavy-arrival { left: 304px; right: 148px; top: 16px; }
-  #game #taskBanner #objectiveText { display: none; }
-}
-
-/* Portrait dedicates a readable bottom action strip to the two touch hands.
-   The joystick remains above it; duplicate floating fire controls are removed. */
-@media (max-width: 760px) and (orientation: portrait) {
-  body:has(#game:not([hidden])) #toast { top: 12px; bottom: auto; left: 12px; right: 148px; width: auto; max-width: none; max-height: 48px; overflow-y: auto; padding: 6px 10px; transform: none; font-size: 13px; line-height: 1.3; }
-  body:has(#game:not([hidden])):has(#toast.show) #taskBanner { visibility: hidden; }
-  #combatMenu { top: max(12px, env(safe-area-inset-top)); right: 12px; }
-  #combatMenu > summary { min-height: 42px; min-width: 88px; padding: 9px 13px; }
-  #combatMenu .interface-menu-panel { width: min(290px, calc(100vw - 24px)); }
-  #game #objectivesPanel { top: 68px; left: 12px; right: 12px; width: auto; padding: 12px 14px; }
-  #game #objectivesPanel h2 { padding-bottom: 8px; }
-  #game .objective-section { grid-template-columns: 48px minmax(0, 1fr); padding-top: 9px; }
-  #game .objective-section strong { font-size: 15px; }
-  #game .objective-section p { font-size: 14px; }
-  #game #loadoutPanel { left: 12px; right: 12px; bottom: max(12px, env(safe-area-inset-bottom)); width: auto; padding: 12px; }
-  #game #hullHealth { margin: 0 0 10px; }
-  #game .hull-heading { margin-bottom: 6px; }
-  #game .hull-heading strong { font-size: 21px; }
-  #game #loadoutPanel .combat-slots { gap: 8px; margin-bottom: 8px; }
-  #game #loadoutPanel .combat-slots button { min-height: 78px; padding: 10px; gap: 5px; }
-  #game #loadoutPanel .combat-slots span { font-size: 18px; }
-  #game #loadoutPanel .tactical-moves { margin: 0 0 8px; }
-  #game #loadoutPanel .tactical-moves button { min-height: 44px; padding: 8px 10px; }
-  #game #loadoutPanel .ability-panel { grid-template-columns: 54px minmax(0, 1fr); }
-  #game #loadoutPanel .ability-panel #flightButton { display: flex; justify-content: center; gap: 5px; min-height: 68px; padding: 8px 3px; border: 1px solid var(--hud-line); border-radius: 8px; background: #ffffff06; color: var(--hud-cyan); }
-  #game #loadoutPanel .ability-panel #flightButton :is(kbd, span, b) { color: inherit; font: 600 12px/1.3 var(--ui, "Segoe UI", sans-serif); }
-  #game #loadoutPanel .ability-panel #flightButton kbd { display: none; }
-  #game #loadoutPanel .ability-panel #abilityButton { grid-template-columns: minmax(0, 1fr) auto; min-height: 68px; padding: 8px 10px; gap: 4px 8px; }
-  #game #loadoutPanel #abilityButton > kbd { display: none; }
-  #game #loadoutPanel #abilityButton .ultimate-heading,
-  #game #loadoutPanel #abilityStatus { grid-column: 1; }
-  #game #loadoutPanel #abilityCd { grid-column: 2; font-size: 17px; }
-  #game #loadoutPanel #abilityLabel { font-size: 17px; }
-  #game #loadoutPanel #abilityStatus { display: none; }
-  #game #vicinityPanel { top: 222px; left: 12px; bottom: auto; width: 118px; padding: 8px; }
-  #game #vicinityPanel h2 { display: none; }
-  #game #vicinityPanel #radar { margin: 0 0 4px; }
-  #game #mapToggle { font-size: 12px; min-height: 30px; }
-  #game #sortieHud { left: 142px; right: 12px; top: 222px; width: auto; padding: 10px 12px; }
-  #game #sortieHud .field-heading { display: block; font-size: 12px; }
-  #game #sortieHud .field-heading b { display: block; margin-top: 4px; }
-  #game #sortieHud p { margin-top: 7px; font-size: 14px; }
-  #game #sortieHud:hover .field-fitted { display: none; }
-  #game #squadPanel { top: 344px; left: 142px; right: 12px; width: auto; padding: 10px 12px; max-height: 122px; overflow: auto; }
-  #game #squadPanel h2 { display: none; }
-  #game #squadHud { margin: 0; gap: 7px; }
-  #game .squad-channel { grid-template-columns: minmax(0, 1fr); gap: 3px; }
-  #game .squad-channel b { font-size: 13px; }
-  #game .squad-channel small { display: none; }
-  #game .squad-channel.downed small { display: block; }
-  #game #joystick { left: 18px; bottom: 302px; width: 96px; height: 96px; }
-  #game #joystick i { left: 28px; top: 28px; }
-  #game #touchFire,
-  #game #touchMelee { display: none; }
-  #game #taskBanner,
-  #game #taskBanner.warning,
-  #game #taskBanner.heavy-arrival { top: 16px; left: 14px; right: 148px; transform: none; width: auto; text-align: left; }
-  #game #taskBanner #levelLabel,
-  #game #taskBanner.warning #levelLabel,
-  #game #taskBanner.heavy-arrival #levelLabel { font-size: 20px; }
-  #game #taskBanner #objectiveText { display: none; }
-  #game #viewHint { display: none; }
-  #game #fieldOffers { width: calc(100% - 24px); max-height: calc(100svh - 24px); padding: 16px; }
-  #game .field-offer-heading { align-items: flex-start; gap: 8px; }
-  #game .field-cards { grid-template-columns: 1fr; }
-  #game .field-cards > button { gap: 7px; padding: 14px; }
-  #game #levelMapPanel { width: calc(100vw - 24px); padding: 12px; }
-}
-
-@media (min-width: 761px) and (max-width: 1100px) and (orientation: portrait) {
-  body:has(#game:not([hidden])) #toast { top: auto; bottom: 14px; left: 292px; right: 318px; width: auto; max-width: 440px; padding: 10px 12px; transform: none; font-size: 13px; }
-  body:has(#game:not([hidden])):has(#toast.show) #viewHint { visibility: hidden; }
-}
-
-@media (max-width: 760px) and (orientation: portrait) and (max-height: 740px) {
-  #game #vicinityPanel { top: 216px; width: 100px; }
-  #game #vicinityPanel #radar { display: none; }
-  #game #mapToggle { min-height: 44px; padding-top: 0; border: 0; }
-  #game #sortieHud { top: 216px; left: 124px; }
-  #game #squadPanel { top: 332px; left: 124px; max-height: max(32px, calc(100svh - 628px)); }
-  #game #joystick { bottom: 292px; width: 88px; height: 88px; }
-  #game #joystick i { left: 24px; top: 24px; }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  #game *, #game *::before, #game *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
-}
+@media(max-height:740px) and (orientation:portrait){#game #squadPanel{top:225px;max-height:100px}#game #taskBanner,#game #taskBanner.warning,#game #taskBanner.heavy-arrival{top:220px}#game #taskBanner #objectiveText{display:none}}
+@media(prefers-reduced-motion:reduce){#game *,#game *::before,#game *::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
+/* Legacy keycap rules were important; reset only the radial control's key. */
+#game #loadoutPanel #abilityButton>kbd{border:0!important;padding:0!important;font-size:39px!important;background:none;min-width:0;border-radius:0}
+#game:has(#objectivesPanel[open]) #sortieHud,#game:has(#objectivesPanel[open]) #squadPanel{visibility:hidden}
+@media(max-width:1150px),(max-height:650px) and (orientation:landscape){#game #loadoutPanel #abilityButton>kbd{font-size:31px!important}}
+@media(max-height:550px) and (orientation:landscape){#game #loadoutPanel #abilityButton>kbd{font-size:27px!important}}
+@media(max-width:760px) and (orientation:portrait){#game #loadoutPanel #abilityButton>kbd{font-size:30px!important}}
+@media(pointer:coarse) and (orientation:landscape){#game #loadoutPanel .tactical-moves button{min-height:44px}#combatMenu>summary{min-height:44px}#game #mapToggle{min-height:44px}}
+@media(pointer:coarse){#game #mapToggle{min-height:44px}}

@@ -1,22 +1,29 @@
-# UI/UX readability pass
+# Interface redesign
 
-The interface prioritizes the next decision: start a run, deploy to the next mission, fit a component, or act in combat. Shared styling lives in `dist/readability.css`; campaign, workshop, and combat layouts have their own `*-ux.css` files, loaded after the legacy styles.
+The interface uses distinct workspaces for starting play, planning a drop, fitting a machine, and fighting. Each workspace has its own composition and interaction model.
 
-- **Type and contrast:** self-hosted Inter for interface text and Barlow Semi Condensed for headings. Warm ivory text on navy surfaces, amber commands and objectives, cyan allied/ready states, and red critical states. Font licenses are bundled in `dist/fonts/`.
-- **Navigation:** primary destinations stay visible on desktop. A native Menu disclosure holds controls, saved mechs, effects, and reporting, plus navigation on phones. Combat has one utility menu. Keyboard focus returns to the menu after dialogs close.
-- **Campaign:** next mission and deployment lead the screen. Loadout, the full route, contracts, and the last report expand on demand. New refit choices open automatically. Disclosure state and focus survive campaign re-renders; invalid builds explain the blocked launch next to Deploy.
-- **Workshop:** sockets, component choices, and inspection have distinct stages. Three standard weight classes lead frame selection; six alternate designs expand separately. Selecting an alternate keeps it visible after fitting. On phones the inspection precedes the component list.
-- **Combat:** health, independent hands, dash, and special have a clear hierarchy. Duplicate schematic/status information and the solo squad panel are removed from the visual layout. Mission details expand on hover or keyboard/touch focus. Multiplayer squad status, essential objective progress, radar, and touch actions remain available.
-- **Controls:** essential bindings appear first. Detailed movement, weapon, enemy, campaign, and effects explanations use native disclosures.
+| Workspace | Layout and behavior |
+| --- | --- |
+| Command deck | Full battlefield backdrop with three foreground decisions: campaign, workshop, and squad. A saved run changes the campaign action into Continue with a smaller New run control. |
+| Operations | Tactical illustration from playable mission geometry, connected nine-mission route, five working tabs, and persistent launch station. Loadout, refits, contracts, and reports have dedicated workspaces. |
+| Fitting bay | Socket navigation, central 3D viewer, bounded component catalog, persistent save/test actions. Hover previews geometry; click or focus selects a candidate for comparison. Install explicitly commits it. Comparisons use actual armor, boost, payload, range, and cooldown calculations. |
+| Chassis registry | Start with the fitted class and compare three platforms. Class navigation, authored silhouettes, comparable stats, and separate Fit frame / Factory loadout commands replace the initial fifteen-card wall. |
+| Armory | Saved machines show chassis silhouettes, equipment, armor, mass, and boost. Load is primary; deletion requires a second click. The empty state leads to the fitting bay. |
+| Combat | Hull and integrity at lower left, independent graphical weapon pods at lower center, movement and radial special at lower right. Mission objectives use a native disclosure; radar occupies the upper-right edge. Real attack and recharge state drive button feedback. |
+| Handbook | Topic navigator and reading pane. Essential bindings appear as physical keycaps; all detailed weapon, enemy, movement, campaign, and effects guidance remains available. |
+
+The desktop shell reserves an 88px navigation rail and 64px header. Phones use a 68px bottom bar. Operations and workshop own their scrolling regions; deployment and fitting actions remain available independently of long catalogs. Short landscape has explicit layouts, including coarse-pointer controls.
+
+`dist/readability.css` owns the shell, command deck, shared controls, and handbook. `campaign-ux.css`, `workshop-ux.css`, `chassis-ux.css`, and `combat-ux.css` own their workspaces. `workshop-ux.js` separates inspection from persistence. `interface-ux.js` manages wayfinding, utility menus, handbook topics, and dialog focus. Typography is self-hosted Inter and Barlow Semi Condensed; licenses are bundled in `dist/fonts/`.
 
 ## Validation
 
-Run `npm test` and `npm run build` for the existing gameplay suite and Worker dry-run build. For local Chrome UI checks, install Playwright in a development environment and run:
+Run `npm test` and `npm run build` for the gameplay/API suite and Worker dry-run build. The optional Chrome integration check exercises real actions with isolated local saves:
 
 ```sh
 node scripts/check-ui-ux.mjs
 ```
 
-`PLAYWRIGHT_MODULE` can point to a Playwright module URL when it is provided outside this checkout. `UI_UX_OUTPUT`, `UI_UX_PORT`, `UI_UX_BASE_URL`, and `UI_UX_BROWSER_CHANNEL` customize the local check. The script uses isolated saves and never deploys the game or submits reports. It checks four viewport sizes, including touch portrait and short landscape, writes screenshots and a layout report to ignored `.artifacts/ui-ux/`, and exercises fitting, alternate designs, campaign selection/deployment, saved builds, controls, menu keyboard behavior, and combat inputs.
+Set `PLAYWRIGHT_MODULE` to a module URL when Playwright is installed outside the checkout. `UI_UX_OUTPUT`, `UI_UX_PORT`, `UI_UX_BASE_URL`, and `UI_UX_BROWSER_CHANNEL` customize the run. Screenshots and layout results go to ignored `.artifacts/redesign/` by default. Checks cover four viewport sizes, actual touch controls, campaign tabs and persistence, preview-versus-install behavior, keyboard menus, saved builds, handbook topics, combat inputs, earned refits, and squad-layout fixtures.
 
-Screenshots in `docs/pr-media/ui-ux/` show the implemented game. This pass does not include changes from the separate, unmerged Anchorage/field-progression integration branch.
+Screenshots and GIFs in `docs/pr-media/ui-ux/` show the implemented game. GIFs record actual component preview/installation and campaign workspace switching. Multiplayer layout uses fixtures; live peer connections are not covered by this UI check.
