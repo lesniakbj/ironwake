@@ -15,8 +15,9 @@ const staticMode=process.env.UI_UX_STATIC==='1',staticOrigin=new URL(base).origi
 const mime={'.html':'text/html','.js':'text/javascript','.css':'text/css','.svg':'image/svg+xml','.ttf':'font/ttf','.woff':'font/woff','.woff2':'font/woff2','.json':'application/json','.png':'image/png','.jpg':'image/jpeg','.jpeg':'image/jpeg','.webp':'image/webp','.ogg':'audio/ogg','.mp3':'audio/mpeg'};
 let server,browser;
 const failures=[],checks=[],errors=[],touchPages=new WeakSet(),touchSessions=new WeakMap();
-const viewports=[{width:1440,height:900},{width:1280,height:720},{width:390,height:844},{width:844,height:390}];
-const hud=['.hull-wing','#combatSlots','.mobility-wing','#objectivesPanel','#squadPanel','#vicinityPanel','#sortieHud','#combatMenu','#joystick'];
+const viewportCatalog=[{width:1440,height:900},{width:1280,height:720},{width:390,height:844},{width:844,height:390}],requestedViewports=process.env.UI_UX_VIEWPORTS?.split(',').map(s=>s.trim()).filter(Boolean),viewports=requestedViewports?viewportCatalog.filter(v=>requestedViewports.includes(v.width+'x'+v.height)):viewportCatalog;
+assert.ok(viewports.length&&(!requestedViewports||viewports.length===requestedViewports.length),'UI_UX_VIEWPORTS must select supported sizes, e.g. 390x844,844x390');
+const hud=['.hull-wing','#combatSlots','.mobility-wing','#objectivesPanel','#taskBanner','#squadPanel','#vicinityPanel','#sortieHud','#combatMenu','#joystick'];
 if(!staticMode&&!process.env.UI_UX_BASE_URL){
  server=spawn(process.execPath,[fileURLToPath(new URL('./preview-server.mjs',import.meta.url)),port],{cwd:root,windowsHide:true});
  await new Promise((done,reject)=>{server.stdout.once('data',done);server.once('error',reject);server.once('exit',code=>reject(Error('Preview exited: '+code)));});
@@ -63,9 +64,10 @@ async function checkLayout(page,label,selectors=[],squadFixture=false,{viewportB
  const result=await page.evaluate(({selectors,squadFixture,viewportBounds})=>{
   const squad=document.querySelector('#squadHud'),previous=squad?.innerHTML;
   if(squadFixture&&squad)squad.innerHTML=Array.from({length:4},(_,i)=>`<div class="squad-channel"><span>0${i+1}</span><b>PILOT ABC${i}${i?'':' / YOU'}</b><small>ONLINE</small></div>`).join('');
-  const visible=e=>e&&e.getClientRects().length&&getComputedStyle(e).visibility!=='hidden'&&Number(getComputedStyle(e).opacity)>0;
-  const rects=selectors.map(selector=>({selector,e:document.querySelector(selector)})).filter(({e})=>visible(e)).map(({selector,e})=>{const r=e.getBoundingClientRect();return{selector,x:r.x,y:r.y,width:r.width,height:r.height,right:r.right,bottom:r.bottom};});
-  const overlaps=rects.flatMap((a,i)=>rects.slice(i+1).filter(b=>Math.min(a.right,b.right)-Math.max(a.x,b.x)>2&&Math.min(a.bottom,b.bottom)-Math.max(a.y,b.y)>2).map(b=>a.selector+' overlaps '+b.selector));
+  const visible=e=>{if(!e||!e.getClientRects().length||getComputedStyle(e).visibility==='hidden'||Number(getComputedStyle(e).opacity)===0||e.closest('.combat-sr-only,[hidden]'))return false;const closed=e.closest('details:not([open])');if(closed&&e!==closed&&!closed.querySelector(':scope>summary')?.contains(e))return false;const r=e.getBoundingClientRect();return r.width>1&&r.height>1;};
+  const elements=selectors.map(selector=>({selector,e:document.querySelector(selector)})).filter(({e})=>visible(e));
+  const rects=elements.map(({selector,e})=>{const r=e.getBoundingClientRect();return{selector,x:r.x,y:r.y,width:r.width,height:r.height,right:r.right,bottom:r.bottom};});
+  const overlaps=rects.flatMap((a,i)=>rects.slice(i+1).filter(b=>{const ae=elements.find(x=>x.selector===a.selector).e,be=elements.find(x=>x.selector===b.selector).e;return !ae.contains(be)&&!be.contains(ae)&&Math.min(a.right,b.right)-Math.max(a.x,b.x)>2&&Math.min(a.bottom,b.bottom)-Math.max(a.y,b.y)>2;}).map(b=>a.selector+' overlaps '+b.selector));
   const offscreen=viewportBounds?rects.filter(r=>r.x< -1||r.y< -1||r.right>innerWidth+1||r.bottom>innerHeight+1).map(r=>r.selector+' is outside viewport'):[];
   const dialogs=[...document.querySelectorAll('dialog[open]')].map(e=>({id:e.id,client:e.clientWidth,scroll:e.scrollWidth}));
   const textElements=[...document.querySelectorAll('body *')].filter(e=>visible(e)&&!e.closest('[aria-hidden=true]')&&[...e.childNodes].some(n=>n.nodeType===Node.TEXT_NODE&&n.textContent.trim())),fonts=[...new Set(textElements.map(e=>getComputedStyle(e).fontFamily))],nonArial=textElements.filter(e=>!getComputedStyle(e).fontFamily.toLowerCase().includes('arial')).map(e=>({tag:e.tagName,id:e.id,text:e.textContent.trim().slice(0,70),font:getComputedStyle(e).fontFamily})),visibleOverlines=[...document.querySelectorAll('.overline,.eyebrow')].filter(visible).map(e=>e.textContent.trim());
@@ -83,7 +85,38 @@ async function checkLayout(page,label,selectors=[],squadFixture=false,{viewportB
 async function openGame(page){await page.waitForFunction(()=>!document.querySelector('#game').hidden&&document.querySelector('#deploymentScreen').hidden,null,{timeout:30000});await page.evaluate(()=>{if(document.pointerLockElement)document.exitPointerLock();});await page.waitForFunction(()=>document.querySelector('#hullValue').textContent!=='—');await touchMode(page);}
 async function holdHand(page,hand){
  const button=page.locator('#'+hand+'HandButton'),r=await button.boundingBox();await page.mouse.move(r.x+r.width/2,r.y+r.height/2);await page.mouse.down();
- await page.waitForFunction(h=>document.querySelector('#'+h+'HandState').textContent!=='READY',hand,{timeout:3000});await page.mouse.up();
+ try{
+  await page.waitForFunction(h=>!['ready','disabled','offline'].includes(document.querySelector('#'+h+'HandButton').dataset.state),hand,{timeout:3000});
+  const state=await button.evaluate(e=>({state:e.dataset.state,activity:e.dataset.activity,recovery:Number.parseFloat(e.style.getPropertyValue('--recovery')),accessibleLabel:e.getAttribute('aria-label')}));
+  assert.ok(Number.isFinite(state.recovery)&&state.recovery>=0&&state.recovery<=100,'The '+hand+' weapon has a bounded live recovery fill');assert.ok(state.accessibleLabel?.length,'Weapon state has an accessible description');
+  checks.push({label:'Live '+hand+' weapon state at '+page.viewportSize().width+'x'+page.viewportSize().height,...state});
+ }finally{await page.mouse.up();}
+ await page.waitForFunction(h=>document.querySelector('#'+h+'HandButton').dataset.state==='ready',hand,{timeout:3000});
+ assert.equal(Number.parseFloat(await button.evaluate(e=>e.style.getPropertyValue('--recovery'))),100,'Released weapon fills when recovered');
+}
+async function combatClarity(page,label){
+ const result=await page.evaluate(()=>{
+  const visible=e=>{if(!e||!e.getClientRects().length||getComputedStyle(e).visibility==='hidden'||getComputedStyle(e).display==='none'||e.closest('.combat-sr-only,[hidden]'))return false;const closed=e.closest('details:not([open])');if(closed&&e!==closed&&!closed.querySelector(':scope>summary')?.contains(e))return false;const r=e.getBoundingClientRect();return r.width>1&&r.height>1;};
+  const box=e=>{const r=e.getBoundingClientRect();return{width:r.width,height:r.height}};
+  return{health:document.querySelector('#hullValue').textContent,healthLabel:document.querySelector('#hullMeter').getAttribute('aria-valuetext'),healthPercent:Number(document.querySelector('#hullMeter').getAttribute('aria-valuenow')),objectiveOpen:document.querySelector('#objectivesPanel').open,sortieVisible:visible(document.querySelector('#sortieHud')),redundant:[...document.querySelectorAll('#hudName,#hullCondition,#leftHandState,#rightHandState,#abilityLabel,.ultimate-heading,#vicinityPanel h2,.radar-key')].filter(visible).map(e=>({id:e.id||e.className,text:e.textContent.trim(),...box(e)})),hands:['left','right'].map(h=>{const e=document.querySelector('#'+h+'HandButton');return{hand:h,icon:!!e.querySelector('svg'),state:e.dataset.state,activity:e.dataset.activity,recovery:Number.parseFloat(e.style.getPropertyValue('--recovery'))}})};
+ });
+ assert.match(result.health,/^\d+$/,'Health shows the current value without a duplicate maximum');assert.match(result.healthLabel,new RegExp('^'+result.health+' of \\d+ hull health, (online|damaged|critical|offline)$'),'The current value, maximum and condition remain accessible');assert.ok(result.hands.every(h=>h.icon&&Number.isFinite(h.recovery)),'Both hands use real equipped icons and live readiness fills');assert.deepEqual(result.redundant,[],'Decorative identity, repeated state words and radar explanations stay off the HUD');
+ if(!result.objectiveOpen)assert.equal(result.sortieVisible,false,'Run progression stays in the objective disclosure');
+ checks.push({label,...result});
+}
+async function warningLayout(page,label){
+ const result=await page.evaluate(selectors=>{
+  const warning=document.querySelector('#taskBanner'),title=document.querySelector('#levelLabel'),detail=document.querySelector('#objectiveText'),before={hidden:warning.hidden,className:warning.className,title:title.textContent,detail:detail.textContent};
+  try{
+   warning.hidden=false;warning.classList.add('warning','heavy-arrival');title.textContent='HEAVY MECH INCOMING';detail.textContent='Leave the marked landing zone.';
+   const entries=selectors.map(selector=>({selector,e:document.querySelector(selector)})).filter(({e})=>{if(!e||!e.getClientRects().length||getComputedStyle(e).visibility==='hidden'||e.closest('[hidden]'))return false;const closed=e.closest('details:not([open])');if(closed&&e!==closed&&!closed.querySelector(':scope>summary')?.contains(e))return false;const r=e.getBoundingClientRect();return r.width>1&&r.height>1;});
+   const rects=entries.map(({selector,e})=>{const r=e.getBoundingClientRect();return{selector,x:r.x,y:r.y,right:r.right,bottom:r.bottom,width:r.width,height:r.height}}),r=rects.find(r=>r.selector==='#taskBanner');
+   if(!r)return{width:innerWidth,height:innerHeight,warningFixture:true,disclosureOpen:document.querySelector('#objectivesPanel').open,warningHidden:true,rects,overlaps:[],offscreen:[]};
+   const overlaps=rects.filter(other=>other!==r&&Math.min(r.right,other.right)-Math.max(r.x,other.x)>2&&Math.min(r.bottom,other.bottom)-Math.max(r.y,other.y)>2).map(other=>'#taskBanner overlaps '+other.selector),offscreen=r.x<0||r.y<0||r.right>innerWidth||r.bottom>innerHeight?['#taskBanner is outside viewport']:[];
+   return{width:innerWidth,height:innerHeight,warningFixture:true,rects,overlaps,offscreen};
+  }finally{warning.hidden=before.hidden;warning.className=before.className;title.textContent=before.title;detail.textContent=before.detail;}
+ },hud);
+ checks.push({label,...result});failures.push(...[...result.overlaps,...result.offscreen].map(s=>label+': '+s));
 }
 async function menuKeyboard(page,selector){
  const summary=page.locator(selector+'>summary');await summary.focus();await page.keyboard.press('Space');await page.waitForFunction(s=>document.querySelector(s).open,selector);await page.keyboard.press('Escape');assert.equal(await page.locator(selector).evaluate(e=>e.open),false);assert.equal(await summary.evaluate(e=>e===document.activeElement),true);
@@ -134,17 +167,23 @@ try{
    if(!await page.locator('#manualImpactMode').isVisible())await activate(page.locator('[data-help-section]').filter({hasText:/Motion/i}).first());
    const mode=await page.locator('#manualImpactMode').textContent();await activate(page.locator('#manualImpactMode'));assert.notEqual(await page.locator('#manualImpactMode').textContent(),mode);await activate(page.locator('#closeModal'));
    await openItem(page,'[data-view=builds]');await page.locator('[data-load="0"]').waitFor({state:'visible'});await screenshot(page,size+'-05b-saved-mechs');await activate(page.locator('[data-load="0"]'));await page.waitForFunction(()=>!document.querySelector('#modal').open);
-   await activate(page.locator('#testBuildTop'));await openGame(page);await screenshot(page,size+'-06-range');await checkLayout(page,size+' range',hud);await coarseTargets(page,size);
+   await activate(page.locator('#testBuildTop'));await openGame(page);await screenshot(page,size+'-06-range');await checkLayout(page,size+' range',hud);await coarseTargets(page,size);await combatClarity(page,size+' clean range HUD');
    assert.equal(await page.locator('#squadPanel').isVisible(),false,'Solo combat hides the redundant roster');
    await activate(page.locator('#objectivesPanel>summary'));assert.equal(await page.locator('#personalObjectiveDetail').isVisible(),true);await checkLayout(page,size+' objective details',hud);await activate(page.locator('#objectivesPanel>summary'));
    await holdHand(page,'left');await holdHand(page,'right');await menuKeyboard(page,'#combatMenu');
    await page.locator('#battle').focus();await page.keyboard.press('e');await page.waitForFunction(()=>document.querySelector('#abilityButton').dataset.state!=='ready');assert.ok(Number.parseFloat(await page.locator('#abilityButton').evaluate(e=>e.style.getPropertyValue('--charge')))<100,'The radial special follows actual cooldown');
-   await page.keyboard.press('Shift');await page.waitForFunction(()=>document.querySelector('#dashCd').textContent!=='READY');
+   await page.keyboard.press('Shift');await page.waitForFunction(()=>document.querySelector('#dashButton').dataset.state!=='ready');
+   const cooldowns=await page.evaluate(()=>['dash','ability'].map(id=>{const e=document.querySelector('#'+id+'Button');return{id,state:e.dataset.state,charge:Number.parseFloat(e.style.getPropertyValue('--charge')),disabled:e.disabled,label:e.getAttribute('aria-label')}}));
+   assert.ok(cooldowns.every(s=>s.disabled&&s.charge<100&&s.charge>=0&&s.label),'Dash and special countdowns follow actual unavailability and recharge');checks.push({label:size+' live mobility cooldowns',cooldowns});
+   await page.waitForFunction(()=>document.querySelector('#dashButton').dataset.state==='ready',null,{timeout:5000});assert.equal(await page.locator('#dashButton').isEnabled(),true);assert.equal(Number.parseFloat(await page.locator('#dashButton').evaluate(e=>e.style.getPropertyValue('--charge'))),100);
    await activate(page.locator('#combatMenu>summary'));await screenshot(page,size+'-06b-combat-menu');await checkLayout(page,size+' combat menu commands',['#gameHelp','#soundToggle','#gameReport','#exitGame']);await page.keyboard.press('Escape');
    await openItem(page,'#soundToggle','#combatMenu');assert.match(await page.locator('#soundToggle').textContent(),/OFF/);await openItem(page,'#gameHelp','#combatMenu');assert.equal(await page.locator('#modal').evaluate(e=>e.open),true);await activate(page.locator('#closeModal'));
    await openItem(page,'#exitGame','#combatMenu');await page.waitForFunction(()=>document.querySelector('#game').hidden);
    await navigate(page,'campaign');await tab(page,'operations');await activate(page.locator('[data-action=deploy]'));await openGame(page);assert.doesNotMatch(await page.locator('#objectiveMode').textContent(),/TEST BAY|COMBAT TRIAL/);
-   await screenshot(page,size+'-07-mission');await checkLayout(page,size+' mission',hud);await checkLayout(page,size+' mission four-pilot fixture',hud,true);await coarseTargets(page,size+' mission');
+   await screenshot(page,size+'-07-mission');await checkLayout(page,size+' mission',hud);await checkLayout(page,size+' mission four-pilot fixture',hud,true);await coarseTargets(page,size+' mission');await combatClarity(page,size+' clean mission HUD');await warningLayout(page,size+' heavy warning layout');
+   assert.equal(await page.locator('#sortieHud').isVisible(),false,'Campaign stats do not occupy the default combat field');await activate(page.locator('#objectivesPanel>summary'));assert.equal(await page.locator('#sortieHud').isVisible(),true,'Campaign stats remain available inside objective details');await checkLayout(page,size+' mission objective details',hud);await activate(page.locator('#objectivesPanel>summary'));
+   const initialHull=Number(await page.locator('#hullMeter').getAttribute('aria-valuenow'));await page.waitForFunction(initial=>Number(document.querySelector('#hullMeter').getAttribute('aria-valuenow'))<initial,initialHull,{timeout:30000});
+   const damaged=await page.locator('#hullMeter').evaluate(e=>({percent:Number(e.getAttribute('aria-valuenow')),accessibleLabel:e.getAttribute('aria-valuetext'),current:document.querySelector('#hullValue').textContent,fill:Number.parseFloat(document.querySelector('#hullFill').style.width),state:document.querySelector('#hullHealth').dataset.state}));assert.ok(damaged.percent<initialHull&&damaged.percent>=0,'Live enemy damage updates health');assert.equal(damaged.fill,damaged.percent,'The health fill follows live damage');checks.push({label:size+' real enemy damage updates health',...damaged});await screenshot(page,size+'-07b-damaged-mission');await checkLayout(page,size+' damaged mission',hud);
    await openItem(page,'#exitGame','#combatMenu');await activate(page.locator('#confirmExit'));await page.waitForFunction(()=>document.querySelector('#game').hidden);assert.equal(await page.locator('#campaignScreen').isVisible(),true);
    if(['127.0.0.1','localhost'].includes(new URL(base).hostname)){
     await page.goto(new URL('../tests/campaign-fixtures.html',base).href);await activate(page.locator('#install'));await page.goto(base);await activate(page.locator('#continueCampaign'));await tab(page,'refits');
