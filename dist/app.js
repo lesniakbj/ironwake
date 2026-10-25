@@ -5,7 +5,7 @@ import{createSceneFlow}from './scene-flow.js';
 import{createDeploymentGate,MIN_LOADING_SECONDS,deploymentIntro}from './cinematic.js';
 import{campaignRound}from './mission-catalog.js';
 // Both room endpoints require the integrated chassis and item catalogs.
-const ROOM_PROTOCOL=destructionLabEnabled?'ironwake-demolition-campaign-v1-':'ironwake-cinematic-v2-';
+const ROOM_PROTOCOL=destructionLabEnabled?'ironwake-demolition-cinematic-v2-':'ironwake-cinematic-v2-';
 import{HEAVY_EQUIPMENT,chassisFor,chassisBlueprint}from './chassis.js';
 import{chassisPickerMarkup}from './chassis-view.js';
 import {CONTRACTS,sortieReport} from './sortie-progression.js';
@@ -254,5 +254,5 @@ const destructionLab=createDestructionLab({
  canControl:()=>!room||isHost,
  choose(variant){if(room&&!isHost){toast('The host selects the destruction run.');return;}selectMode('destruction',variant);$('#modal').close();if(room){menuScreen('home');toast(m.name+' selected. Mark ready to deploy together.');}else $('#deploy').click();},
  fitKit(){build=cleanBuild({...build,chassis:'anvil',parts:{torso:'standard',head:'standard',arms:'standard',legs:'standard',booster:'standard'},equipment:['hammer','launcher','repair']});buildChanged();toast('Demolition kit fitted: hammer, rockets and repair.');},
- restart(){if(room&&!isHost){toast('Only the host can reset a run.');return;}world=newWorld(m,room?roster:[me()]);if(isHost)broadcast({type:'start',world:snapshot(world)});startView();}
+ restart(){if(room&&!isHost){toast('Only the host can reset a run.');return;}world=newWorld(m,room?roster:[me()]);startView();}
 });
