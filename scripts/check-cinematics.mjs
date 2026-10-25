@@ -144,6 +144,24 @@ try{
  await guest.locator('.deployment-cancel').click();await waitPhase(host,'idle');assert.equal(await host.locator('#hangar').isVisible(),true);
  assert.equal(await host.locator('[data-action=deploy]').isEnabled(),false,'host must ready up again after cancellation');
  console.log('PASS: guest cancellation unwinds host deployment without ending the campaign');
+ // Destruction rooms need the same ticketed barrier, including the lab's reset action.
+ const demolitionHost=await makePage(),demolitionGuest=await makePage();await mockPeer(demolitionHost);await mockPeer(demolitionGuest);
+ await demolitionHost.goto(base+'?lab=destruction');await demolitionHost.locator('#closeModal').click();await demolitionHost.locator('#startHost').click();
+ await demolitionHost.waitForFunction(()=>document.body.dataset.room==='true');
+ const demolitionCode=(await demolitionHost.locator('#networkStatus').textContent()).match(/ROOM (\w+)/)[1];
+ await demolitionHost.locator('#destructionLab').click();await demolitionHost.locator('[data-demolition=yard]').click();
+ await demolitionGuest.goto(base+'?lab=destruction&room='+demolitionCode);await demolitionGuest.locator('#confirmJoin').click();
+ await demolitionGuest.waitForFunction(()=>document.body.dataset.room==='true');
+ // The lab uses the shared workshop readiness controls.
+ await demolitionHost.evaluate(()=>document.querySelector('#deploy').click());await demolitionGuest.evaluate(()=>document.querySelector('#deploy').click());
+ await demolitionHost.waitForFunction(()=>!document.querySelector('#deploy').disabled);await demolitionHost.evaluate(()=>document.querySelector('#deploy').click());
+ await Promise.all([live(demolitionHost),live(demolitionGuest)]);await demolitionHost.locator('#destructionTelemetry').waitFor();
+ await releasePointer(demolitionHost);await demolitionHost.locator('#restartDemolition').click();
+ await Promise.all([live(demolitionHost),live(demolitionGuest)]);
+ const starts=await demolitionGuest.evaluate(()=>window.__receivedPackets.filter(p=>p.type==='start'));
+ assert.equal(starts.length,2,'one start packet per destruction deployment');
+ assert.ok(starts.every(p=>typeof p.ticket==='string'));assert.notEqual(starts[0].ticket,starts[1].ticket);
+ console.log('PASS: two-pilot destruction deployment and ticketed restart');
  if(process.argv.includes('--capture')){
   const capture=await makePage();await open(capture);await capture.locator('#startMission').click();
   await capture.waitForTimeout(250);await capture.screenshot({path:output+'/campaign-before.png'});
