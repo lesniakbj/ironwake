@@ -79,7 +79,7 @@ export function stepField(w,dt){
  if(!w?.field)return;for(const p of w.players){const f=p.field;if(!f)continue;f.buffs=f.buffs.filter(buff=>buff.expiresAt>w.time);p.hp=Math.min(p.hp,currentMaxHull(p));if(f.lastPickup?.until<=w.time)f.lastPickup=null;f.nearby=null;if(!(p.hp>0))continue;let best=125;
   for(const node of w.field.nodes){if(node.state!=='ready'||node.claimed.includes(p.id)||Math.abs((p.altitude||0)-node.z)>95||node.kind==='relay'&&f.relays.includes(node.relayId))continue;const distance=Math.hypot(p.x-node.x,p.y-node.y);if(distance<=best&&!staticShotBlocked(w.mission,{x:p.x,y:p.y,z:(p.altitude||0)+32},{x:node.x,y:node.y,z:node.z+32})){best=distance;f.nearby=node.id;}}
   // Free combat drops reward moving through the fight; authored caches retain an explicit choice.
-  const drop=w.field.nodes.find(node=>node.drop&&node.state==='ready'&&Math.hypot(p.x-node.x,p.y-node.y)<=42+fieldModifiers(p).pickupRadius&&Math.abs((p.altitude||0)-node.z)<70);if(drop)interactField(w,p,{id:drop.id,revision:drop.revision});
+  for(const drop of w.field.nodes){if(drop.drop&&drop.state==='ready'&&Math.hypot(p.x-drop.x,p.y-drop.y)<=42+fieldModifiers(p).pickupRadius&&Math.abs((p.altitude||0)-drop.z)<70&&interactField(w,p,{id:drop.id,revision:drop.revision}))break;}
  }
 }
 export function cleanSortieReport(value){

@@ -93,6 +93,10 @@ Hit bursts share three instanced draw calls (28 hits maximum); explosions share 
 
 ## Develop
 
+Press **F8** or **Report** to submit a bug or suggestion with an automatic game
+screenshot, optional voice recording and game context. See [reporting setup and
+testing](docs/in-game-feedback.md) for the required server secret and storage.
+
 Requires Node.js 22.13+ (24 recommended).
 
 ```sh

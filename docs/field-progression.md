@@ -41,6 +41,14 @@ Run `node scripts/preview-server.mjs 4190`, then open:
 
 The lab is development-only and is excluded from the deployed `dist/` assets. It does not write a campaign save. Before release, verify desktop and touch card selection, the three live HUD panels, Full/Reduced visuals, every equipment family, an entire nine-mission run, and a host/client squad through extraction and reconnection. The automated checks do not establish rendered layout quality or final balance.
 
+### Review follow-up validation
+
+The review fixes select overlapping Aegis domes using their complete, clamped damage factor, including both shield and special power. Real simulation regressions cover all six weak/strong/target roster orders, mixed bonuses, and the mitigation floor. Automatic collection now continues past rejected drops and stops after one successful pickup per pilot per tick; regressions cover a stack-capped first drop and an obstructed first drop at extended magnetic range. All five regressions failed before their respective fixes.
+
+Canonical main's feedback reporter is merged while preserving field input, queued upgrade/purchase requests, reporting input guards, solo reporting pause, and co-op continuation. The complete Node suite passes **323 tests**, and the Wrangler 4.151.1 dry-run build passes. The separate mech/pilot upgrade-tree branch remains unintegrated.
+
+The attached browser rendered a fresh campaign and deployed Ashgate with field hardware, the XP HUD, map markers, and a cache prompt. [Gameplay capture](pr-media/field-cache.png) shows that limited desktop smoke check. The original visual attempt was blocked because Computer Use could not verify the browser URL; the later attached-browser session was stopped by the user's physical Escape key before completing inventory, feedback, mobile, or live co-op checks. These checks, animated mechanic media, and full campaign/balance playtesting remain outstanding.
+
 ## Technology catalog
 
 <!-- Generated from the shipped catalog below. -->
