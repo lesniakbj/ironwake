@@ -94,6 +94,10 @@ Hit bursts share three instanced draw calls (28 hits maximum); explosions share 
 
 The [cinematic transitions foundation](docs/cinematic-transitions.md) adds fast menu cuts, staged deployment loading and a brief camera insertion. Spawning and co-op combat wait for every pilot to finish the entire intro; Escape cancels deployment. Reduced impact effects keep the chase camera stable. Rooms use `ironwake-cinematic-v2`, so squad members must run the same build.
 
+Press **F8** or **Report** to submit a bug or suggestion with an automatic game
+screenshot, optional voice recording and game context. See [reporting setup and
+testing](docs/in-game-feedback.md) for the required server secret and storage.
+
 Requires Node.js 22.13+ (24 recommended).
 
 ```sh
