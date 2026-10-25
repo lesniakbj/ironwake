@@ -1,0 +1,121 @@
+/* Command answers one question first: where are we dropping next? */
+body[data-screen=campaign] .campaign-screen{max-width:1240px;padding:40px 32px 64px}
+body[data-screen=campaign] .menu-stage{min-height:calc(100svh - 126px)}
+.campaign-screen .campaign-heading{margin:0 0 12px;gap:24px;align-items:center}
+.campaign-screen .campaign-heading .overline{font:600 12px/1.5 var(--ui);letter-spacing:.12em;color:var(--mint);margin-bottom:12px}
+.campaign-screen .campaign-heading h1{font:700 clamp(36px,4vw,56px)/1 var(--display);letter-spacing:0;gap:16px}
+.campaign-screen .campaign-live{font:600 11px/1.4 var(--ui);letter-spacing:.06em;color:var(--mint);background:#91dcd910;border:1px solid #91dcd936;padding:8px 10px;white-space:nowrap}
+.campaign-screen .campaign-totals{font:500 12px/1.4 var(--ui);color:var(--soft);gap:18px}
+.campaign-screen .campaign-totals>span{display:flex;align-items:baseline;gap:6px;white-space:nowrap}
+.campaign-screen .campaign-totals b{font:700 28px var(--display);color:var(--ink)}
+.campaign-screen .campaign-totals .text-button{font:500 13px var(--ui)}
+.campaign-intro{color:var(--soft);font:400 15px/1.6 var(--ui);margin:0 0 28px}
+.campaign-screen .campaign-result{font:500 15px/1.6 var(--ui);color:var(--mint);background:#91dcd90d;border:1px solid #91dcd936;border-radius:6px;padding:16px 20px;margin:0 0 24px}
+.mission-spotlight{display:flex;gap:28px;align-items:center;padding:28px 32px;border:1px solid #f0be7866;border-left:4px solid var(--orange);border-radius:8px;background:radial-gradient(ellipse at 95% 20%,#f0be781a,transparent 65%),#182736;position:relative;overflow:hidden}
+.mission-spotlight-number{font:700 110px/.9 var(--display);color:#f0be7833;flex-shrink:0;border-right:1px solid #f0be7833;padding-right:28px}
+.mission-spotlight .overline{color:var(--orange);margin:0 0 10px}
+.mission-spotlight h2{font:700 40px/1.08 var(--display);color:var(--ink);margin:0 0 12px}
+.mission-spotlight p:not(.overline){font:400 16px/1.65 var(--ui);max-width:780px;color:#d3dce1;margin:0 0 14px}
+.mission-spotlight-meta{font:500 13px/1.5 var(--ui);text-transform:capitalize;color:var(--soft)}
+.campaign-screen .campaign-squad{background:#111e29;border:1px solid var(--line);border-radius:8px;padding:24px;margin:16px 0 28px}
+.campaign-screen .campaign-squad-heading{font:600 13px/1.5 var(--ui);color:var(--ink);margin-bottom:20px;gap:16px;flex-wrap:wrap}
+.campaign-screen .campaign-squad-heading>span{font:600 13px/1.5 var(--ui);letter-spacing:.05em}
+.campaign-screen .campaign-squad-heading small{font:400 12px var(--ui);color:var(--soft);margin-left:12px}
+.campaign-screen .campaign-squad-heading>div{gap:20px;flex-wrap:wrap}
+.campaign-screen .campaign-squad-heading .text-button{font:500 14px var(--ui)}
+.campaign-screen .room-code{font:500 12px var(--ui);color:var(--mint);overflow-wrap:anywhere}
+.campaign-screen .campaign-launch-row{align-items:center;gap:24px}
+.campaign-screen .campaign-pilots{display:grid;gap:10px;flex:1;min-width:0;grid-template-columns:repeat(auto-fit,minmax(210px,1fr))}
+.campaign-screen .campaign-pilot{border:0;border-left:2px solid #91dcd940;border-radius:0;padding:8px 14px;background:none;gap:12px;min-width:0}
+.campaign-screen .campaign-pilot.ready{border-color:var(--mint);background:#91dcd908}
+.campaign-screen .pilot-index{font:700 30px var(--display);color:#91dcd966}
+.campaign-screen .campaign-pilot strong{font:600 14px/1.4 var(--ui);color:var(--ink);overflow-wrap:anywhere}
+.campaign-screen .campaign-pilot small{font:400 12px/1.5 var(--ui);color:var(--soft);margin-top:4px;overflow-wrap:anywhere}
+.campaign-screen .campaign-pilot small:last-child{display:none}
+.campaign-screen .campaign-pilot em{font:600 11px var(--ui);color:var(--mint);font-style:normal;letter-spacing:.04em}
+.campaign-screen .campaign-deploy-actions{flex-shrink:0;gap:10px;flex-wrap:wrap}
+.campaign-screen .campaign-deploy-actions .primary{font:600 16px/1.4 var(--ui);min-height:56px;min-width:240px;justify-content:center;letter-spacing:0}
+.campaign-screen .campaign-network-status{font:400 13px/1.55 var(--ui);color:var(--soft);margin:18px 0 0}
+.campaign-screen .campaign-build-error{font:500 14px/1.6 var(--ui);color:var(--signal-danger);background:#ff8b820c;border:1px solid #ff8b8250;padding:12px 16px;border-radius:5px;margin:18px 0 0}
+.campaign-screen .campaign-build-error .text-button{display:inline-block;color:var(--orange);margin-left:8px}
+.campaign-screen>details{margin:12px 0;background:#14212d;border:1px solid var(--line);border-radius:7px;overflow:clip}
+.campaign-screen>details>summary{display:flex;align-items:center;gap:18px;list-style:none;padding:20px 24px;min-height:76px;cursor:pointer;color:var(--ink)}
+.campaign-screen>details>summary::-webkit-details-marker{display:none}
+.campaign-screen>details>summary>span{font:600 16px/1.4 var(--ui)}
+.campaign-screen>details>summary>small{font:400 13px/1.5 var(--ui);color:var(--soft);margin-left:auto;text-align:right}
+.campaign-screen>details>summary:after{content:'＋';font:400 24px/1 var(--ui);color:var(--mint);flex-shrink:0}
+.campaign-screen>details[open]>summary{border-bottom:1px solid var(--line);background:#1a2b3b}
+.campaign-screen>details[open]>summary:after{content:'−'}
+.campaign-screen .campaign-refit-details:has(.earned){border-color:#f0be7870}
+.campaign-screen .campaign-refit-details:has(.earned)>summary>span{color:var(--orange)}
+.campaign-screen .campaign-loadout,.campaign-screen .sortie-contracts,.campaign-screen .run-refit,.campaign-screen .sortie-debrief{padding:24px;margin:0;background:transparent;border:0;color:var(--ink)}
+.campaign-screen .loadout-heading,.campaign-screen .theater-heading{font:600 12px/1.5 var(--ui);color:var(--mint);letter-spacing:.06em;gap:16px}
+.campaign-screen .deployment-fitting{gap:20px;grid-template-columns:minmax(180px,1.3fr) minmax(170px,1fr) minmax(150px,1fr) minmax(130px,.8fr);margin-top:20px;align-items:end}
+.campaign-screen .campaign-field{font:600 12px/1.5 var(--ui);letter-spacing:.06em;color:var(--soft);display:grid;gap:8px;min-width:0}
+.campaign-screen .campaign-field select{min-height:48px;width:100%;max-width:100%;border:1px solid var(--line);border-radius:5px;background:#0e1924;color:var(--ink);font:400 14px/1.4 var(--ui);padding:10px 12px;text-overflow:ellipsis}
+.campaign-screen .fitted-hands{gap:12px}.campaign-screen .fitted-hands>span{background:#1e3040;border-color:var(--line);padding:12px;min-width:0}
+.campaign-screen .fitted-hands small{font:500 11px var(--ui);color:var(--soft)}
+.campaign-screen .fitted-hands strong{font:600 14px/1.4 var(--ui);color:var(--ink)}
+.campaign-screen .deployment-stats{padding:12px;background:#91dcd909;border:1px solid var(--line);border-radius:5px}
+.campaign-screen .deployment-stats strong{font:700 25px var(--display);color:var(--mint)}
+.campaign-screen .deployment-stats span{font:400 12px/1.5 var(--ui);color:var(--soft)}
+.campaign-screen .deployment-stats.overloaded strong{color:var(--signal-danger)}
+.campaign-screen .special-detail,.campaign-screen .landing-detail,.campaign-screen .campaign-scope,.campaign-screen .map-caption,.campaign-screen .sortie-footnote{font:400 14px/1.65 var(--ui);color:var(--soft);letter-spacing:0}
+.campaign-screen .special-detail{margin:18px 0 0}
+.campaign-screen .sortie-section-heading h2{font:700 30px/1.1 var(--display);color:var(--ink)}
+.campaign-screen .sortie-section-heading>p{font:400 14px/1.65 var(--ui);color:var(--soft)}
+.campaign-screen .refit-summary{font:500 13px/1.5 var(--ui);color:var(--orange);gap:16px;flex-wrap:wrap}
+.campaign-screen .run-modules{font:400 14px/1.6 var(--ui);color:var(--soft)}
+.campaign-screen .field-cards{gap:14px}.campaign-screen .field-cards>button{background:#1c3040;border-color:var(--line);padding:20px;min-height:180px;text-align:left;border-radius:6px}
+.campaign-screen .field-cards strong{font:700 25px/1.1 var(--display);color:var(--ink)}
+.campaign-screen .field-cards span{font:400 14px/1.65 var(--ui);color:var(--soft)}
+.campaign-screen .field-cards small,.campaign-screen .field-cards b{font:600 12px/1.5 var(--ui);color:var(--mint)}
+.campaign-screen .campaign-layout{grid-template-columns:minmax(0,1fr) 310px;border:0;background:#101e2a;border-radius:0}
+.campaign-screen .campaign-theater{background:#101e2a}
+.campaign-screen .campaign-briefing{background:#172937;border-color:var(--line);padding:24px}
+.campaign-screen .campaign-briefing h2{font:700 32px/1.1 var(--display);color:var(--ink)}
+.campaign-screen .campaign-briefing .overline{font:600 12px/1.5 var(--ui);color:var(--mint)}
+.campaign-screen .battlefield-description{font:400 15px/1.65 var(--ui);color:#d3dce1}
+.campaign-screen .battlefield-tags{font:500 12px/1.6 var(--ui);color:var(--soft)}
+.campaign-screen .mission-node{padding:16px;min-height:158px;border:1px solid var(--line);border-radius:5px;background:#172936;color:var(--soft);gap:8px}
+.campaign-screen .mission-node small,.campaign-screen .mission-node span{font:500 11px/1.5 var(--ui);letter-spacing:0;color:var(--soft)}
+.campaign-screen .mission-node>b{font:700 30px/1 var(--display);color:var(--soft)}
+.campaign-screen .mission-node strong{font:700 21px/1.1 var(--display);color:var(--ink)}
+.campaign-screen .mission-node.current{border-color:var(--orange);box-shadow:inset 0 3px var(--orange);background:#f0be7810}
+.campaign-screen .mission-node.current small,.campaign-screen .mission-node.current>b{color:var(--orange)}
+.campaign-screen .mission-node[aria-pressed=true]{outline-color:var(--mint)}
+.campaign-screen .mission-node.complete{background:#91dcd90c;border-color:#91dcd950}
+.campaign-screen .mission-node svg{opacity:.15}
+.campaign-screen .mission-pressure>div{border-color:var(--line);padding:10px}
+.campaign-screen .mission-pressure dt{font:400 12px/1.4 var(--ui);color:var(--soft)}
+.campaign-screen .mission-pressure dd{font:600 15px/1.5 var(--ui);color:var(--ink)}
+.campaign-screen .mission-swatch{border-color:var(--line)}
+.campaign-screen .mission-swatch span{font:500 12px var(--ui)}
+.campaign-screen .theater-heading>span:last-child{font:500 12px var(--ui);color:var(--soft)}
+.campaign-screen .contract-grid{gap:16px}.campaign-screen .contract-grid button{background:#1b2e3d;border:1px solid var(--line);padding:20px;border-radius:6px}
+.campaign-screen .contract-grid button[aria-pressed=true]{background:#f0be7810;border-color:var(--orange)}
+.campaign-screen .contract-grid strong{font:700 26px/1.1 var(--display);color:var(--ink)}
+.campaign-screen .contract-grid span{font:400 14px/1.6 var(--ui);color:var(--soft)}
+.campaign-screen .contract-grid small,.campaign-screen .contract-grid b{font:600 12px/1.5 var(--ui);color:var(--orange)}
+.campaign-screen .module-chip{font:500 12px/1.5 var(--ui);padding:6px 10px;background:#91dcd910;border-color:var(--line);color:var(--mint)}
+.campaign-screen .debrief-totals span,.campaign-screen .debrief-pilots span{font:400 14px/1.6 var(--ui);color:var(--soft)}
+.campaign-screen .debrief-totals b{font:700 36px var(--display);color:var(--ink)}
+.campaign-screen .debrief-pilots article{background:#1b2e3d;border-color:var(--line)}
+@media(max-width:1000px){
+ .campaign-screen .deployment-fitting{grid-template-columns:1fr 1fr}.campaign-screen .campaign-launch-row{align-items:stretch;flex-direction:column}.campaign-screen .campaign-deploy-actions .primary{width:100%}.campaign-screen .campaign-layout{grid-template-columns:1fr}.campaign-screen .campaign-briefing{border:0;border-top:1px solid var(--line)}
+}
+@media(max-width:600px){
+ body[data-screen=campaign] .campaign-screen{padding:28px 16px 44px}
+ .campaign-screen .campaign-heading{align-items:flex-start;gap:12px}.campaign-screen .campaign-heading h1{font-size:38px;gap:12px}.campaign-screen .campaign-heading .overline{font-size:11px;letter-spacing:.08em;margin-bottom:10px}
+ .campaign-screen .campaign-totals{gap:4px;flex-direction:column;align-items:flex-end;min-width:75px}.campaign-screen .campaign-totals>span{font-size:10px}.campaign-screen .campaign-totals b{font-size:24px}.campaign-screen .campaign-totals .text-button{font-size:12px;padding:8px 0;text-align:right}
+ .campaign-screen .campaign-live{font-size:10px;padding:6px 8px}.campaign-intro{font-size:14px;margin-bottom:20px;max-width:290px}
+ .mission-spotlight{padding:22px 20px;gap:16px;align-items:flex-start}.mission-spotlight-number{font-size:52px;padding-right:0;border:0}.mission-spotlight .overline{font-size:11px}.mission-spotlight h2{font-size:32px}.mission-spotlight p:not(.overline){font-size:14px;line-height:1.65}.mission-spotlight-meta{font-size:12px}
+ .campaign-screen .campaign-squad{padding:20px 16px;margin:12px 0 24px}.campaign-screen .campaign-squad-heading{gap:10px;margin-bottom:12px}.campaign-screen .campaign-squad-heading>div{gap:20px}.campaign-screen .campaign-squad-heading>span{font-size:12px}.campaign-screen .campaign-pilot{padding:8px 10px}.campaign-screen .campaign-pilot em{font-size:11px}
+ .campaign-screen .campaign-deploy-actions .primary{font-size:15px;min-width:0;min-height:56px}.campaign-screen .campaign-network-status{font-size:12px}
+ .campaign-screen>details>summary{padding:18px 16px;gap:10px;flex-wrap:wrap;position:relative;padding-right:40px;min-height:80px}.campaign-screen>details>summary>span{font-size:15px;width:100%}.campaign-screen>details>summary>small{font-size:12px;margin-left:0;text-align:left}.campaign-screen>details>summary:after{position:absolute;right:16px;top:24px;font-size:20px}
+ .campaign-screen .campaign-loadout,.campaign-screen .sortie-contracts,.campaign-screen .run-refit,.campaign-screen .sortie-debrief{padding:20px 16px}
+ .campaign-screen .loadout-heading{flex-wrap:wrap}.campaign-screen .deployment-fitting{grid-template-columns:1fr;gap:16px}.campaign-screen .campaign-loadout>.campaign-field{max-width:none}.campaign-screen .campaign-field select{font-size:15px}
+ .campaign-screen .fitted-hands{grid-template-columns:1fr 1fr}.campaign-screen .fitted-hands>span{padding:12px}.campaign-screen .contract-grid{grid-template-columns:1fr}
+ .campaign-screen .mission-route{grid-template-columns:1fr;gap:10px;padding:0 16px 16px}.campaign-screen .mission-node{min-height:120px;padding:16px}.campaign-screen .mission-node small,.campaign-screen .mission-node span{font-size:12px}.campaign-screen .mission-node strong{font-size:23px}.campaign-screen .mission-node svg{opacity:.2}.campaign-screen .campaign-briefing{padding:20px 16px}.campaign-screen .theater-heading{flex-wrap:wrap;gap:8px}
+ .campaign-screen .field-cards{grid-template-columns:1fr}.campaign-screen .sortie-section-heading{gap:16px;align-items:flex-start;flex-direction:column}.campaign-screen .sortie-section-heading h2{font-size:28px}.campaign-screen .refit-summary{font-size:12px;gap:8px}
+}
