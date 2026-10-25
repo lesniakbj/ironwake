@@ -17,6 +17,7 @@ not a requirement to move every existing system in one PR.
 | `dist/missions/`             | Mission generation, lookup and tuning                 | Objective pacing                       |
 | `dist/simulation/`           | Authoritative world state and simulation behavior     | Combat rules                           |
 | `dist/app/`                  | Browser controllers, DOM helpers and HUD presentation | Interface work                         |
+| `dist/network/protocol.js`   | Shared room compatibility namespaces                  | Incompatible wire-format changes       |
 | Existing focused modules     | Their existing subsystem                              | Enemy behavior, career, effects, audio |
 
 Keep dependencies flowing from presentation to simulation to definitions and pure build logic.

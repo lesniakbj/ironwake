@@ -202,3 +202,53 @@ test('phaser and field siphon share the career-plus-field hull cap without losin
     'repair includes permanent hull training',
   );
 });
+
+function chainedHit(damage) {
+  const world = isolateCombat(campaignWorld({ upgrades: ['conductor', 'power', 'breaker'] }));
+  const player = world.players[0];
+  const primary = target(player, 'tank');
+  const neighbor = {
+    ...target(player, 'tank'),
+    id: 'neighbor',
+    x: primary.x + 60,
+    y: primary.y + 80,
+  };
+  player.field.buffs = [{ relayId: 'storm', expiresAt: 999 }];
+  world.enemies = [primary, neighbor];
+  world.seed = 1; // The first seeded roll triggers the authored 33% arc chance.
+  world.bullets.push({
+    id: world.id++,
+    kind: 'carbine',
+    owner: player.id,
+    origin: { x: player.x, y: player.y, z: 32 },
+    x: primary.x - 3,
+    y: primary.y,
+    z: 32,
+    vx: 100,
+    vy: 0,
+    vz: 0,
+    life: 0.1,
+    damage,
+    enemy: false,
+    pierce: 1,
+    hit: [],
+  });
+  tick(world);
+  return { player, primary, neighbor };
+}
+
+test('uncapped field arcs apply career and heavy-target damage once through their primary hit', () => {
+  const { player, primary, neighbor } = chainedHit(24);
+  const career = progressionModifiers(player.progression, 'vanguard');
+  const primaryDamage = 24 * 1.12 * 1.2 * career.damage * career.heavyDamage;
+  near(2000 - primary.hp, primaryDamage, 'primary hit retains all field and career multipliers');
+  near(2000 - neighbor.hp, primaryDamage * 0.95, 'arc inherits amplified primary damage once');
+});
+
+test('field arc damage remains capped at 120 against armored targets with career and field bonuses', () => {
+  const { player, primary, neighbor } = chainedHit(1000);
+  const career = progressionModifiers(player.progression, 'vanguard');
+  assert.ok(career.damage > 1 && career.heavyDamage > 1);
+  assert.ok(2000 - primary.hp > 120 / 0.95, 'primary damage reaches the arc cap');
+  near(2000 - neighbor.hp, 120, 'final arc damage cannot amplify beyond its cap');
+});

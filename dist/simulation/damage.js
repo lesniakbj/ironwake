@@ -22,12 +22,16 @@ export function damageEnemy(w, e, amount, owner, kind = 'hit') {
   const attacker = w.players.find((p) => p.id === owner),
     m = fieldModifiers(attacker),
     proc = ['chain', 'thorns', 'burn'].includes(kind);
+  // Arcs inherit an already amplified primary hit and have a final per-proc cap.
+  if (kind === 'chain') amount = Math.min(120, amount);
   if (attacker) {
-    const career = careerModifiers(attacker);
-    amount *=
-      fieldHitMultiplier(attacker, e, kind, m) *
-      career.damage *
-      (e.objective || e.elite || e.type === 'tank' ? career.heavyDamage : 1);
+    if (kind !== 'chain') {
+      const career = careerModifiers(attacker);
+      amount *=
+        fieldHitMultiplier(attacker, e, kind, m) *
+        career.damage *
+        (e.objective || e.elite || e.type === 'tank' ? career.heavyDamage : 1);
+    }
     e.lastHitBy = owner;
     if (!proc && m.critChance > 0 && random(w) < Math.min(0.75, m.critChance)) {
       amount *= 1.5 + (m.critDamage || 0);

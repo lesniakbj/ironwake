@@ -68,7 +68,10 @@ try {
           .map((el) => el.getBoundingClientRect())
           .filter((r) => r.width && r.height);
         return (
-          boxes.every((r) => r.x >= 0 && r.right <= innerWidth && r.y >= 0) &&
+          boxes.length > 0 &&
+          boxes.every(
+            (r) => r.x >= 0 && r.right <= innerWidth && r.y >= 0 && r.bottom <= innerHeight,
+          ) &&
           boxes.every((a, i) =>
             boxes
               .slice(i + 1)
@@ -79,9 +82,44 @@ try {
       true,
       'controls fit the viewport without overlapping: ' + selector,
     );
+  const openMenu = async (selector) => {
+    const menu = page.locator(selector);
+    if (!(await menu.evaluate((el) => el.open))) {
+      await page.locator(selector + ' > summary').click();
+    }
+    await page.waitForFunction((selector) => document.querySelector(selector).open, selector);
+    if (selector === '#combatMenu') {
+      for (const id of [
+        'gameHelp',
+        'voiceSettings',
+        'voiceToggle',
+        'soundToggle',
+        'gameReport',
+        'exitGame',
+      ]) {
+        assert.equal(
+          await page.locator(`${selector} #${id}`).isVisible(),
+          true,
+          id + ' is visible',
+        );
+      }
+    }
+    await controlsFit(selector + ' .interface-menu-panel button');
+  };
+  const closeMenu = async (selector) => {
+    if (await page.locator(selector).evaluate((el) => el.open)) {
+      await page.locator(selector + ' > summary').click();
+    }
+  };
+  const menuAction = async (menu, selector) => {
+    await openMenu(menu);
+    await page.locator(selector).click();
+  };
   for (const width of [1440, 390, 360]) {
     await page.setViewportSize({ width, height: 1000 });
-    await controlsFit('.topbar nav button');
+    await controlsFit('.topbar nav > button, .topbar nav > details > summary');
+    await openMenu('#interfaceMenu');
+    await closeMenu('#interfaceMenu');
   }
   await page.setViewportSize({ width: 1440, height: 1000 });
   // Cancelling a preview while its audio is still loading must not start speech later.
@@ -93,7 +131,7 @@ try {
     await gate;
     await route.continue();
   });
-  await page.locator('#pilotVoiceSettings').click();
+  await menuAction('#interfaceMenu', '#pilotVoiceSettings');
   await buildVisible();
   await page.locator('[name=pilotVoice][value=flint]').check();
   await page.locator('#previewPilotVoice').click();
@@ -110,7 +148,7 @@ try {
     ['echo', 'Echo'],
     ['rook', 'Rook'],
   ]) {
-    await page.locator('#pilotVoiceSettings').click();
+    await menuAction('#interfaceMenu', '#pilotVoiceSettings');
     await page.locator(`[name=pilotVoice][value=${id}]`).check();
     await page.locator('#previewPilotVoice').click();
     await page.waitForFunction(
@@ -123,15 +161,16 @@ try {
   }
   assert.equal(await page.evaluate(() => window.pilotPlayback.decoded), 96);
   assert.equal(await page.evaluate(() => window.pilotPlayback.started), 3);
-  await page.locator('#pilotVoiceSettings').click();
+  await menuAction('#interfaceMenu', '#pilotVoiceSettings');
   await page.locator('[name=pilotVoice][value=echo]').check();
   await page.locator('#closePilotVoices').click();
   await page.reload();
   assert.equal(await page.locator('#pilotVoiceSettings').textContent(), 'Voice: Echo');
-  await page.locator('.topbar [data-feedback]').click();
+  await menuAction('#interfaceMenu', '.topbar [data-feedback]');
   await buildVisible();
   await page.locator('[name=title]').fill('Local coexistence regression draft');
   await page.locator('#feedbackClose').click();
+  await closeMenu('#interfaceMenu');
   await page.locator('#startGarage').click();
   await page.locator('#testBuildTop').click();
   await page.waitForFunction(
@@ -142,14 +181,22 @@ try {
   await page.locator('#game').waitFor({ state: 'visible' });
   await page.evaluate(() => document.exitPointerLock());
   assert.equal(await page.locator('#voiceSettings').textContent(), 'ECHO ▾');
-  await controlsFit('#audioControls button');
+  await openMenu('#combatMenu');
   await buildVisible();
   await page.screenshot({ path: output + 'desktop-combat.png' });
-  await page.locator('#voiceSettings').click();
+  await menuAction('#combatMenu', '#voiceToggle');
+  assert.equal(await page.locator('#voiceToggle').getAttribute('aria-pressed'), 'false');
+  await menuAction('#combatMenu', '#voiceToggle');
+  assert.equal(await page.locator('#voiceToggle').getAttribute('aria-pressed'), 'true');
+  await menuAction('#combatMenu', '#soundToggle');
+  assert.match(await page.locator('#soundToggle').textContent(), /OFF/);
+  await menuAction('#combatMenu', '#soundToggle');
+  assert.match(await page.locator('#soundToggle').textContent(), /ON/);
+  await menuAction('#combatMenu', '#voiceSettings');
   await page.locator('[name=pilotVoice][value=flint]').check();
   await page.locator('#closePilotVoices').click();
   assert.equal(await page.locator('#voiceSettings').textContent(), 'FLINT ▾');
-  await page.locator('#gameReport').click();
+  await menuAction('#combatMenu', '#gameReport');
   assert.equal(
     await page.locator('[name=title]').inputValue(),
     'Local coexistence regression draft',
@@ -160,19 +207,21 @@ try {
   await page.locator('#feedbackClose').click();
   for (const width of [390, 360]) {
     await page.setViewportSize({ width, height: 844 });
-    await controlsFit('#audioControls button');
-    await page.locator('#voiceSettings').click();
+    await openMenu('#combatMenu');
+    await menuAction('#combatMenu', '#voiceSettings');
     await buildVisible();
     await page.locator('#closePilotVoices').click();
+    await openMenu('#combatMenu');
     await page.screenshot({ path: output + width + '-combat.png' });
-    await page.locator('#gameReport').click();
+    await menuAction('#combatMenu', '#gameReport');
     await buildVisible();
     await page.locator('#feedbackClose').click();
+    await closeMenu('#combatMenu');
     await page.keyboard.press('F8');
     await buildVisible();
     await page.locator('#feedbackClose').click();
   }
-  await page.locator('#exitGame').click();
+  await menuAction('#combatMenu', '#exitGame');
   await page.locator('#game').waitFor({ state: 'hidden' });
   assert.equal(await page.locator('#pilotVoiceSettings').textContent(), 'Voice: Flint');
   assert.equal(submissions, 0);

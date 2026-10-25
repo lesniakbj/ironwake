@@ -200,6 +200,8 @@ Public PeerJS signaling and Google STUN require internet. There is no TURN relay
 
 ## Project layout
 
+See [parallel development](docs/parallel-development.md) for subsystem ownership, the one-time formatting migration, measured Git merge examples, and the proposed merge queue. [The integration manifest](docs/parallel-integration.json) records the five exact PR heads included in this branch.
+
 - `dist/core.js`: stable public API and explicit simulation tick order.
 - `dist/catalog/`, `dist/builds/`: equipment definitions, build normalization and composed career/field stats.
 - `dist/simulation/`: world/input, movement, weapons, damage, enemies and tick phases.

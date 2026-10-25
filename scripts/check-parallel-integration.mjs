@@ -31,6 +31,12 @@ try {
     if (route.request().method() !== 'GET') submissions++;
     return route.fulfill({ json: { available: false } });
   });
+  async function combatAction(selector) {
+    if (!(await page.locator(selector).isVisible())) {
+      await page.locator('#combatMenu>summary').click();
+    }
+    await page.locator(selector).click();
+  }
   await page.goto('http://127.0.0.1:4307/ironwake/');
   await page.locator('#feedbackDialog').waitFor({ state: 'attached' });
   await page.evaluate(async () => {
@@ -76,18 +82,29 @@ try {
   );
   await page.screenshot({ path: output + 'campaign-field-upgrade.png' });
   await page.locator('#fieldInventoryToggle').click();
-  await page.locator('#gameReport').click();
+  await combatAction('#gameReport');
   await page.waitForFunction(() => document.querySelector('#feedbackScreenshot').naturalWidth > 0);
   const before = JSON.parse(await page.locator('#feedbackContext').textContent());
   await page.waitForTimeout(600);
   await page.locator('#feedbackClose').click();
-  await page.locator('#gameReport').click();
+  await combatAction('#gameReport');
   const after = JSON.parse(await page.locator('#feedbackContext').textContent());
   assert.ok(after.round.time - before.round.time < 0.2, 'solo simulation pauses during reporting');
   assert.match(after.mission.name, /^Ashgate Depot$/i);
   assert.ok(after.player.hp > 0);
   await page.locator('#feedbackClose').click();
+  if (await page.locator('#combatMenu').evaluate((menu) => menu.open)) {
+    await page.locator('#combatMenu>summary').click();
+  }
+  for (let i = 0; i < 2; i++) {
+    const offer = page.locator('[data-field-upgrade]:enabled').first();
+    await offer.waitFor({ state: 'visible' });
+    await offer.click();
+    await page.waitForTimeout(150);
+  }
+  await page.locator('#fieldOffers').waitFor({ state: 'hidden' });
   await page.setViewportSize({ width: 960, height: 680 });
+  await page.locator('#battle').focus();
   await page.keyboard.down('d');
   await page.keyboard.press('Shift');
   for (let i = 0; i < 18; i++) {
@@ -96,7 +113,15 @@ try {
   }
   await page.keyboard.up('d');
   await page.evaluate(() => document.exitPointerLock());
-  await page.locator('#exitGame').click();
+  await combatAction('#gameReport');
+  const moved = JSON.parse(await page.locator('#feedbackContext').textContent());
+  const movementDistance = Math.hypot(
+    moved.player.x - after.player.x,
+    moved.player.y - after.player.y,
+  );
+  assert.ok(movementDistance > 10, 'captured frames show actual simulated movement');
+  await page.locator('#feedbackClose').click();
+  await combatAction('#exitGame');
   await page.locator('#confirmExit').click();
   await page.waitForFunction(() => document.body.dataset.screen === 'hub');
   assert.equal(await page.locator('#game').isVisible(), false);
@@ -112,6 +137,7 @@ try {
         chosenName,
         mission: after.mission.name,
         reportingTimeDelta: after.round.time - before.round.time,
+        movementDistance,
         errors,
         submissions,
         fixture:

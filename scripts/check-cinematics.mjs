@@ -97,6 +97,11 @@ async function live(page) {
   assert.equal(await page.locator('#game').isVisible(), true);
   assert.equal(await page.locator('#game').getAttribute('data-arrival'), null);
 }
+async function exitCombat(page) {
+  if (!(await page.locator('#exitGame').isVisible()))
+    await page.locator('#combatMenu > summary').click();
+  await page.locator('#exitGame').click();
+}
 try {
   const page = await makePage();
   await open(page);
@@ -146,7 +151,7 @@ try {
   await page.keyboard.press('w');
   await releasePointer(page);
   await page.screenshot({ path: output + '/desktop-combat.png' });
-  await page.locator('#exitGame').click();
+  await exitCombat(page);
   await waitPhase(page, 'idle');
   assert.equal(await page.locator('#hangar').isVisible(), true);
   console.log(
@@ -391,7 +396,7 @@ try {
 
   // Abort a second drop on disconnect; the campaign must remain available.
   await releasePointer(host);
-  await host.locator('#exitGame').click();
+  await exitCombat(host);
   await host.locator('#confirmExit').click();
   await command(host);
   await host.locator('[data-action=newRun]').click();
