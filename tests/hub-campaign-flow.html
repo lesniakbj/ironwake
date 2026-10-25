@@ -1,0 +1,185 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>IRONWAKE / Anchorage campaign flow fixture</title>
+  <style>
+    *{box-sizing:border-box}body{margin:0;background:#101d22;color:#dce7df;font:14px/1.5 system-ui,sans-serif}main{padding:18px 22px}h1{font-size:22px;margin:0 0 8px}p{margin:6px 0;color:#b6c9c0}.controls{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0}button{padding:10px 13px;border:1px solid #93b6a6;border-radius:3px;background:#25443e;color:#edf5e5;cursor:pointer}button:disabled{opacity:.4;cursor:default}#status{display:block;padding:10px 12px;background:#1d3338;border-left:3px solid #b6d59b;white-space:pre-wrap}details{margin-top:10px}#events{max-height:210px;overflow:auto;white-space:pre-wrap;font:12px/1.5 ui-monospace,monospace;margin:8px 0}iframe{display:block;width:100%;height:900px;min-height:720px;border:0;border-top:1px solid #617e74;background:#132026}strong{color:#d9efb9}.warning{color:#edc995}
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Anchorage / real game campaign flow</h1>
+    <p class="warning">Local development fixture. The embedded page is the actual game; only its PeerJS transport and host outcomes are simulated. This does not establish live WAN co-op or combat balance.</p>
+    <p>Connect, walk to stations in the game, research a chassis or train the pilot, then mark ready. Deploy through the fixture, complete a synthetic round, return, and spend the earned points and run tokens through the real station controls. Repeat for another mission or test a defeat.</p>
+    <p>Career purchases and rewards update this origin's real browser save. The synthetic host campaign and shared armory live only in this fixture. Reloading the guest keeps the browser saves.</p>
+    <div class="controls">
+      <button id="connect" disabled>Connect test squad</button>
+      <button id="deploy" disabled>Host deploys next mission</button>
+      <button id="victory" disabled>Host completes mission</button>
+      <button id="defeat" disabled>Host loses mission</button>
+      <button id="return" disabled>Host returns to hub</button>
+      <button id="reconnect" disabled>Reconnect guest (keep saves)</button>
+      <button id="newRun" disabled>New synthetic host run</button>
+    </div>
+    <output id="status" role="status">Loading the game…</output>
+    <details open><summary>Transport and reward checks</summary><pre id="events" aria-live="polite"></pre></details>
+  </main>
+  <iframe id="game" title="Actual IRONWAKE game with local test host"></iframe>
+  <script type="module">
+    import{newCampaign,registerPilot,campaignMission,recordSortie,installRefit,profileFor}from '../dist/campaign.js';
+    import{chassisBlueprint}from '../dist/chassis.js';
+    import{newWorld,snapshot,cleanBuild,validBuild}from '../dist/core.js?v=41';
+    import{sortieReport}from '../dist/sortie-progression.js';
+    import{cleanCareer,awardCareerForWorld,careerProfile}from '../dist/career-progression.js';
+    import{cleanDeploymentProgression}from '../dist/career-progression.js';
+    import{HUB_PROTOCOL,HUB_STATIONS,newHubSave,inheritArmory,purchaseAtStation,rewardHub,missingLicenses,syncHubPlayers,setHubInput,stepHub,nearStation,hubSnapshot}from '../dist/hub-state.js';
+    import{validCallsign}from '../dist/pilot.js';
+
+    const $=id=>document.getElementById(id),frame=$('game'),HOST='fixture-host',GUEST='fixture-guest',ROOM='TEST23',HOST_NAME='PILOT-ABCDEFGH';
+    const clone=value=>JSON.parse(JSON.stringify(value));
+    let campaign=newCampaign(86025),armory=inheritArmory(newHubSave(),[chassisBlueprint('vanguard')]),roster=[],hub=syncHubPlayers(null,[]),hostWorld=null;
+    let phase='loading',connection=null,peer=null,gameReady=false,joinAfterLoad=false,reloadCareer=null,guestPilot='',expectedCareer=null,lastHubPacket=0,lastWorldPacket=0,lastTick=performance.now();
+    const events=[];
+    function log(message){events.push(new Date().toLocaleTimeString()+'  '+message);$('events').textContent=events.slice(-65).join('\n');$('events').scrollTop=$('events').scrollHeight;}
+    function assert(condition,message){log((condition?'PASS  ':'FAIL  ')+message);if(!condition)$('status').dataset.failed='true';return condition;}
+    function careerSave(){try{return cleanCareer(JSON.parse(localStorage.getItem('iw-career-v1')));}catch{return cleanCareer(null);}}
+    const guest=()=>roster.find(member=>member.id===GUEST);
+    function refresh(){
+      const connected=!!connection?.open,member=guest(),profile=profileFor(campaign,guestPilot);
+      $('connect').disabled=!gameReady||connected||phase==='loading';
+      $('deploy').disabled=!connected||phase!=='hub'||campaign.runState!=='active'||!member?.ready;
+      $('victory').disabled=$('defeat').disabled=!connected||phase!=='playing';
+      $('return').disabled=!connected||phase!=='result';
+      $('reconnect').disabled=!gameReady||!connected||phase!=='hub';
+      $('newRun').disabled=!connected||phase!=='hub';
+      $('status').textContent=`${phase.toUpperCase()} · synthetic host mission ${Math.min(9,campaign.level+1)} / 9 · secured ${campaign.level} · run ${campaign.runState}\n${guestPilot||'Guest not connected'} · guest ${member?.ready?'READY':'not ready'} · ${profile.credits} run tokens · ${profile.modules.length} run modules · shared ${armory.credits} CR`;
+    }
+    function deliver(data){if(connection?.open)connection.emit('data',clone(data));}
+    function lobby(){hub=syncHubPlayers(hub,roster);deliver({type:'lobby',room:ROOM,roster,mission:campaignMission(campaign),campaign,armory,hub:hubSnapshot(hub)});refresh();}
+    function unready(){roster.forEach(member=>member.ready=false);}
+    function receive(data){
+      if(!data||typeof data!=='object')return;
+      if(data.type==='hello'){
+        if(!validCallsign(data.callsign)){log('Rejected invalid fixture hello callsign.');return;}
+        guestPilot=data.callsign;
+        const build=cleanBuild(data.build);
+        roster=[{id:HOST,name:HOST_NAME,build:chassisBlueprint('vanguard'),progression:{mech:[],pilot:[]},ready:false},{id:GUEST,name:guestPilot,build,progression:cleanDeploymentProgression(data.progression,build.chassis),ready:false}];
+        campaign=registerPilot(campaign,HOST_NAME,roster.map(member=>member.name));campaign=registerPilot(campaign,guestPilot,roster.map(member=>member.name));
+        // Match the production migration for established equipment, without granting every license.
+        armory=inheritArmory(armory,roster.map(member=>member.build));hub=syncHubPlayers(hub,roster);
+        const command=HUB_STATIONS.find(station=>station.id==='mission');Object.assign(hub.players.find(player=>player.id===HOST),{x:command.x,z:command.z});
+        phase='hub';log('hello accepted for '+guestPilot+'; real roster progression retained.');lobby();return;
+      }
+      if(data.type==='hubInput'&&phase==='hub'){setHubInput(hub,GUEST,data.input);return;}
+      if(data.type==='input')return;
+      const member=guest();if(!member||phase!=='hub')return;
+      if(data.type==='loadout'){
+        member.build=cleanBuild(data.build);member.progression=cleanDeploymentProgression(data.progression,member.build.chassis);member.ready=false;
+        log('loadout received; guest readiness cleared; progression '+JSON.stringify(member.progression));lobby();
+      }else if(data.type==='ready'){
+        member.ready=!!data.ready&&data.campaignId===campaign.id&&data.revision===campaign.revision&&validBuild(member.build)&&missingLicenses(armory,member.build).length===0;
+        log('ready received: '+member.ready+' (campaign revision '+data.revision+').');lobby();
+      }else if(data.type==='refit'){
+        const next=nearStation(hub,GUEST,'supply')?installRefit(campaign,member.name,data.request):campaign;
+        if(next!==campaign){campaign=next;unready();log('refit installed through real Run supplies UI; squad readiness cleared.');}else log('refit rejected: proximity, token, offer or revision did not match.');
+        lobby();
+      }else if(data.type==='hubPurchase'){
+        const next=purchaseAtStation(armory,hub,GUEST,data.request);
+        if(next!==armory){armory=next;log('shared license purchased at the real vendor.');}else log('license rejected: proximity, currency, unlock or revision did not match.');
+        lobby();
+      }
+    }
+    class Emitter{
+      constructor(){this.handlers=new Map();}
+      on(type,handler){const handlers=this.handlers.get(type)||[];handlers.push(handler);this.handlers.set(type,handlers);return this;}
+      emit(type,value){for(const handler of this.handlers.get(type)||[])handler(value);}
+    }
+    class LocalConnection extends Emitter{
+      constructor(){super();this.peer=HUB_PROTOCOL+ROOM;this.open=false;this.bufferSize=0;}
+      send(data){if(this.open)receive(clone(data));}
+      close(){if(!this.open)return;this.open=false;phase='disconnected';log('mock connection closed; real app resets its network state.');this.emit('close');refresh();}
+    }
+    function installPeer(){
+      const win=frame.contentWindow;
+      win.Peer=class LocalPeer extends Emitter{
+        constructor(){super();this.destroyed=false;this.id=GUEST;peer=this;win.setTimeout(()=>{if(!this.destroyed)this.emit('open',GUEST);},0);}
+        connect(target){
+          connection=new LocalConnection();const conn=connection;
+          win.setTimeout(()=>{if(this.destroyed)return;if(target!==HUB_PROTOCOL+ROOM){this.emit('error',{type:'peer-unavailable'});return;}conn.open=true;conn.emit('open');},0);
+          return conn;
+        }
+        destroy(){this.destroyed=true;connection?.close();if(peer===this)peer=null;}
+        reconnect(){}
+      };
+    }
+    async function waitFor(check,description,timeout=10000){
+      const deadline=performance.now()+timeout;
+      while(performance.now()<deadline){if(check())return;await new Promise(resolve=>setTimeout(resolve,50));}
+      throw new Error('Timed out waiting for '+description+'.');
+    }
+    async function connect(){
+      await waitFor(()=>typeof frame.contentDocument?.getElementById('startJoin')?.onclick==='function','the real app join handler');
+      const doc=frame.contentDocument;doc.getElementById('startJoin').click();doc.getElementById('joinCode').value=ROOM;doc.getElementById('confirmJoin').click();
+      await waitFor(()=>phase==='hub'&&connection?.open,'the real app to accept a lobby');
+      log('Actual Join squad controls connected the guest to deterministic local transport.');refresh();
+    }
+    async function deploy(){
+      if(phase!=='hub'||!guest()?.ready||campaign.runState!=='active')return;
+      roster.find(member=>member.id===HOST).ready=true;
+      hostWorld=newWorld(campaignMission(campaign),roster);expectedCareer=careerSave();phase='deploying';refresh();
+      deliver({type:'start',world:snapshot(hostWorld)});
+      await waitFor(()=>{const doc=frame.contentDocument;return !doc.getElementById('game').hidden&&doc.getElementById('deploymentScreen').hidden;},'the real mission to finish loading');
+      phase='playing';lastWorldPacket=performance.now();
+      const player=hostWorld.players.find(player=>player.id===GUEST);
+      assert(JSON.stringify(player.progression)===JSON.stringify(guest().progression),'deployment preserves the actual purchased career ranks.');
+      assert(JSON.stringify(player.field.modules)===JSON.stringify(profileFor(campaign,guestPilot).modules),'deployment carries the guest run modules.');
+      log('Host start message deployed '+hostWorld.mission.name+' through the actual startView path.');refresh();
+    }
+    function outcome(won){
+      if(phase!=='playing'||!hostWorld)return;
+      hostWorld.status=won?'won':'lost';hostWorld.time=90;hostWorld.cleared=won?hostWorld.mission.zones.length:0;
+      hostWorld.sortie.salvage=won?480:0;hostWorld.sortie.salvageUnits=hostWorld.sortie.salvage*100;
+      expectedCareer=awardCareerForWorld(expectedCareer,hostWorld,GUEST,guestPilot);
+      deliver({type:'state',world:snapshot(hostWorld,false)});
+      assert(JSON.stringify(careerSave())===JSON.stringify(expectedCareer),won?'the real final-snapshot handler saves one deduplicated guest career reward.':'defeat gives no career reward.');
+      const chassis=hostWorld.players.find(player=>player.id===GUEST).build.chassis||'custom',saved=careerSave();
+      log('Saved totals: '+careerProfile(saved,'mech',chassis).earned+' '+chassis+' research, '+careerProfile(saved,'pilot',guestPilot).earned+' pilot points.');
+      campaign=recordSortie(campaign,won?'victory':'defeat',sortieReport(hostWorld,won?'victory':'defeat'));armory=rewardHub(armory,campaign);
+      phase='result';log((won?'Synthetic victory':'Synthetic defeat')+' settled with the real campaign/armory models. Use Host returns to hub separately.');refresh();
+    }
+    function returnToHub(){
+      if(phase!=='result')return;
+      unready();hub=syncHubPlayers(null,roster);hostWorld=null;phase='hub';
+      deliver({type:'return',mission:campaignMission(campaign),roster,campaign,armory,hub:hubSnapshot(hub)});
+      assert(JSON.stringify(careerSave())===JSON.stringify(expectedCareer),'return does not award the same career round twice.');
+      assert(frame.contentDocument.body.dataset.screen==='hub','the real guest return handler enters Anchorage.');
+      log('Guest returned; real Command, Run supplies, Parts foundry and Signal archive controls are available.');refresh();
+    }
+    function guarded(action){return()=>Promise.resolve().then(action).catch(error=>{log('ERROR  '+error.message);refresh();});}
+    $('connect').onclick=guarded(connect);$('deploy').onclick=guarded(deploy);$('victory').onclick=()=>outcome(true);$('defeat').onclick=()=>outcome(false);$('return').onclick=returnToHub;
+    $('reconnect').onclick=()=>{if(phase!=='hub')return;reloadCareer=careerSave();joinAfterLoad=true;connection?.close();gameReady=false;phase='loading';refresh();frame.contentWindow.location.reload();};
+    $('newRun').onclick=()=>{if(phase!=='hub')return;const names=roster.map(member=>member.name);campaign=newCampaign(86025);for(const name of names)campaign=registerPilot(campaign,name,names);unready();hub=syncHubPlayers(null,roster);log('Started a fresh synthetic host campaign; personal career and shared armory remain.');lobby();};
+    frame.addEventListener('load',guarded(async()=>{
+      if(!['127.0.0.1','localhost'].includes(location.hostname))return;
+      installPeer();await waitFor(()=>typeof frame.contentDocument?.getElementById('startJoin')?.onclick==='function','game initialization');
+      gameReady=true;phase='disconnected';
+      if(reloadCareer){assert(JSON.stringify(careerSave())===JSON.stringify(reloadCareer),'career purchases and rewards survive an actual game reload.');reloadCareer=null;}
+      log('Actual dist/index.html loaded; PeerJS replaced only inside this local iframe.');refresh();
+      if(joinAfterLoad){joinAfterLoad=false;await connect();}
+    }));
+    if(['127.0.0.1','localhost'].includes(location.hostname)){
+      frame.src='../dist/';
+      setInterval(()=>{
+        const now=performance.now(),dt=Math.min(.05,(now-lastTick)/1000);lastTick=now;
+        if(!connection?.open)return;
+        if(phase==='hub'){
+          stepHub(hub,dt);
+          if(now-lastHubPacket>=80){lastHubPacket=now;deliver({type:'hubState',hub:hubSnapshot(hub)});}
+        }else if(phase==='playing'&&now-lastWorldPacket>=1000){lastWorldPacket=now;hostWorld.time++;deliver({type:'state',world:snapshot(hostWorld,false)});}
+      },1000/60);
+    }else{frame.hidden=true;$('status').textContent='This development fixture runs only on localhost or 127.0.0.1.';log('Blocked outside localhost.');}
+  </script>
+</body>
+</html>

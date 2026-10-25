@@ -19,6 +19,6 @@ document.getElementById('prepare').onclick=()=>{
   campaign=recordSortie(campaign,'victory',{outcome:'victory',missionId:mission.id,round:true,seconds:90,salvage:300,pilots:[{name:pilot,modules:[]}]});
  }
  localStorage.setItem('iw-career-v1',JSON.stringify(career));localStorage.setItem('iw-campaign',JSON.stringify(campaign));localStorage.setItem('iw-active',JSON.stringify(chassisBlueprint('vanguard')));
- document.getElementById('status').textContent='Ready: 7 Vanguard research and 7 pilot points. Open the game and choose Upgrade trees.';
+ document.getElementById('status').textContent='Ready: 7 Vanguard research and 7 pilot points. Open Anchorage and visit Parts foundry or Signal archive.';
 };
 </script></html>
