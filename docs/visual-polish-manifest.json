@@ -79,8 +79,8 @@
     "existingDirtyWorkPreserved": true
   },
   "browserVerification": {
-    "performed": false,
-    "screenshotsCaptured": false,
+    "performed": true,
+    "screenshotsCaptured": true,
     "mainNavigation": {
       "url": "http://127.0.0.1:4310/ironwake/",
       "outcome": "Timed out: net::ERR_CONNECTION_TIMED_OUT"
@@ -94,12 +94,20 @@
     "previousStoppedActions": [
       "Navigation to http://127.0.0.1:4203/tests/field-browser.html",
       "Separate data:error tab cleanup"
-    ]
+    ],
+    "captureFollowup": {
+      "runtime": "92011c2c81b84da82994f38572a5dc729444ecd2",
+      "media": "docs/pr-media/visual-polish",
+      "captures": 6,
+      "normalGame": true,
+      "fixtureAssistance": false,
+      "priorDeniedActionsRetried": false
+    }
   },
   "gates": [
-    "Fresh rendered desktop/mobile Full and Reduced inspection and comparable screenshots",
-    "Actual GPU shader compilation and physical low-end/mobile performance",
-    "Interactive deploy/cancel/retry/feedback/return/touch replay",
+    "Broader nine-arena Full/Reduced and landscape contrast/occlusion acceptance",
+    "Physical low-end/mobile GPU performance and physical touch validation",
+    "Complete interrupted deploy/cancel/retry/feedback lifecycle replay",
     "Manually played campaign victory",
     "Independent remote squad validation",
     "Independent review and approval"
