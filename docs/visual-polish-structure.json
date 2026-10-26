@@ -1,8 +1,8 @@
 {
   "kind": "Node CPU and scene structure; no GPU rendering, culling, FPS or visual acceptance",
-  "recordedAt": "2026-10-26T18:53:35.029Z",
+  "recordedAt": "2026-10-26T19:01:23.963Z",
   "baseline": "5492bdb286ce48b45fc6e66be3e50abc1482ccce",
-  "revision": "9fae04af0ca16c87fd30967d5b531b055f23a9d1",
+  "revision": "185d41c37661f4af4c1bcadd838a5146d7b5d45f",
   "arenas": [
     {
       "id": "ashgate",
@@ -163,8 +163,8 @@
       "tier": "standard",
       "reduced": false,
       "samples": 600,
-      "p50Ms": 0.0261000000000422,
-      "p95Ms": 0.09430000000000405,
+      "p50Ms": 0.026399999999966894,
+      "p95Ms": 0.09569999999996526,
       "shadowTexels": 1048576,
       "maxMotes": 96,
       "surfaces": {
@@ -178,8 +178,8 @@
       "tier": "standard",
       "reduced": true,
       "samples": 600,
-      "p50Ms": 0.02039999999999509,
-      "p95Ms": 0.05279999999999063,
+      "p50Ms": 0.021100000000046748,
+      "p95Ms": 0.055999999999983174,
       "shadowTexels": 1048576,
       "maxMotes": 0,
       "surfaces": {
@@ -193,8 +193,8 @@
       "tier": "compact",
       "reduced": false,
       "samples": 600,
-      "p50Ms": 0.02179999999998472,
-      "p95Ms": 0.0433999999999628,
+      "p50Ms": 0.021800000000041564,
+      "p95Ms": 0.05110000000001946,
       "shadowTexels": 262144,
       "maxMotes": 32,
       "surfaces": {
@@ -208,8 +208,8 @@
       "tier": "compact",
       "reduced": true,
       "samples": 600,
-      "p50Ms": 0.01999999999998181,
-      "p95Ms": 0.039700000000038926,
+      "p50Ms": 0.02050000000002683,
+      "p95Ms": 0.04450000000002774,
       "shadowTexels": 262144,
       "maxMotes": 0,
       "surfaces": {

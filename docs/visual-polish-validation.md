@@ -1,6 +1,6 @@
 # Visual pass validation
 
-**Status: draft; rendered acceptance and independent approval remain open.** Implementation commit: `9fae04af0ca16c87fd30967d5b531b055f23a9d1`. The final evidence commit adds documentation only. [Research and implementation decisions](visual-polish-research.md), [exact dependency manifest](visual-polish-manifest.json), [full test output](visual-polish-tests.txt), and [structural measurements](visual-polish-structure.json) accompany this report.
+**Status: draft; rendered acceptance and independent approval remain open.** Implementation commits: `9fae04af0ca16c87fd30967d5b531b055f23a9d1` and the final cladding correction `185d41c37661f4af4c1bcadd838a5146d7b5d45f`. The final evidence commit adds documentation only. [Research and implementation decisions](visual-polish-research.md), [exact dependency manifest](visual-polish-manifest.json), [full test output](visual-polish-tests.txt), and [structural measurements](visual-polish-structure.json) accompany this report.
 
 ## Integration
 
@@ -22,7 +22,7 @@ The source worktrees were inspected before work. `coop-enemy-scaling` had unrela
 
 | Check | Result |
 | --- | --- |
-| Full `node --test --test-reporter=spec tests/*.test.js` after the final source changes | **456 passed, zero failed/cancelled/skipped**; 44.1 seconds locally |
+| Full `node --test --test-reporter=spec tests/*.test.js` after the final source changes | **456 passed, zero failed/cancelled/skipped**; 41.3 seconds locally |
 | New visual regressions | 11 pass: surface alignment/edges/flight, duplicate events, no airburst/landing/edge scorch, caps, time rewind, teardown, Reduced mode, ray isolation, all nine arena rebuilds and actual simulation equivalence |
 | Syntax: every authored JS/CJS/MJS plus inline HTML scripts under dist/scripts/tests/worker, excluding vendor | **266 checks, zero failures** |
 | `node scripts/check-architecture.mjs` | **237 modules, 59 extracted modules**, pass |
@@ -34,6 +34,8 @@ The source worktrees were inspected before work. `coop-enemy-scaling` had unrela
 The repository has no separate ESLint or TypeScript command. Existing installed dependencies were copied into this isolated checkout; no dependency manifest or lockfile changed. An initial pnpm subprocess could not find `pnpm`; the command-local option above avoids its unnecessary dependency-install subprocess. The formatter itself and later package command pass. An initial Wrangler log write outside the workspace was denied; the successful repeat sets `WRANGLER_LOG_PATH` inside `.openai/visual-pass`. No global settings or credentials changed.
 
 The suite includes campaign result/reward/save/retry and interrupted/repeated deployment logic inherited from the stack. Those are automated/synthetic checks, not manually played wins or fresh browser interaction. Browser scripts were not launched through an alternate driver after the URL guard.
+
+The first pushed head `70dde23` passed [canonical CI run 40382213988](https://github.com/loganthorneloe/ironwake/actions/runs/40382213988). A subsequent geometry review found boundary piers buried inside the opaque rim. The correction makes them thin face cladding, extending at most 0.14 render units from the existing wall; it creates no freestanding cover or collider. A regression verifies both exposed placement and the small trim envelope. The full checks above were repeated after that correction. The draft PR is [#20](https://github.com/loganthorneloe/ironwake/pull/20); its latest terminal CI status must be checked separately from the initial run.
 
 ## Performance observations
 
