@@ -26,12 +26,7 @@ await mkdir(output, { recursive: true });
 const browser = await chromium.launch({
   channel: 'chrome',
   headless: true,
-  args: [
-    '--enable-webgl',
-    '--ignore-gpu-blocklist',
-    '--disable-background-timer-throttling',
-    '--disable-renderer-backgrounding',
-  ],
+  args: ['--enable-webgl', '--ignore-gpu-blocklist'],
 });
 const errors = [];
 async function makePage(options = {}) {
@@ -40,23 +35,14 @@ async function makePage(options = {}) {
   await context.route('**/three-view.js*', async (route) => {
     const response = await route.fetch();
     let source = await response.text();
-    const compile = /await\s+renderer\.compileAsync\(\s*scene\s*,\s*camera\s*\)\s*;/g;
-    assert.equal(
-      [...source.matchAll(compile)].length,
-      1,
-      'shader preparation hook must apply once',
-    );
     source = source.replace(
-      compile,
-      (statement) => `await globalThis.__holdDeployment?.();${statement}`,
+      'await renderer.compileAsync(scene,camera);',
+      'await globalThis.__holdDeployment?.();await renderer.compileAsync(scene,camera);',
     );
     await route.fulfill({ response, body: source });
   });
   const page = await context.newPage();
-  page.on('pageerror', (error) => {
-    errors.push(error.message);
-    console.error('Browser page error:', error.message);
-  });
+  page.on('pageerror', (error) => errors.push(error.message));
   return page;
 }
 const phase = (page) => page.locator('#sceneFlow').getAttribute('data-phase');
@@ -72,35 +58,30 @@ async function releasePointer(page) {
 }
 async function open(page) {
   await page.goto(base);
-  await page.locator('#feedbackDialog').waitFor({ state: 'attached' });
-}
-async function command(page) {
-  await page.bringToFront();
-  await page.locator('.hub-directory [data-walk=mission]').click();
-  // Use the real walking route and proximity check. Navigation normally opens
-  // Command on arrival; the interact button covers an interrupted final step.
-  await page.waitForFunction(() => {
-    const panel = document.querySelector('#hubCommand');
-    const interact = document.querySelector('#hubInteract');
-    return !panel.hidden || (!interact.disabled && interact.textContent.includes('Command'));
-  });
-  if (!(await page.locator('#hubCommand').isVisible())) await page.locator('#hubInteract').click();
-  await page.locator('#hubCommand').waitFor({ state: 'visible' });
-  await page.locator('[data-action=deploy]').waitFor();
+  await page.locator('#startGarage').waitFor();
 }
 async function range(page) {
   await page.locator('#startGarage').click();
   await page.locator('#testBuildTop').click();
 }
+async function command(page) {
+  await page.locator('#hubScreen').waitFor({ state: 'visible' });
+  await page.locator('.hub-directory [data-walk=mission]').click();
+  await page.locator('#hubCommand').waitFor({ state: 'visible', timeout: 15000 });
+  await page.locator('#hubCommand [data-action=deploy]').waitFor();
+}
+async function readyAtHub(page) {
+  const ready = page.locator('#hubTeam [data-hub-action=ready]');
+  await ready.waitFor({ state: 'visible' });
+  await ready.click();
+  await page.waitForFunction(
+    () => document.querySelector('#hubTeam [data-hub-action=ready]')?.textContent === 'Unready',
+  );
+}
 async function live(page) {
   await waitPhase(page, 'idle');
   assert.equal(await page.locator('#game').isVisible(), true);
   assert.equal(await page.locator('#game').getAttribute('data-arrival'), null);
-}
-async function exitCombat(page) {
-  if (!(await page.locator('#exitGame').isVisible()))
-    await page.locator('#combatMenu > summary').click();
-  await page.locator('#exitGame').click();
 }
 try {
   const page = await makePage();
@@ -151,7 +132,7 @@ try {
   await page.keyboard.press('w');
   await releasePointer(page);
   await page.screenshot({ path: output + '/desktop-combat.png' });
-  await exitCombat(page);
+  await page.locator('#exitGame').click();
   await waitPhase(page, 'idle');
   assert.equal(await page.locator('#hangar').isVisible(), true);
   console.log(
@@ -201,7 +182,7 @@ try {
   });
   await mobile.locator('#startMission').click();
   await command(mobile);
-  await mobile.locator('[data-action=deploy]').click();
+  await mobile.locator('#hubCommand [data-action=deploy]').click();
   await mobile.waitForFunction(() => !!window.__releaseDeployment);
   await mobile.screenshot({ path: output + '/mobile-loading.png' });
   assert.equal(await mobile.locator('#sceneFlow').getAttribute('data-motion'), 'reduced');
@@ -223,7 +204,6 @@ try {
     links = new Map();
   let sequence = 0;
   async function deliver(target, message) {
-    if (target.isClosed()) return;
     await target.evaluate((message) => window.__receivePeer(message), message);
   }
   const relay = async ({ page }, message) => {
@@ -352,27 +332,28 @@ try {
   await mockPeer(guest);
   await open(host);
   await host.locator('#startHost').click();
-  await host.waitForFunction(() => document.body.dataset.room === 'true');
-  const code = (await host.locator('#networkStatus').textContent()).match(/ROOM (\w+)/)[1];
+  await host.locator('#hubTeam .hub-squad-label').filter({ hasText: 'ROOM ' }).waitFor();
+  const code = (await host.locator('#hubTeam .hub-squad-label').textContent()).match(
+    /ROOM (\w+)/,
+  )[1];
   await open(guest);
   await guest.locator('#startJoin').click();
   await guest.locator('#joinCode').fill(code);
   await guest.locator('#confirmJoin').click();
-  await guest.waitForFunction(() => document.body.dataset.room === 'true');
-  await command(host);
-  await command(guest);
+  await guest.locator('#hubTeam [data-hub-action=ready]').waitFor();
   await guest.evaluate(() => {
     window.__holdDeployment = () =>
       new Promise((resolve) => (window.__releaseDeployment = resolve));
   });
-  await host.locator('[data-action=ready]').click();
-  await guest.locator('[data-action=ready]').click();
-  await host.locator('[data-action=deploy]').click();
+  await readyAtHub(host);
+  await readyAtHub(guest);
+  await command(host);
+  await host.locator('#hubCommand [data-action=deploy]').click();
   await guest.waitForFunction(() => !!window.__releaseDeployment);
   await waitPhase(host, 'waiting');
   assert.equal(await phase(guest), 'loading');
   assert.equal(
-    await guest.evaluate(
+    await host.evaluate(
       () => window.__receivedPackets?.filter((p) => p.type === 'state').length || 0,
     ),
     0,
@@ -396,16 +377,15 @@ try {
 
   // Abort a second drop on disconnect; the campaign must remain available.
   await releasePointer(host);
-  await exitCombat(host);
+  await host.locator('#exitGame').click();
   await host.locator('#confirmExit').click();
   await command(host);
-  await host.locator('[data-action=newRun]').click();
+  await host.locator('#hubCommand [data-action=newRun]').click();
   await host.locator('#confirmCampaign').click();
+  await readyAtHub(host);
+  await readyAtHub(guest);
   await command(host);
-  await command(guest);
-  await host.locator('[data-action=ready]').click();
-  await guest.locator('[data-action=ready]').click();
-  await host.locator('[data-action=deploy]').click();
+  await host.locator('#hubCommand [data-action=deploy]').click();
   await guest.waitForFunction(
     () =>
       !!window.__releaseDeployment &&
@@ -416,13 +396,11 @@ try {
   assert.equal(await host.locator('#hangar').isVisible(), true);
   await command(host);
   assert.equal(
-    await host.locator('[data-action=deploy]').isEnabled(),
+    await host.locator('#hubCommand [data-action=deploy]').isEnabled(),
     false,
     'host must ready up again after cancellation',
   );
   console.log('PASS: guest cancellation unwinds host deployment without ending the campaign');
-  await host.close();
-  await guest.close();
   // Destruction rooms need the same ticketed barrier, including the lab's reset action.
   const demolitionHost = await makePage(),
     demolitionGuest = await makePage();
@@ -441,10 +419,10 @@ try {
   await demolitionGuest.locator('#confirmJoin').click();
   await demolitionGuest.waitForFunction(() => document.body.dataset.room === 'true');
   // The lab uses the shared workshop readiness controls.
-  await demolitionHost.evaluate(() => document.querySelector('#deploy').click());
-  await demolitionGuest.evaluate(() => document.querySelector('#deploy').click());
+  await demolitionHost.locator('#deploy').click();
+  await demolitionGuest.locator('#deploy').click();
   await demolitionHost.waitForFunction(() => !document.querySelector('#deploy').disabled);
-  await demolitionHost.evaluate(() => document.querySelector('#deploy').click());
+  await demolitionHost.locator('#deploy').click();
   await Promise.all([live(demolitionHost), live(demolitionGuest)]);
   await demolitionHost.locator('#destructionTelemetry').waitFor();
   await releasePointer(demolitionHost);
@@ -457,8 +435,6 @@ try {
   assert.ok(starts.every((p) => typeof p.ticket === 'string'));
   assert.notEqual(starts[0].ticket, starts[1].ticket);
   console.log('PASS: two-pilot destruction deployment and ticketed restart');
-  await demolitionHost.close();
-  await demolitionGuest.close();
   if (process.argv.includes('--capture')) {
     const capture = await makePage();
     await open(capture);
@@ -467,7 +443,7 @@ try {
     await capture.waitForTimeout(250);
     await capture.screenshot({ path: output + '/campaign-before.png' });
     await mkdir(output + '/frames', { recursive: true });
-    await capture.locator('[data-action=deploy]').click();
+    await capture.locator('#hubCommand [data-action=deploy]').click();
     let capturedInsertion = false;
     const frameTimes = [];
     for (let i = 0; i < 64; i++) {

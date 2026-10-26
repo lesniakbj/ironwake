@@ -9,7 +9,7 @@ import { EQUIPMENT } from '../dist/catalog/equipment.js';
 import { PARTS } from '../dist/catalog/parts.js';
 import { cleanBuild } from '../dist/builds/loadout.js';
 import { mechStats } from '../dist/builds/stats.js';
-import { combatStats } from '../dist/builds/combat-stats.js';
+import { combatStats, combatRecovery } from '../dist/builds/combat-stats.js';
 import { newWorld } from '../dist/simulation/world.js';
 import { setInput } from '../dist/simulation/input.js';
 import { surfaceAt } from '../dist/simulation/geometry.js';
@@ -34,6 +34,7 @@ test('core preserves its public API and shares canonical definitions across vers
     'blocksBullet',
     'buildKey',
     'cleanBuild',
+    'combatRecovery',
     'combatStats',
     'combatTrial',
     'cost',
@@ -65,6 +66,7 @@ test('core preserves its public API and shares canonical definitions across vers
     PARTS,
     cleanBuild,
     mechStats,
+    combatRecovery,
     combatStats,
     newWorld,
     setInput,

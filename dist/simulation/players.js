@@ -4,7 +4,7 @@ import { COMBAT_MOVES } from '../catalog/combat-moves.js';
 import { ABILITIES } from '../catalog/abilities.js';
 import { WEAPONS, RANGED, MELEE } from '../catalog/weapons.js';
 import { specialFor } from '../builds/loadout.js';
-import { careerModifiers, combatStats } from '../builds/combat-stats.js';
+import { careerModifiers, combatStats, combatRecovery } from '../builds/combat-stats.js';
 import { fieldModifiers } from '../sortie-progression.js';
 import { fieldArea } from '../field-combat.js';
 import { cancelEnemyAction } from '../enemy-behaviors.js';
@@ -21,17 +21,12 @@ import { stepHand } from './hand-weapons.js';
 export function stepPlayers(w, dt) {
   for (const p of w.players) {
     const mods = fieldModifiers(p),
-      career = careerModifiers(p);
+      career = careerModifiers(p),
+      recovery = combatRecovery(p);
     p.shot = Math.max(0, p.shot - dt);
     p.meleeTime = Math.max(0, (p.meleeTime || 0) - dt);
-    p.abilityCd = Math.max(
-      0,
-      p.abilityCd - dt * career.specialRecharge * (1 + Math.min(2, mods.specialRecharge || 0)),
-    );
-    p.dashCd = Math.max(
-      0,
-      (p.dashCd || 0) - dt * career.dashRecharge * (1 + Math.min(2, mods.dashRecharge || 0)),
-    );
+    p.abilityCd = Math.max(0, p.abilityCd - dt * recovery.specialRate);
+    p.dashCd = Math.max(0, (p.dashCd || 0) - dt * recovery.dashRate);
     p.active = Math.max(0, p.active - dt);
     p.energy = p.energy ?? 100;
     if (w.time - p.lastInput > 0.7) p.input = {};

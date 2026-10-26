@@ -23,7 +23,12 @@ import {
 } from './planet-scene.js?v=41';
 import { createDashEffect } from './dash-effects.js?v=impact-1';
 import { thirdPersonView } from './third-person-view.js?v=41';
-import { createHomeBattle } from './home-battle.js?v=41';
+import {
+  createHomeBattle,
+  createHangarEnvironment,
+  finishHangarMech,
+  restHangarMech,
+} from './home-battle.js?v=hangar-1';
 import { makeFlameEffect } from './flame-effects.js?v=impact-1';
 import { createExplosionPool } from './explosion-effects.js?v=impact-1';
 import { correctedProjectile, launchCorrection } from './weapon-origin.js?v=41';
@@ -1623,7 +1628,10 @@ export function drawBattle3D(canvas, w, id, t, presentation = {}) {
   projectiles.visible = !presentation.deployment;
   effectsGroup.visible = !presentation.deployment;
   destructionScene?.update(w, dt);
-  fieldScene?.update(w, t, id);
+  if (fieldScene) {
+    fieldScene.root.visible = !presentation.deployment;
+    fieldScene.update(w, t, id);
+  }
   if (w.operation) updatePlanet(mapGroup, w, t);
   if (['sandbox', 'trial'].includes(w.mission.mode))
     mapGroup.position.set(
@@ -1691,16 +1699,16 @@ export function drawBattle3D(canvas, w, id, t, presentation = {}) {
   skyGroup.position.copy(camera.position);
   if (presentation.render !== false) renderer.render(scene, camera);
 }
-const orbit = { yaw: 0.58, pitch: 0.22, distance: 15 };
+const orbit = { yaw: 0.48, pitch: 0.04, distance: 13.5 };
 export function rotatePreview(x, y) {
   orbit.yaw += x;
   orbit.pitch = T.MathUtils.clamp(orbit.pitch + y, -0.18, 0.9);
 }
 export function zoomPreview(delta) {
-  orbit.distance = T.MathUtils.clamp(orbit.distance + delta, 13, 34);
+  orbit.distance = T.MathUtils.clamp(orbit.distance + delta, 9, 34);
 }
 export function resetPreviewOrbit() {
-  Object.assign(orbit, { yaw: 0.58, pitch: 0.22, distance: 15 });
+  Object.assign(orbit, { yaw: 0.48, pitch: 0.04, distance: 13.5 });
 }
 // Swap material references only on this model; cached materials shared with gameplay stay untouched.
 function workshopPowerPose(g, powered) {
@@ -1742,7 +1750,7 @@ function workshopLighting(powered) {
   for (const { light, intensity } of u.bayLights)
     light.intensity = powered ? intensity : light.isHemisphereLight ? 0.07 : 0;
   for (const strip of u.bayStrips) strip.visible = powered;
-  const background = powered ? 0x11161c : 0x030609;
+  const background = powered ? 0x080d11 : 0x030609;
   previewRenderer.setClearColor(background);
   previewScene.fog.color.setHex(background);
 }
@@ -1750,6 +1758,7 @@ let previewRenderer,
   previewScene,
   previewCamera,
   previewModel,
+  previewBay,
   previewKey = '',
   previewLast = 0;
 export function drawPreview3D(canvas, build, t, thrusters = false, equipment = false) {
@@ -1759,46 +1768,11 @@ export function drawPreview3D(canvas, build, t, thrusters = false, equipment = f
   if (!previewRenderer) {
     try {
       previewRenderer = makeRenderer(canvas);
-      previewRenderer.setClearColor(0x11161c);
+      previewRenderer.setClearColor(0x080d11);
       previewScene = new T.Scene();
-      previewScene.fog = new T.Fog(0x11161c, 22, 55);
-      lighting(previewScene);
-      previewCamera = new T.PerspectiveCamera(34, 1, 0.1, 100);
-      previewCamera.position.set(11.7, 7.4, -18);
-      previewCamera.lookAt(0, 2.7, 0);
-      const floor = new T.Mesh(
-        boxGeometry,
-        new T.MeshStandardMaterial({ color: 0x1c242c, roughness: 0.7, metalness: 0.35 }),
-      );
-      floor.position.y = -0.25;
-      floor.scale.set(80, 0.4, 70);
-      floor.receiveShadow = true;
-      previewScene.add(floor);
-      for (let i = -5; i <= 5; i++) {
-        box(previewScene, i * 4, -0.02, 0, 0.025, 0.02, 55, '#34404b');
-        box(previewScene, 0, -0.02, i * 4, 55, 0.02, 0.025, '#34404b');
-      }
-      for (const side of [-1, 1]) {
-        glow(previewScene, side * 4.5, 0.01, 0, 0.08, 0.025, 13, '#a9c3d0');
-        for (let i = 0; i < 6; i++) {
-          const stripe = box(previewScene, side * 5, 0.02, -5 + i * 2, 0.5, 0.03, 0.2, '#c7b99d');
-          stripe.rotation.y = 0.6;
-        }
-        box(previewScene, side * 12, 4, 12, 2, 8, 2, '#202a35');
-        glow(previewScene, side * 11, 4, 10.9, 0.08, 7, 0.06, '#738eaa');
-      }
-      const rim = new T.DirectionalLight(0xe6f1f8, 1.5);
-      rim.position.set(-7, 5, 7);
-      previewScene.add(rim);
-      const fill = new T.DirectionalLight(0x7fc6ed, 1.4);
-      fill.position.set(6, 3, -3);
-      previewScene.add(fill);
-      previewScene.userData.bayLights = [];
-      previewScene.userData.bayStrips = [];
-      previewScene.traverse((o) => {
-        if (o.isLight) previewScene.userData.bayLights.push({ light: o, intensity: o.intensity });
-        if (o.isMesh && o.material?.isMeshBasicMaterial) previewScene.userData.bayStrips.push(o);
-      });
+      previewScene.fog = new T.Fog(0x080d11, 23, 65);
+      previewCamera = new T.PerspectiveCamera(34, 1, 0.1, 120);
+      previewBay = createHangarEnvironment({ T, scene: previewScene });
     } catch {
       return;
     }
@@ -1812,6 +1786,7 @@ export function drawPreview3D(canvas, build, t, thrusters = false, equipment = f
       disposeMech(previewModel);
     }
     previewModel = makeMech(build);
+    finishHangarMech({ T, model: previewModel });
     previewScene.add(previewModel);
   }
   const width = canvas.clientWidth,
@@ -1827,15 +1802,15 @@ export function drawPreview3D(canvas, build, t, thrusters = false, equipment = f
   const dt = Math.min(0.05, previewLast ? Math.max(0.001, t - previewLast) : 0.016);
   previewLast = t;
   const scale = chassisFor(build).scale,
-    distance = orbit.distance * Math.max(1, scale) * Math.max(1, 0.7 / previewCamera.aspect);
+    distance = orbit.distance * scale * Math.max(1, 0.78 / previewCamera.aspect);
   previewScene.fog.near = 22 * Math.max(1, scale);
   previewScene.fog.far = 55 * Math.max(1, scale);
   previewCamera.position.set(
     Math.sin(orbit.yaw) * Math.cos(orbit.pitch) * distance,
-    2.5 * scale + Math.sin(orbit.pitch) * distance,
+    2.7 * scale + Math.sin(orbit.pitch) * distance,
     -Math.cos(orbit.yaw) * Math.cos(orbit.pitch) * distance,
   );
-  previewCamera.lookAt(0, 2.5 * scale, 0);
+  previewCamera.lookAt(0, 2.7 * scale, 0);
   previewModel.rotation.y = 0;
   previewModel.position.y = T.MathUtils.lerp(
     previewModel.position.y,
@@ -1884,7 +1859,9 @@ export function drawPreview3D(canvas, build, t, thrusters = false, equipment = f
     kit.flameFX.update(start, end, t, !!hands[kit.hand].flame);
   }
   updatePreviewEquipment(previewModel, build, hands, t, powered, equipment);
+  if (!equipment) restHangarMech(previewModel);
   workshopPowerPose(previewModel, powered);
+  previewBay.update(t, powered);
   previewRenderer.render(previewScene, previewCamera);
 }
 function updatePreviewEquipment(model, build, hands, t, powered, equipment) {
@@ -1930,20 +1907,8 @@ let homeBattle;
 export function drawHomeBattle3D(canvas, build, t) {
   if (!previewRenderer) drawPreview3D(canvas, build, 0);
   if (!previewRenderer) return;
-  homeBattle ??= createHomeBattle({
-    T,
-    box,
-    glow,
-    lighting,
-    makeMech,
-    animateMech,
-    cleanBuild,
-    createSky,
-    makeProjectile,
-    updateProjectile,
-    createExplosionPool,
-  });
-  homeBattle(previewRenderer, canvas, t);
+  homeBattle ??= createHomeBattle({ T, makeMech, disposeMech, animateMech, chassisFor, mechStats });
+  homeBattle(previewRenderer, canvas, t, build);
 }
 
 export function renderingStats() {

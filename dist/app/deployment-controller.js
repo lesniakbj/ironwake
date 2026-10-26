@@ -1,12 +1,16 @@
 import { select as $ } from './dom.js';
 import { createDeploymentGate, MIN_LOADING_SECONDS, deploymentIntro } from '../cinematic.js';
 import { snapshot } from '../core.js?v=41';
-import { drawBattle3D, prepareBattle, resetBattle } from '../three-view.js?v=impact-1';
+import { drawBattle3D, prepareBattle, resetBattle } from '../three-view.js?v=ui-stack-1';
 import { view, resetView } from '../view-controls.js?v=41';
-import { resetSound, updateBoostSound, playTransitionSound } from '../audio.js?v=pilot-2';
+import {
+  resetSound,
+  updateBoostSound,
+  playTransitionSound,
+} from '../audio.js?v=pilot-career-cinematic-3';
 import { impactMode } from '../impact-preferences.js';
 
-// Session writes stay explicit; loading, ticket gates and stale async work live here.
+// Ticket gates, loading and stale async completion stay independent from session settlement.
 export function createDeploymentController({
   readSession,
   readPending,
@@ -37,10 +41,7 @@ export function createDeploymentController({
     const { room, isHost } = readSession();
     if (!deployment) return;
     if (room && !isHost) {
-      sendToHost({
-        type: 'deployment-failed',
-        ticket: deployment.ticket,
-      });
+      sendToHost({ type: 'deployment-failed', ticket: deployment.ticket });
       resetNetwork(message);
       return;
     }
@@ -99,6 +100,7 @@ export function createDeploymentController({
     if (isHost) broadcast({ type: 'start', ticket, world: snapshot(world) });
     if (document.pointerLockElement) document.exitPointerLock();
     $('#modal').close();
+    $('#combatMenu').open = false;
     clearInputs();
     resetView();
     view.yaw = world.mission.heading;

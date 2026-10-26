@@ -21,6 +21,7 @@ class Element {
     this.attributes[key] = value;
   }
   querySelector(selector) {
+    if (selector === '#objectivesPanel .objective-details') return null;
     return (this.elements[selector] ??= new Element());
   }
   append(...children) {
@@ -60,6 +61,7 @@ const setup = () => {
     offers: parent.children[1],
     nearby: parent.children[2],
     pickup: parent.children[3],
+    inventoryPanel: parent.children[4],
   };
 };
 
@@ -135,7 +137,7 @@ test('field controls support touch clicks, explicit cursor release and retries a
 });
 
 test('inventory shows stack effects and relay timers, level feedback uses the right label, and disabled pilots cannot choose', () => {
-  const { hud, w, p, panel, pickup, offers } = setup();
+  const { hud, w, p, panel, pickup, offers, inventoryPanel } = setup();
   assert.match(pickup.innerHTML, /FIELD LEVEL GAINED/);
   p.field.upgrades = ['power', 'power'];
   p.field.items = ['gyro'];
@@ -143,7 +145,8 @@ test('inventory shows stack effects and relay timers, level feedback uses the ri
   p.field.relayCount = 1;
   assert.equal(hud.key('KeyB'), true);
   hud.update(w, p);
-  const inventory = panel.querySelector('#fieldInventory');
+  const inventory = inventoryPanel.querySelector('#fieldInventory');
+  assert.equal(inventoryPanel.hidden, false);
   assert.equal(inventory.hidden, false);
   assert.match(inventory.innerHTML, /Weapon overdrive/);
   assert.match(inventory.innerHTML, /×2/);

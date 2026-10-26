@@ -19,7 +19,7 @@ export {
   cleanBuild,
 } from './builds/loadout.js';
 export { mechStats, cost, validBuild } from './builds/stats.js';
-export { combatStats, statsForPlayer } from './builds/combat-stats.js';
+export { combatStats, combatRecovery, statsForPlayer } from './builds/combat-stats.js';
 export { planetMission } from './planet-mission.js?v=41';
 export { blocksBullet } from './bulwark.js?v=41';
 export { rng } from './simulation/math.js';

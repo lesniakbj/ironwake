@@ -17,72 +17,140 @@
     <link rel="stylesheet" href="mission-route.css" />
     <link rel="stylesheet" href="impact.css?v=1" />
     <script src="vendor/peerjs.min.js" defer></script>
-    <link rel="stylesheet" href="cinematic.css?v=1" />
-    <script src="app.js?v=parallel-workstreams-1" type="module"></script>
+    <script src="app.js?v=ui-stack-1" type="module"></script>
     <link rel="stylesheet" href="./chassis.css" />
     <link rel="stylesheet" href="build-label.css" />
-    <link rel="stylesheet" href="hub.css" />
-    <link rel="stylesheet" href="career.css" />
     <script src="build-label.js" type="module"></script>
     <link rel="stylesheet" href="feedback.css" />
-    <link
-      rel="preload"
-      href="fonts/BarlowSemiCondensed-Bold.ttf"
-      as="font"
-      type="font/ttf"
-      crossorigin
-    />
-    <link rel="stylesheet" href="readability.css?v=1" />
-    <link rel="stylesheet" href="campaign-ux.css?v=1" />
-    <link rel="stylesheet" href="workshop-ux.css?v=1" />
-    <link rel="stylesheet" href="combat-ux.css?v=1" />
+    <link rel="stylesheet" href="hub.css" />
+    <link rel="stylesheet" href="career.css" />
+    <link rel="stylesheet" href="cinematic.css?v=1" />
+    <link rel="stylesheet" href="hangar-ui.css?v=ui-stack-1" />
+    <link rel="stylesheet" href="campaign-ux.css?v=ui-stack-1" />
+    <link rel="stylesheet" href="assembly-ui.css?v=3" />
+    <link rel="stylesheet" href="chassis-ux.css?v=hangar-3" />
+    <link rel="stylesheet" href="combat-ux.css?v=ui-stack-1" />
   </head>
   <body data-screen="home">
     <div id="hangar">
       <a class="skip-link" href="#mainContent">Skip to content</a>
+      <nav class="section-rail" aria-label="Main navigation">
+        <button class="rail-home rail-button" id="railHome" aria-label="Home" aria-current="page">
+          <span data-ui-icon="home"></span><b>Hangar</b>
+        </button>
+        <button class="rail-button" id="campaignNav" aria-label="Anchorage">
+          <span data-ui-icon="operations"></span><b>Anchorage</b>
+        </button>
+        <button class="rail-button" id="garageNav" aria-label="Workshop">
+          <span data-ui-icon="mech"></span><b>Assembly</b>
+        </button>
+        <div class="rail-bottom" aria-hidden="true">
+          <span>IW</span><i></i><small>WAKE DIVISION</small>
+        </div>
+      </nav>
       <header class="topbar">
         <button class="brand" id="homeNav" aria-label="Start screen">
           <svg viewBox="0 0 40 40" aria-hidden="true">
             <path d="M5 5h10v20l5 7 5-7V5h10v23L20 39 5 28z" fill="currentColor" /></svg
           >IRONWAKE
         </button>
-        <nav aria-label="Main navigation">
-          <button id="campaignNav">Anchorage</button><button id="garageNav">Workshop</button>
+        <div class="pilot" title="Random callsign saved in this browser">
+          <span class="pilot-badge" data-ui-icon="pilot"></span>
+          <div><span id="pilotLabel" role="status">PILOT</span></div>
+        </div>
+        <nav aria-label="Utilities">
           <details id="interfaceMenu" class="interface-menu">
-            <summary>Menu</summary>
+            <summary aria-label="Settings and help">
+              <span data-ui-icon="settings"></span><span>System</span>
+            </summary>
             <div class="interface-menu-panel">
-              <button class="mobile-nav" data-menu-action="campaign">Campaign</button
-              ><button class="mobile-nav" data-menu-action="workshop">Workshop</button
-              ><button data-view="builds">Saved mechs</button
-              ><button data-view="manual">Controls & help</button
+              <p class="menu-panel-heading">Pilot utilities</p>
+              <button data-view="builds"><span data-ui-icon="library"></span>Saved mechs</button
+              ><button data-view="manual"><span data-ui-icon="book"></span>Controls & help</button
               ><button id="pilotVoiceSettings" aria-haspopup="dialog">Voice: Rook</button
               ><button id="impactMode" aria-pressed="true">FX: Full</button
-              ><button data-feedback>Report an issue [F8]</button>
+              ><button data-feedback>
+                <span data-ui-icon="report"></span>Report an issue <kbd>F8</kbd>
+              </button>
             </div>
           </details>
         </nav>
-        <div class="pilot" title="Random callsign saved in this browser">
-          <span id="pilotLabel" role="status">PILOT</span>
-        </div>
       </header>
       <main class="menu-stage" id="mainContent" tabindex="-1">
-        <section class="home-menu" aria-label="Start menu">
-          <p class="overline">CO-OP MECH CAMPAIGN</p>
-          <h1>IRON<span>WAKE</span></h1>
-          <p class="home-description">
-            Choose your front. Build your machine.<br />Take the battlefield together.
-          </p>
-          <div class="start-actions">
-            <button id="continueCampaign" class="button primary" hidden>
-              Return to Anchorage <span>↗</span></button
-            ><button id="startMission" class="button secondary">New run <span>＋</span></button
-            ><button id="startGarage" class="button secondary">Workshop <span>↗</span></button>
-            <div class="friends-actions">
-              <button id="startHost">Host friends</button><span>/</span
-              ><button id="startJoin">Join a squad</button>
+        <section class="home-menu" aria-label="Main menu">
+          <header class="title-lockup">
+            <div class="title-insignia" aria-hidden="true">
+              <svg viewBox="0 0 60 64">
+                <path d="M7 4h13v34l10 14 10-14V4h13v39L30 63 7 43z" fill="currentColor" />
+                <path d="M26 4h8v26h-8z" fill="currentColor" />
+              </svg>
             </div>
+            <h1>IRONWAKE</h1>
+          </header>
+          <nav class="home-choices" aria-label="Start playing">
+            <button
+              id="continueCampaign"
+              class="home-choice home-selected"
+              hidden
+              data-home-detail="Continue your saved campaign on the Cinder Front."
+            >
+              <strong class="js-continue-label">Continue</strong
+              ><span class="choice-chevron" aria-hidden="true">›</span
+              ><span class="home-row-detail" id="homeResumeDetail"
+                >Your next mission is waiting.</span
+              >
+            </button>
+            <button
+              id="startMission"
+              class="home-choice home-selected"
+              data-home-detail="Begin a nine-mission campaign. Play solo or invite your squad."
+            >
+              <strong>New campaign</strong><span class="choice-chevron" aria-hidden="true">›</span>
+            </button>
+            <button
+              id="startGarage"
+              class="home-choice"
+              data-home-detail="Inspect your machine. Change its chassis, equipment and finish."
+            >
+              <strong>Assembly</strong><span class="choice-chevron" aria-hidden="true">›</span>
+            </button>
+            <div class="home-squad-choices">
+              <button
+                id="startHost"
+                class="home-choice"
+                data-home-detail="Open a squad and invite up to three pilots."
+              >
+                <strong>Host squad</strong
+                ><span class="choice-chevron" aria-hidden="true">›</span></button
+              ><button
+                id="startJoin"
+                class="home-choice"
+                data-home-detail="Join another pilot using their squad invite code."
+              >
+                <strong>Join squad</strong><span class="choice-chevron" aria-hidden="true">›</span>
+              </button>
+            </div>
+            <button
+              class="home-choice"
+              data-view="manual"
+              data-home-detail="Movement, equipment, mission orders and pilot controls."
+            >
+              <strong>Pilot handbook</strong
+              ><span class="choice-chevron" aria-hidden="true">›</span>
+            </button>
+          </nav>
+          <div class="home-selection-note">
+            <span class="selection-rule" aria-hidden="true"></span>
+            <p id="homeSelectionDetail">
+              Begin a nine-mission campaign. Play solo or invite your squad.
+            </p>
+            <span class="menu-input-hint"
+              ><kbd>↑</kbd><kbd>↓</kbd> SELECT <kbd>↵</kbd> CONFIRM</span
+            >
           </div>
-          <p class="start-note">1–4 players · One shared front · Your campaign</p>
+          <div class="home-machine-caption" aria-hidden="true">
+            <strong id="homeMachineName">VANGUARD</strong>
+          </div>
         </section>
         <section id="hubScreen" class="hub-screen" aria-label="Wake Anchorage co-op hub"></section>
         <section
@@ -92,45 +160,46 @@
         ></section>
         <section class="loadout" aria-label="Workshop">
           <div class="garage-heading">
-            <h1>Workshop</h1>
-            <button id="chooseChassis" class="button secondary">Choose chassis ↗</button>
-            <div class="workshop-heading-actions">
-              <span class="practice-label">PRACTICE</span
-              ><button id="testBuildTop" class="button secondary">Target range</button
-              ><button id="startTrial" class="button secondary">AI duel</button
-              ><button id="garageBack" class="text-button">Done ↗</button>
+            <div class="workshop-title"><h1>Assembly</h1></div>
+            <div class="build-identity">
+              <div
+                id="mechName"
+                aria-label="Generated mech name"
+                title="Generated from your equipment"
+              ></div>
             </div>
+            <button id="chooseChassis" class="button secondary">Change chassis ↗</button>
           </div>
-          <div
-            id="mechName"
-            aria-label="Generated mech name"
-            title="Generated from your equipment"
-          ></div>
           <div class="assembly-summary">
-            <p class="overline">WEIGHT CAPACITY</p>
-            <strong id="assemblyStatus" role="status"></strong><span id="assemblyStats"></span>
+            <div class="assembly-topline" hidden>
+              <strong id="assemblyStatus" role="status"></strong>
+            </div>
+            <div class="assembly-capacity">
+              <span id="assemblyStats"></span>
+              <p id="powerRemaining"></p>
+            </div>
             <div
               id="powerSegments"
               class="power-segments"
               role="meter"
               aria-label="Weight capacity"
             ></div>
-            <p id="powerRemaining"></p>
             <small id="assemblyPerformance"></small>
-            <details class="assembly-details">
-              <summary>Build details & fitting guide</summary>
+            <div hidden>
+              <i id="assemblyLoad"></i>
               <p id="chassisSummary"></p>
-              <p class="capacity-explainer">
-                Lighter mechs move and climb faster. Heavier armor makes you tougher.<br />Chassis
-                payload, boosters and heavy mounts set your limits. Refit an invalid build before
-                deploying.
-              </p>
-            </details>
+            </div>
             <p id="buildHint" role="status"></p>
-            <div hidden><i id="assemblyLoad"></i></div>
           </div>
           <aside class="garage-slots" aria-label="Component slots">
-            <div class="grid-heading"><h2>Components</h2></div>
+            <div class="grid-heading">
+              <div class="socket-mode" aria-label="Component category">
+                <button data-socket-group="frame" aria-pressed="true">Frame <span>5</span></button
+                ><button data-socket-group="armament" aria-pressed="false">
+                  Armament <span>3</span>
+                </button>
+              </div>
+            </div>
             <div class="socket-bus">
               <div id="partTabs" class="part-tabs" aria-label="Frame sockets"></div>
               <div id="equipmentTabs" class="equipment-tabs" aria-label="Equipment sockets"></div>
@@ -138,8 +207,10 @@
           </aside>
           <aside class="garage-options" aria-label="Compatible components">
             <div class="selection-heading">
-              <h2 id="selectionTitle">Torso</h2>
-              <span id="frameRole"></span>
+              <div>
+                <h2 id="selectionTitle">Torso</h2>
+                <span id="frameRole"></span><span id="componentCount"></span>
+              </div>
               <div
                 id="equipmentFilters"
                 class="equipment-filters"
@@ -147,7 +218,10 @@
                 hidden
               ></div>
             </div>
-            <div class="finish-tools">
+            <div id="parts" class="part-choices"></div>
+            <div id="componentComparison" class="component-comparison" aria-live="polite"></div>
+            <details class="finish-tools">
+              <summary>Paint & finish <span>＋</span></summary>
               <div class="finish-row" id="paintRow">
                 <span id="paintLabel">Part paint</span>
                 <div id="colors" class="colors"></div>
@@ -157,14 +231,20 @@
                 <span>Exhaust</span>
                 <div id="trailColors" class="colors"></div>
               </div>
-            </div>
-            <div id="parts" class="part-choices"></div>
+            </details>
             <select id="weapon" hidden aria-label="Primary weapon"></select
             ><select id="ability" hidden aria-label="Tactical system"></select>
           </aside>
           <div class="garage-bottom">
-            <span class="fitting-help">Select a socket. Choose a component.</span
-            ><button id="saveMech" class="button secondary">Save mech</button>
+            <button id="garageBack" class="text-button">← Back</button
+            ><span class="fitting-help"><i></i> Changes kept on this device</span
+            ><button id="saveMech" class="button secondary">
+              Save build <span data-ui-icon="library"></span></button
+            ><button id="startTrial" class="button secondary">
+              AI duel <span data-ui-icon="duel"></span></button
+            ><button id="testBuildTop" class="button primary">
+              Test range <span data-ui-icon="crosshair"></span>
+            </button>
             <div hidden>
               <span id="weightBudget"></span><i id="weightBar"></i>
               <p id="weaponDesc"></p>
@@ -177,20 +257,19 @@
           <canvas
             id="mechPreview"
             tabindex="0"
-            aria-label="Animated battle between three mechs"
+            aria-label="Your fitted mech in the service hangar"
           ></canvas>
           <div id="previewPower" role="status" hidden>
-            <span>SYSTEM SHUTDOWN</span><strong>POWER OFFLINE</strong>
+            <strong>Power offline</strong>
             <p id="previewPowerDetail"></p>
-            <small>LIGHTS OFF · WEAPONS LOCKED · BOOSTERS OFF</small>
           </div>
           <button id="pauseBattle" class="text-button" aria-pressed="false">Pause battle</button>
           <div class="orbit-tools">
-            <span>DRAG TO ROTATE · SCROLL TO ZOOM</span
+            <span>Drag to rotate · Scroll to zoom</span
             ><button id="resetOrbit" class="text-button">Reset view</button>
           </div>
           <div class="mech-caption">
-            <p id="modelCode" class="overline"></p>
+            <span id="modelCode" hidden></span>
             <h2 id="previewName"></h2>
             <p id="frameDescription"></p>
             <button id="testWeapons" class="text-button" aria-pressed="false">Test equipment</button
@@ -255,15 +334,45 @@
         <div class="game-brand">IRONWAKE <small id="gameOperation"></small></div>
       </div>
       <details id="combatMenu" class="interface-menu">
-        <summary>Menu</summary>
+        <summary aria-label="Open combat menu">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16" /></svg
+          ><span>Menu</span>
+        </summary>
         <div class="interface-menu-panel">
-          <button id="gameHelp" aria-label="Open controls">Controls & help [H]</button
-          ><button id="voiceSettings" aria-haspopup="dialog">ROOK ▾</button
+          <button
+            id="gameFieldInventory"
+            aria-controls="fieldInventoryPanel"
+            aria-expanded="false"
+            disabled
+          >
+            Field inventory <kbd>B</kbd></button
+          ><button id="gameHelp" aria-label="Open controls">Controls & help <kbd>H</kbd></button
+          ><button id="voiceSettings" aria-haspopup="dialog">Rook ▾</button
           ><button id="voiceToggle" aria-label="Pilot voice callouts" aria-pressed="true">
-            VOICE ON</button
-          ><button id="soundToggle" aria-label="Toggle combat sound">SOUND ON [M]</button
-          ><button id="gameReport" data-feedback>Report an issue [F8]</button
-          ><button id="exitGame" class="button secondary">WORKSHOP</button>
+            Voice on</button
+          ><button id="soundToggle" aria-label="Toggle combat sound">Sound on [M]</button
+          ><button id="gameReport" data-feedback>Report an issue <kbd>F8</kbd></button
+          ><button id="exitGame" class="button secondary">Return to workshop ↗</button>
+        </div>
+      </details>
+      <details id="objectivesPanel" class="terminal-panel" aria-label="Mission objectives">
+        <summary>
+          <span class="objective-marker" aria-hidden="true">◇</span
+          ><span class="objective-summary"
+            ><span id="objectiveMode">TEST BAY</span
+            ><strong id="personalObjective">Test your mech</strong></span
+          ><span class="objective-expand" aria-hidden="true">⌄</span>
+        </summary>
+        <div class="objective-details">
+          <p id="personalObjectiveDetail">Try your weapons, flight, and special.</p>
+          <div class="objective-section team-objective">
+            <h3>Squad objective</h3>
+            <strong id="teamObjective">Free training</strong>
+            <p id="teamObjectiveDetail">No shared mission in the test bay.</p>
+            <div id="teamProgress" class="objective-progress" hidden>
+              <i id="teamProgressFill"></i>
+            </div>
+          </div>
         </div>
       </details>
       <div id="taskBanner" hidden class="terminal-panel" role="status" aria-live="polite">
@@ -274,42 +383,22 @@
         ><span id="objectiveText">LMB left hand · RMB right hand · Space fly · E special</span>
         <div class="progress-track"><i id="progressBar"></i></div>
       </div>
-      <section
-        id="objectivesPanel"
-        class="terminal-panel"
-        tabindex="0"
-        aria-label="Mission objectives. Focus to expand details."
-      >
-        <h2>OBJECTIVES <span id="objectiveMode">TEST BAY</span></h2>
-        <div class="objective-section">
-          <h3>YOU</h3>
-          <strong id="personalObjective">Test your mech</strong>
-          <p id="personalObjectiveDetail">Try your weapons, flight, and special.</p>
-        </div>
-        <div class="objective-section team-objective">
-          <h3>SQUAD</h3>
-          <strong id="teamObjective">Free training</strong>
-          <p id="teamObjectiveDetail">No shared mission in the test bay.</p>
-          <div id="teamProgress" class="objective-progress" hidden>
-            <i id="teamProgressFill"></i>
-          </div>
-        </div>
-      </section>
       <section id="squadPanel" class="terminal-panel" aria-label="Squad link">
-        <h2>SQUAD LINK <span id="squadLinkState">1 / 4</span></h2>
+        <h2>SQUAD <span id="squadLinkState">1 / 4</span></h2>
         <div id="squadHud"></div>
       </section>
       <div id="worldLabels" aria-hidden="true"></div>
       <section id="vicinityPanel" class="terminal-panel" aria-label="Nearby map">
-        <h2>VICINITY <span>650 m</span></h2>
-        <canvas
-          id="radar"
-          width="180"
-          height="180"
-          aria-label="Bird’s-eye local map. Diamonds are hostiles or targets; circles are allies; arrow is you."
-        ></canvas>
-        <div class="radar-key"><span>◇ CONTACT</span><span>○ ALLY</span><span>▲ YOU</span></div>
-        <button id="mapToggle">FULL MAP [TAB]</button>
+        <div class="radar-bezel">
+          <span class="radar-north" aria-hidden="true">N</span
+          ><canvas
+            id="radar"
+            width="180"
+            height="180"
+            aria-label="Bird’s-eye local map. Diamonds are hostiles or targets; circles are allies; arrow is you."
+          ></canvas>
+        </div>
+        <button id="mapToggle" aria-label="Open tactical map, Tab"><kbd>TAB</kbd></button>
       </section>
       <div id="levelMapPanel" hidden>
         <canvas id="levelMap" aria-label="Full procedural level map"></canvas>
@@ -333,84 +422,92 @@
       <div id="crosshair" aria-hidden="true"><i></i><i></i><i></i><i></i><b></b></div>
       <div id="damageVignette" aria-hidden="true"></div>
       <div id="viewHint">Mouse aims · Hold Q / middle mouse to strafe</div>
-      <section id="loadoutPanel" class="terminal-panel" aria-label="Equipped mech systems">
-        <h2>LOADOUT <span id="hudName"></span></h2>
-        <div id="hullHealth" data-state="online">
-          <div class="hull-heading">
-            <b id="hullCondition">HULL</b><strong id="hullValue">—</strong>
+      <section id="loadoutPanel" aria-label="Mech combat controls">
+        <div class="hull-wing">
+          <div class="hull-identity combat-sr-only">
+            <span class="hull-emblem" aria-hidden="true"
+              ><svg viewBox="0 0 40 40"><path d="M5 5h10v20l5 7 5-7V5h10v23L20 39 5 28z" /></svg
+            ></span>
+            <div><small></small><span id="hudName"></span></div>
           </div>
-          <div
-            id="hullMeter"
-            role="progressbar"
-            aria-label="Mech hull health"
-            aria-valuemin="0"
-            aria-valuemax="100"
-            aria-valuenow="100"
-          >
-            <i id="hullFill"></i>
-          </div>
-        </div>
-        <div class="mech-diagram">
-          <svg viewBox="0 0 320 138" aria-hidden="true">
-            <g class="diagram-lines">
-              <path d="M106 52H126L140 62M214 52H196L182 62M160 116V103" />
-              <circle cx="140" cy="62" r="2" />
-              <circle cx="182" cy="62" r="2" />
-            </g>
-            <g class="diagram-mech">
-              <path
-                d="M151 9h18l3 15-12 5-12-5zM140 31l20-5 20 5-4 34-16 9-16-9zM124 33l14 3 3 25-10 7-10-15zM182 36l14-3 3 20-10 15-10-7zM127 62l12 1-2 26-11-2zM181 63l12-1 1 25-11 2zM145 70l15 6-2 11-15 2zM160 76l15-6 2 19-15-2zM143 91l15-2-1 30-17 2zM162 89l15 2 3 30-17-2zM140 122h17v6h-20zM163 122h17l3 6h-20z"
-              />
-              <path class="diagram-core" d="M150 36h20v19l-10 6-10-6z" />
-              <path d="M126 69h-8v27h9M194 70h9v25h-8" />
-            </g>
-          </svg>
-          <div class="diagram-label left">
-            <small>LEFT HAND / LMB</small><strong id="diagramMelee"></strong>
-          </div>
-          <div class="diagram-label right">
-            <small>RIGHT HAND / RMB</small><strong id="activeEquipment"></strong>
-          </div>
-          <span class="diagram-caption">REAR VIEW</span>
-        </div>
-        <div class="weapon-state">
-          <span id="equipmentState">READY</span><span id="zoomState">HOLD TO USE</span>
-        </div>
-        <div id="combatSlots" class="combat-slots">
-          <button id="leftHandButton">
-            <kbd>LMB · LEFT</kbd><span id="leftHandName"></span
-            ><b id="leftHandState">READY</b></button
-          ><button id="rightHandButton">
-            <kbd>RMB · RIGHT</kbd><span id="rightHandName"></span><b id="rightHandState">READY</b>
-          </button>
-        </div>
-        <div class="tactical-moves">
-          <button id="dashButton" aria-label="Dash, Shift">
-            <kbd>SHIFT</kbd><span>DASH</span><b id="dashCd">READY</b><i id="dashFill"></i>
-          </button>
-        </div>
-        <div class="ability-panel">
-          <button id="flightButton"><kbd>SPACE</kbd><span>FLIGHT</span><b>HOLD</b></button
-          ><button id="abilityButton" data-state="ready" aria-label="Ultimate ready. Press E">
-            <kbd>E</kbd
-            ><span class="ultimate-heading">ULTIMATE<span id="abilityLabel">SPECIAL</span></span
-            ><b id="abilityCd">READY</b><span id="abilityStatus">PRESS E TO ACTIVATE</span
-            ><span
-              id="ultimateMeter"
-              class="ultimate-meter"
+          <div id="hullHealth" data-state="online">
+            <div class="hull-heading">
+              <svg class="hull-health-icon" viewBox="0 0 32 36" aria-hidden="true">
+                <path d="M16 2 29 7v10c0 8-8 14-13 17C11 31 3 25 3 17V7Z" />
+                <path class="health-cross" d="M13 10h6v5h5v6h-5v5h-6v-5H8v-6h5Z" /></svg
+              ><b id="hullCondition" class="combat-sr-only">HULL</b
+              ><strong id="hullValue">—</strong>
+            </div>
+            <div
+              id="hullMeter"
               role="progressbar"
-              aria-label="Ultimate recharge"
+              aria-label="Mech hull health"
               aria-valuemin="0"
               aria-valuemax="100"
               aria-valuenow="100"
-              ><i id="ultimateFill"></i
-            ></span>
+            >
+              <i id="hullFill"></i>
+            </div>
+          </div>
+        </div>
+        <div id="combatSlots" class="combat-slots">
+          <button id="leftHandButton" data-state="ready">
+            <span id="leftHandIcon" class="hand-icon" aria-hidden="true"></span
+            ><span class="hand-binding"><kbd>LMB</kbd></span
+            ><span id="leftHandName" class="hand-name"></span><b id="leftHandState">READY</b
+            ><span id="leftHandCooldown" class="hand-cooldown" aria-hidden="true"></span
+            ><i class="hand-activity" aria-hidden="true"></i></button
+          ><button id="rightHandButton" data-state="ready">
+            <span id="rightHandIcon" class="hand-icon" aria-hidden="true"></span
+            ><span class="hand-binding"><kbd>RMB</kbd></span
+            ><span id="rightHandName" class="hand-name"></span><b id="rightHandState">READY</b
+            ><span id="rightHandCooldown" class="hand-cooldown" aria-hidden="true"></span
+            ><i class="hand-activity" aria-hidden="true"></i>
           </button>
+        </div>
+        <div class="mobility-wing">
+          <div class="tactical-moves">
+            <button id="dashButton" aria-label="Dash, Shift">
+              <kbd>SHIFT</kbd
+              ><svg viewBox="0 0 32 32" aria-hidden="true">
+                <path d="m4 10 7 6-7 6m10-12 7 6-7 6m10-12 7 6-7 6" /></svg
+              ><span>Dash</span><b id="dashCd">READY</b><i id="dashFill"></i></button
+            ><button id="flightButton" aria-label="Fly, hold Space">
+              <kbd>SPACE</kbd
+              ><svg viewBox="0 0 32 32" aria-hidden="true">
+                <path d="M16 28V5M7 15l9-10 9 10M6 24l10-10 10 10" /></svg
+              ><span>Flight</span><b class="combat-sr-only">Hold Space to fly</b>
+            </button>
+          </div>
+          <div class="ability-panel">
+            <button id="abilityButton" data-state="ready" aria-label="Ultimate ready. Press E">
+              <span id="abilityIcon" class="hand-icon" aria-hidden="true"></span><kbd>E</kbd
+              ><b id="abilityCd">READY</b
+              ><span id="abilityStatus" class="combat-sr-only">PRESS E TO ACTIVATE</span
+              ><span
+                id="ultimateMeter"
+                class="combat-sr-only"
+                role="progressbar"
+                aria-label="Ultimate recharge"
+                aria-valuemin="0"
+                aria-valuemax="100"
+                aria-valuenow="100"
+                ><i id="ultimateFill"></i
+              ></span></button
+            ><span class="ultimate-heading"
+              ><small></small><span id="abilityLabel">SPECIAL</span></span
+            >
+          </div>
+        </div>
+        <div hidden>
+          <span id="diagramMelee"></span><span id="activeEquipment"></span
+          ><span id="equipmentState"></span><span id="zoomState"></span>
         </div>
       </section>
       <div id="touchControls">
-        <div id="joystick"><i></i></div>
-        <button id="touchFire">LEFT HAND</button><button id="touchMelee">RIGHT HAND</button>
+        <div id="joystick" aria-label="Movement joystick"><i></i></div>
+        <button id="touchFire" hidden>LEFT HAND</button
+        ><button id="touchMelee" hidden>RIGHT HAND</button>
       </div>
     </section>
     <dialog id="modal">

@@ -213,7 +213,7 @@ function makeFieldNodes(w) {
   }
   return nodes;
 }
-export function initSortie(w) {
+export function initSortie(w, statsForPlayer) {
   w.sortie = {
     contract: contractFor(w.mission.contract).id,
     salvage: 0,
@@ -225,20 +225,22 @@ export function initSortie(w) {
     objectives: 0,
     teamSize: w.players.length,
   };
+  // Capture trained hardware before loading run inventory. Field hull gains multiply this base once.
   w.players.forEach((p, i) => {
     const profile = w.mission.raid
         ? w.mission.campaign?.pilots?.find((q) => q.name === p.name)
         : null,
       xp = count(profile?.xp),
       level = levelForXP(xp),
-      upgrades = cleanFieldUpgrades(profile?.upgrades);
+      upgrades = cleanFieldUpgrades(profile?.upgrades),
+      baseHull = statsForPlayer ? statsForPlayer(p.build, p).hp : p.hp;
     p.field = {
       modules: cleanFieldIds(profile?.modules, FIELD_MODULES, FIELD_LIMITS.modules),
       upgrades,
       items: cleanFieldItems(profile?.items),
       damage: 0,
       kills: 0,
-      maxHull: p.hp,
+      maxHull: baseHull,
       seed: (w.mission.seed + i * 7919) >>> 0,
       xp,
       level,
@@ -461,7 +463,7 @@ export function stepField(w, dt) {
   for (const p of w.players) {
     const f = p.field;
     if (!f) continue;
-    f.buffs = f.buffs.filter((buff) => buff.expiresAt > w.time);
+    f.buffs = (f.buffs || []).filter((buff) => buff.expiresAt > w.time);
     p.hp = Math.min(p.hp, currentMaxHull(p));
     if (f.lastPickup?.until <= w.time) f.lastPickup = null;
     f.nearby = null;
@@ -472,7 +474,7 @@ export function stepField(w, dt) {
         node.state !== 'ready' ||
         node.claimed.includes(p.id) ||
         Math.abs((p.altitude || 0) - node.z) > 95 ||
-        (node.kind === 'relay' && f.relays.includes(node.relayId))
+        (node.kind === 'relay' && f.relays?.includes(node.relayId))
       )
         continue;
       const distance = Math.hypot(p.x - node.x, p.y - node.y);

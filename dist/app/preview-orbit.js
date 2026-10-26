@@ -1,4 +1,4 @@
-// Orbit owns only preview input. Rendering remains in the scene module.
+// Preview input is isolated from session and combat controls.
 export function installPreviewOrbit({
   canvas: previewCanvas,
   isActive,

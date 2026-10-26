@@ -1,5 +1,5 @@
 import * as T from './vendor/three.module.min.js';
-import { makeMech, animateMech, disposeMech } from './three-view.js?v=impact-1';
+import { makeMech, animateMech, disposeMech } from './three-view.js?v=ui-stack-1';
 import { buildKey, cleanBuild } from './core.js?v=41';
 import { chassisBlueprint } from './chassis.js';
 import { HUB_STATIONS } from './hub-state.js';

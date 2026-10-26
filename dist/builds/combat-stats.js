@@ -6,6 +6,7 @@ import {
   applyProgressionStats,
 } from '../career-progression.js';
 import { fieldModifiers } from '../sortie-progression.js';
+import { fieldRate } from '../field-combat.js';
 import { mechStats } from './stats.js';
 
 const careerModifierCache = new WeakMap();
@@ -45,6 +46,17 @@ export function combatStats(p) {
     speed: base.speed * (1 + Math.min(1, m.moveSpeed || 0)),
     walkSpeed: base.walkSpeed * (1 + Math.min(1, m.moveSpeed || 0)),
     lift: base.lift * (1 + Math.min(1, m.lift || 0)),
+  };
+}
+
+// Cooldown units advance at these rates; HUD seconds use the same live modifiers.
+export function combatRecovery(p) {
+  const m = fieldModifiers(p),
+    career = careerModifiers(p);
+  return {
+    weaponRate: fieldRate(m),
+    dashRate: career.dashRecharge * (1 + Math.min(2, m.dashRecharge || 0)),
+    specialRate: career.specialRecharge * (1 + Math.min(2, m.specialRecharge || 0)),
   };
 }
 

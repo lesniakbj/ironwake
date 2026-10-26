@@ -1,12 +1,16 @@
 import { select as $ } from './dom.js';
 import { destructionMarkers } from '../destruction-mission.js';
 import { operationMarkers } from '../planet-mission.js?v=41';
+import { objectiveStatus } from '../hud-status.js?v=ui-stack-1';
 import { impactLevel } from '../impact-preferences.js';
 
 export function createWorldLabels({ readState, projectWorld }) {
   const labelNodes = new Map();
   function updateLabels() {
     const { world, localId } = readState();
+    const player = world.players.find((p) => p.id === localId);
+    if (!player) return;
+    const personal = objectiveStatus(world, player).personal;
     const goal = world.mission.zones[world.zoneIndex] || world.mission.exit;
     const entries = [
       ...(world.damageEvents || [])
@@ -48,7 +52,7 @@ export function createWorldLabels({ readState, projectWorld }) {
               return Math.hypot(a.x - p.x, a.y - p.y) - Math.hypot(b.x - p.x, b.y - p.y);
             })
             .slice(0, 3)
-            .map((v, i) => ({ ...v, id: 'operation-' + i, color: '#aaffc5' }))
+            .map((v, i) => ({ ...v, id: 'operation-' + i, waypoint: true, color: '#aaffc5' }))
         : ['sandbox', 'trial'].includes(world.mission.mode)
           ? []
           : [
@@ -87,7 +91,12 @@ export function createWorldLabels({ readState, projectWorld }) {
       }
       const q = projectWorld(e.x, e.y, e.z);
       node.hidden = !q.visible;
-      node.textContent = e.name;
+      const repeatingGoal =
+        e.waypoint && e.name.trim().toLowerCase() === personal.trim().toLowerCase();
+      node.textContent = repeatingGoal
+        ? Math.round(Math.hypot(e.x - player.x, e.y - player.y)) + ' m'
+        : e.name;
+      node.classList.toggle('target-marker', repeatingGoal);
       node.classList.toggle('damage-number', !!e.damage);
       node.classList.toggle('combo-label', !!e.combo);
       node.classList.toggle('heavy-hit', !!e.damage && e.amount >= 120);
@@ -112,12 +121,7 @@ export function createWorldLabels({ readState, projectWorld }) {
           : '#95ffb0';
       q.x += e.offset || 0;
       if (e.damage && q.visible)
-        occupied.push({
-          x: q.x,
-          y: q.y,
-          width: node.offsetWidth,
-          height: node.offsetHeight,
-        });
+        occupied.push({ x: q.x, y: q.y, width: node.offsetWidth, height: node.offsetHeight });
       if (!e.damage && q.visible) {
         const width = node.offsetWidth,
           height = node.offsetHeight;

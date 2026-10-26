@@ -28,9 +28,9 @@ export function damageEnemy(w, e, amount, owner, kind = 'hit') {
     if (kind !== 'chain') {
       const career = careerModifiers(attacker);
       amount *=
-        fieldHitMultiplier(attacker, e, kind, m) *
         career.damage *
-        (e.objective || e.elite || e.type === 'tank' ? career.heavyDamage : 1);
+        (e.objective || e.elite || e.type === 'tank' ? career.heavyDamage : 1) *
+        fieldHitMultiplier(attacker, e, kind, m);
     }
     e.lastHitBy = owner;
     if (!proc && m.critChance > 0 && random(w) < Math.min(0.75, m.critChance)) {
@@ -121,9 +121,14 @@ export function damageEnemy(w, e, amount, owner, kind = 'hit') {
 
 export function structureDamage(w, owner, amount, kind) {
   const p = typeof owner === 'object' ? owner : w.players.find((p) => p.id === owner);
-  return p?.field
-    ? amount * fieldHitMultiplier(p, { objective: true, hp: 1, max: 1 }, kind, fieldModifiers(p))
-    : amount;
+  if (!p) return amount;
+  const career = careerModifiers(p);
+  return (
+    amount *
+    career.damage *
+    career.heavyDamage *
+    fieldHitMultiplier(p, { objective: true, hp: 1, max: 1 }, kind, fieldModifiers(p))
+  );
 }
 
 export function shieldFactor(p) {
@@ -155,8 +160,8 @@ export function hurt(w, t, d, source = t, weapon = 'hit') {
       d *
         0.6 *
         (shield ? shieldFactor(shield) : 1) *
-        fieldMitigation(mods) *
-        careerModifiers(t).damageReduction,
+        careerModifiers(t).damageReduction *
+        fieldMitigation(mods),
   );
   t.recoverUntil = w.time + 0.3;
   t.lastHurt = w.time;

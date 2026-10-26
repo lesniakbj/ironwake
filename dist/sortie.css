@@ -761,7 +761,7 @@
     top: calc(220px + var(--squad-extra, 0px));
   }
   #fieldInventory {
-    max-height: calc(100svh - 465px);
+    max-height: max(72px, calc(100svh - 465px));
   }
 }
 @media (max-width: 700px) and (max-height: 760px) {

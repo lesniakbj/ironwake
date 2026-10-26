@@ -212,10 +212,11 @@ export function objectiveStatus(w, p) {
       : 'Bring every surviving pilot into the exit zone.';
   return { personal, personalDetail, team, teamDetail, progress };
 }
-export function ultimateStatus(p, ability) {
+export function ultimateStatus(p, ability, rechargeRate = 1) {
   if (!ability)
     return { state: 'unavailable', percent: 0, counter: '—', detail: 'NO ULTIMATE', ready: false };
   const remaining = Math.max(0, p.abilityCd || 0),
+    seconds = remaining / (Number.isFinite(rechargeRate) && rechargeRate > 0 ? rechargeRate : 1),
     percent = Math.min(100, Math.max(0, Math.floor((1 - remaining / ability.cd) * 100 + 1e-7)));
   if (p.hp <= 0)
     return { state: 'offline', percent, counter: 'OFFLINE', detail: 'MECH DISABLED', ready: false };
@@ -223,7 +224,7 @@ export function ultimateStatus(p, ability) {
     return {
       state: 'active',
       percent,
-      counter: remaining.toFixed(1) + 's',
+      counter: seconds.toFixed(1) + 's',
       detail: 'ACTIVE · ' + p.active.toFixed(1) + 's',
       ready: false,
     };
@@ -231,7 +232,7 @@ export function ultimateStatus(p, ability) {
     return {
       state: 'charging',
       percent,
-      counter: remaining.toFixed(1) + 's',
+      counter: seconds.toFixed(1) + 's',
       detail: 'RECHARGING · ' + percent + '%',
       ready: false,
     };

@@ -1,10 +1,12 @@
-import { createDeploymentController } from './app/deployment-controller.js';
 import { createCombatHud } from './app/combat-hud.js';
 import { createWorldLabels } from './app/world-labels.js';
 import { createManual } from './app/manual.js';
 import { installPreviewOrbit } from './app/preview-orbit.js';
+import { createDeploymentController } from './app/deployment-controller.js';
+import { roomProtocol } from './network/protocol.js';
 import { createFrameCapture, installFeedback } from './feedback.js';
-import { prepareDialog } from './interface-ux.js?v=1';
+import { prepareDialog } from './interface-ux.js?v=ui-stack-1';
+import { updateWorkshopWorkbench, getWorkshopPreview } from './workshop-ux.js?v=hangar-3';
 import { ENEMY_ROLES } from './enemy-behaviors.js';
 import {
   cleanCareer,
@@ -14,13 +16,12 @@ import {
   availablePoints,
 } from './career-progression.js';
 import { mutateCareerAtHub } from './career-hub.js';
-
 import { destructionMission, destructionMarkers } from './destruction-mission.js';
 import { createDestructionLab, destructionLabEnabled } from './destruction-lab.js';
 import { createSceneFlow } from './scene-flow.js';
 import { createDeploymentGate, MIN_LOADING_SECONDS, deploymentIntro } from './cinematic.js';
 import { campaignRound } from './mission-catalog.js';
-// Both room endpoints require the integrated chassis and item catalogs.
+// Both endpoints require matching field, career, hub and deployment catalogs.
 import {
   HUB_PROTOCOL,
   HUB_CATALOG,
@@ -38,12 +39,11 @@ import {
   hubSnapshot,
 } from './hub-state.js';
 import { createHubView } from './hub-view.js';
-import { roomProtocol } from './network/protocol.js';
 const ROOM_PROTOCOL = roomProtocol(destructionLabEnabled);
-import { HEAVY_EQUIPMENT, chassisFor, chassisBlueprint } from './chassis.js';
-import { chassisPickerMarkup } from './chassis-view.js';
+import { chassisFor, chassisBlueprint } from './chassis.js';
+import { chassisPickerMarkup, chassisIcon } from './chassis-view.js';
 import { CONTRACTS, sortieReport } from './sortie-progression.js';
-import { createSortieHud, debriefMarkup } from './sortie-view.js';
+import { createSortieHud, debriefMarkup } from './sortie-view.js?v=ui-stack-1';
 import { impactMode, toggleImpactMode, impactLevel } from './impact-preferences.js';
 import {
   newCampaign,
@@ -58,9 +58,9 @@ import { createCampaignView, CAMPAIGN_MECHS } from './campaign-view.js';
 import { createCallsign, validCallsign } from './pilot.js';
 import { receiveLegacyMechs } from './migration.js';
 await receiveLegacyMechs();
-import { hullStatus } from './hud-status.js?v=41';
+import { hullStatus } from './hud-status.js?v=ui-stack-1';
 import { operationMarkers } from './planet-mission.js?v=41';
-import { itemIcon, itemWeightClass } from './workshop-icons.js?v=41';
+import { itemIcon } from './workshop-icons.js?v=41';
 import { SOCKETS, socketOptions, fitComponent, gridState } from './workshop-grid.js?v=41';
 import { taskStatus, objectiveStatus, ultimateStatus } from './hud-status.js?v=41';
 import { drawNearbyMap } from './nearby-map.js?v=41';
@@ -78,6 +78,7 @@ import {
   partsFor,
   mechStats,
   combatStats,
+  combatRecovery,
   validBuild,
   WEAPONS,
   RANGED,
@@ -111,7 +112,7 @@ import {
   resetBattle,
   getAim,
   projectWorld,
-} from './three-view.js?v=impact-1';
+} from './three-view.js?v=ui-stack-1';
 import {
   view,
   look,
@@ -137,20 +138,13 @@ import {
   selectPilotVoice,
   previewPilotVoice,
   stopPilotVoice,
-} from './audio.js?v=pilot-2';
+} from './audio.js?v=pilot-career-cinematic-3';
 const $ = (s) => document.querySelector(s),
   $$ = (s) => [...document.querySelectorAll(s)],
   escape = (s) =>
     String(s).replace(
       /[&<>"']/g,
-      (c) =>
-        ({
-          '&': '&amp;',
-          '<': '&lt;',
-          '>': '&gt;',
-          '"': '&quot;',
-          "'": '&#39;',
-        })[c],
+      (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c],
     );
 const read = (k, f) => {
     try {
@@ -232,8 +226,6 @@ const reduced = matchMedia('(prefers-reduced-motion:reduce)').matches;
 const sortieHud = createSortieHud($('#game'));
 const sceneFlow = createSceneFlow($('#sceneFlow'));
 let deployment = null;
-$('.home-description').innerHTML =
-  'Build your machine. Upgrade it in combat.<br>Recover salvage tech. Link resonance relays.';
 function toast(msg) {
   $('#toast').textContent = msg;
   $('#toast').classList.add('show');
@@ -353,7 +345,7 @@ function fitInto(slot, payload) {
   buildChanged();
   document.querySelector(`[data-slot="${slot}"]`)?.focus({ preventScroll: true });
 }
-function chooseChassis(size = 'all') {
+function chooseChassis(size = chassisFor(build).size || 'medium') {
   modal(chassisPickerMarkup(build, size));
   document
     .querySelectorAll('[data-chassis-class]')
@@ -386,11 +378,12 @@ function updateBuild() {
     current = isPart ? build.parts[activeSlot] : build.equipment[slot],
     selectedSocket = SOCKETS.find((s) => s.id === activeSlot);
   $('#mechName').textContent = build.name;
+  $('#homeMachineName').textContent = build.name;
   $('#previewName').textContent = build.name;
   $('#frameRole').textContent = '';
   const chassis = chassisFor(build);
   $('#chooseChassis').textContent =
-    chassis.name + (chassis.size ? ' · ' + chassis.size.toUpperCase() : '') + ' ↗';
+    chassis.name + (chassis.size ? ' · ' + chassis.size : '') + ' ↗';
   $('#chassisSummary').textContent =
     `${chassis.role} · ${f.heavyUsed}/${f.heavySlots} heavy mounts · ${chassis.scale.toFixed(2)}× size`;
   $('#frameDescription').textContent = build.equipment
@@ -398,7 +391,7 @@ function updateBuild() {
     .join(' · ');
   $('#modelCode').textContent = f.weightClass + ' MECH';
   const socketHTML = (s) =>
-    `<button class="grid-socket" aria-pressed="${s.id === activeSlot}" aria-label="${s.label}: ${s.item.name.split(' / ').at(-1)}, ${s.weight} tonnes" data-slot="${s.id}" style="--socket-color:${build.partColors[s.id] || '#a1d9c2'}"><span class="socket-label">${s.label}</span><span class="socket-icon">${itemIcon(s.id, s.selected, s.item)}</span><strong>${s.item.name.split(' / ').at(-1)}</strong><small>${s.weight}t${s.id === 'booster' ? ' · ' + f.capacity + 't effective payload' : ''}</small></button>`;
+    `<button class="grid-socket" aria-pressed="${s.id === activeSlot}" aria-label="${s.label}: ${s.item.name.split(' / ').at(-1)}, ${s.weight} tonnes" data-slot="${s.id}" style="--socket-color:${build.partColors[s.id] || '#a1d9c2'}"><span class="socket-label">${s.label}</span><span class="socket-icon">${itemIcon(s.id, s.selected, s.item)}</span><strong>${s.item.name.split(' / ').at(-1)}</strong><small>${s.weight}t</small></button>`;
   $('#partTabs').innerHTML = f.sockets.slice(0, 5).map(socketHTML).join('');
   $('#equipmentTabs').innerHTML = f.sockets.slice(5).map(socketHTML).join('');
   $$('[data-slot]').forEach(
@@ -430,7 +423,7 @@ function updateBuild() {
     $('#testThrusters').setAttribute('aria-pressed', 'false');
   }
   $('#workshopStatus').textContent = valid ? 'READY TO TEST' : 'POWER OFFLINE';
-  $('#assemblyStatus').textContent = valid ? '● ONLINE' : '○ REFIT REQUIRED';
+  $('#assemblyStatus').textContent = valid ? 'Online' : 'Needs refit';
   $('#assemblyStatus').classList.toggle('offline', !valid);
   $('#assemblyStats').innerHTML = `${f.weight}<span> / ${f.capacity}t</span>`;
   $('#assemblyPerformance').textContent =
@@ -451,10 +444,10 @@ function updateBuild() {
     )
     .join('');
   $('#powerRemaining').textContent = valid
-    ? f.capacity - f.weight + 't FREE CAPACITY'
+    ? f.capacity - f.weight + 't available'
     : f.weight > f.capacity
-      ? f.weight - f.capacity + 't OVER CAPACITY'
-      : f.heavyUsed + '/' + f.heavySlots + ' HEAVY MOUNTS';
+      ? f.weight - f.capacity + 't over capacity'
+      : f.heavyUsed + '/' + f.heavySlots + ' heavy mounts';
   $('#selectionTitle').textContent = selectedSocket.label;
   $('#parts').classList.toggle('frame-choices', isPart);
   const filters = $('#equipmentFilters');
@@ -482,32 +475,6 @@ function updateBuild() {
         : equipmentFilter === 'melee'
           ? v.melee && !v.guard
           : !v.melee),
-  );
-  const maxWeight = Math.max(...Object.values(socketOptions(activeSlot)).map((v) => v.weight));
-  const designsExpanded =
-    $('#parts .alternate-designs')?.open &&
-    $('#parts .alternate-designs')?.dataset.frameSlot === activeSlot;
-  const optionCards = options.map(([id, v]) => {
-    const chosen = id === current,
-      tier = itemWeightClass(activeSlot, id, v);
-    return `<button class="part-choice ${chosen ? 'selected' : ''}" data-choice="${id}" aria-pressed="${chosen}" aria-label="${escape(v.name.split(' / ').at(-1))}, ${tier}, ${v.weight} tonnes${chosen ? ', fitted' : ''}"><span class="choice-heading"><span class="option-icon" style="--socket-color:${build.partColors[activeSlot] || '#a1d9c2'}">${itemIcon(activeSlot, id, v)}</span><span class="choice-name"><span class="weight-class ${tier}">${tier.toUpperCase()}</span><strong>${v.name.split(' / ').at(-1)}</strong></span></span><span class="component-weight"><b>${v.weight}<small>t</small></b><span>WEIGHT</span></span><span class="weight-comparison" aria-hidden="true"><i style="width:${(v.weight / maxWeight) * 100}%"></i></span>${isPart && v.appearance ? `<small class="equipment-description">${v.appearance}</small>` : ''}${!isPart && slot !== 2 && HEAVY_EQUIPMENT.includes(id) ? '<small class="equipment-description">Requires 1 heavy-rated hand mount</small>' : ''}<span class="choice-detail">${isPart ? (activeSlot === 'booster' ? Math.min(chassis.payload, Math.round(v.capacity * chassis.output)) + 't effective payload' : v.hp + ' armor') : v.role || 'TEAM SPECIAL'}</span>${isPart ? '' : `<small class="equipment-description">${v.desc}</small>`}</button>`;
-  });
-  $('#parts').innerHTML =
-    isPart && optionCards.length > 3
-      ? optionCards.slice(0, 3).join('') +
-        `<details class="alternate-designs" data-frame-slot="${activeSlot}" ${designsExpanded || options.slice(3).some(([id]) => id === current) ? 'open' : ''}><summary>More frame designs <span>${optionCards.length - 3} alternatives</span></summary><div class="alternate-design-grid">${optionCards.slice(3).join('')}</div></details>`
-      : optionCards.join('');
-  $$('[data-choice]').forEach(
-    (el) =>
-      (el.onclick = () => {
-        fitInto(activeSlot, {
-          kind: selectedSocket.kind,
-          id: el.dataset.choice,
-        });
-        document
-          .querySelector(`[data-choice="${el.dataset.choice}"]`)
-          ?.focus({ preventScroll: true });
-      }),
   );
   $('#paintRow').hidden = !isPart;
   $('#paintLabel').textContent = (PART_LABELS[activeSlot] || 'Part') + ' paint';
@@ -555,6 +522,16 @@ function updateBuild() {
   $('#damageBar').style.width = '0%';
   $('#engineering').textContent =
     `Unlimited thrust · ${f.lift} lift/sec · ${Math.round(f.speed * f.boost)} boost speed`;
+  updateWorkshopWorkbench({
+    build,
+    activeSlot,
+    current,
+    options,
+    selectedSocket,
+    socketItems: socketOptions(activeSlot),
+    onSlot: (id) => document.querySelector('button[data-slot=' + id + ']')?.click(),
+    onFit: (id) => fitInto(activeSlot, { kind: selectedSocket.kind, id }),
+  });
   renderCampaign();
 }
 
@@ -569,9 +546,10 @@ function menuScreen(screen) {
     'aria-label',
     screen === 'garage'
       ? 'Mech viewer. Drag to rotate, scroll to zoom, or use arrow keys.'
-      : 'Animated battle between three mechs',
+      : 'Your fitted mech in the service hangar',
   );
   window.scrollTo(0, 0);
+  $('#mainContent').scrollTop = 0;
   thrusterPreview = false;
   equipmentPreview = false;
   $('#testWeapons').textContent = 'Test equipment';
@@ -642,10 +620,7 @@ const campaignView = createCampaignView($('#campaignScreen'), {
   },
   special: (id) => {
     if (!Object.hasOwn(ABILITIES, id)) return;
-    build = cleanBuild({
-      ...build,
-      equipment: [...build.equipment.slice(0, 2), id],
-    });
+    build = cleanBuild({ ...build, equipment: [...build.equipment.slice(0, 2), id] });
     buildChanged();
   },
   deploy: () => {
@@ -659,7 +634,7 @@ const campaignView = createCampaignView($('#campaignScreen'), {
 });
 
 const hubView = createHubView($('#hubScreen'), $('#campaignScreen'), {
-  inputBlocked: () => !!feedback?.isOpen(),
+  inputBlocked: () => !!feedback?.isOpen() || $('#interfaceMenu').open,
   command: () => renderCampaign(),
   host: () => hostRoom(),
   join: () => showJoin(),
@@ -787,6 +762,7 @@ function registerRunPilot(name) {
 function applyRefit(name, request, playerId = localId) {
   if (
     playing ||
+    deployment ||
     world ||
     !campaign ||
     (room && !isHost) ||
@@ -821,9 +797,13 @@ function persistCampaign() {
 }
 function renderCampaign() {
   $('#continueCampaign').hidden = !campaign;
-  $('#continueCampaign').textContent = room
-    ? 'Return to squad Anchorage ↗'
-    : 'Return to Anchorage ↗';
+  $('#continueCampaign .js-continue-label').textContent = room ? 'Rejoin squad' : 'Continue';
+  $('#homeResumeDetail').textContent =
+    campaign?.runState === 'active'
+      ? 'Mission ' +
+        String(Math.min(9, campaign.level + 1)).padStart(2, '0') +
+        ' / 09 · Pick up where you left off.'
+      : 'Your campaign report is ready.';
   $('#startMission').classList.toggle('primary', !campaign);
   $('#startMission').classList.toggle('secondary', !!campaign);
   $('#startMission').disabled = !!room && !isHost;
@@ -880,7 +860,14 @@ function beginCampaign() {
   openCampaign();
 }
 function toggleReady() {
-  if (!room || playing || world || connecting || (m.campaign && campaign?.runState !== 'active'))
+  if (
+    !room ||
+    playing ||
+    deployment ||
+    world ||
+    connecting ||
+    (m.campaign && campaign?.runState !== 'active')
+  )
     return;
   const p = localPlayer();
   if (!p || (!p.ready && (!validBuild(build) || !hubDeployable([p])))) return;
@@ -935,7 +922,7 @@ $('#startMission').onclick = () => {
     return;
   }
   modal(
-    '<p class="overline">NEW CAMPAIGN</p><h2>Start a new front?</h2><p>This resets the campaign saved in this browser. Your mechs and career upgrade trees stay in the armory.' +
+    '<h2>Start a new front?</h2><p>This resets the campaign saved in this browser. Your mechs and career upgrade trees stay in the armory.' +
       (room ? ' Your squad will share the new board and ready up again.' : '') +
       '</p><div class="dialog-actions"><button class="button primary" id="confirmCampaign">NEW CAMPAIGN</button><button class="button secondary" id="keepCampaign">CONTINUE CURRENT</button></div>',
   );
@@ -1050,7 +1037,7 @@ function updateSquad() {
 }
 function showHostInfo() {
   modal(
-    '<p class="eyebrow orange">UP TO FOUR PILOTS</p><h2>ASSEMBLE YOUR SQUAD</h2><p>Create a room, share its invite, and choose your mechs. Everyone marks ready before the host deploys. No account needed.</p><p>Keep the host’s tab open during the mission. Direct browser connections may be blocked by restrictive networks; try a different network if a connection fails.</p><button class="button primary" id="confirmHost">CREATE ONLINE ROOM ↗</button>',
+    '<h2>Host a squad</h2><p>Create a room, share its invite, and choose your mechs. Everyone marks ready before the host deploys. No account needed.</p><p>Keep the host’s tab open during the mission. Direct browser connections may be blocked by restrictive networks; try a different network if a connection fails.</p><button class="button primary" id="confirmHost">Create squad ↗</button>',
   );
   $('#confirmHost').onclick = () => {
     $('#modal').close();
@@ -1069,8 +1056,8 @@ function createPeer(id) {
   });
 }
 function resetNetwork(message) {
-  resetSound();
   cancelDeployment();
+  resetSound();
   $('#modal').close();
   if (document.pointerLockElement) document.exitPointerLock();
   clearTimeout(joinTimeout);
@@ -1195,10 +1182,7 @@ async function hostRoom() {
             assigned.callsign = createCallsign();
           if (peer !== p || !conn.open) return;
           if (world || playing || roster.length >= 4) {
-            safeSend(conn, {
-              type: 'reject',
-              reason: 'The squad is full or is already testing.',
-            });
+            safeSend(conn, { type: 'reject', reason: 'The squad is full or is already testing.' });
             setTimeout(() => conn.close(), 500);
             return;
           }
@@ -1298,10 +1282,7 @@ async function joinRoom(code) {
   p.on('open', (id) => {
     if (peer !== p) return;
     localId = id;
-    hostConn = p.connect(ROOM_PROTOCOL + code, {
-      reliable: true,
-      serialization: 'binary',
-    });
+    hostConn = p.connect(ROOM_PROTOCOL + code, { reliable: true, serialization: 'binary' });
     const conn = hostConn;
     conn.on('open', () =>
       safeSend(conn, {
@@ -1331,6 +1312,7 @@ async function joinRoom(code) {
         if (data.hub) hubState = data.hub;
         if (
           !playing &&
+          !deployment &&
           (firstJoin || previousMode !== m.mode || previousPractice !== !!m.practice)
         ) {
           campaignView.focusLanding(campaign);
@@ -1382,7 +1364,7 @@ async function joinRoom(code) {
 }
 function showJoin(code = '') {
   modal(
-    `<p class="eyebrow orange">LINK UP</p><h2>JOIN YOUR SQUAD</h2><p>Enter your host’s six-character room code. Join the host’s campaign board, choose your mech and special, then mark ready. Everyone deploys to the same battlefield.</p><label class="small-label" for="joinCode">ROOM CODE</label><input class="join-code" id="joinCode" maxlength="6" autocomplete="off" spellcheck="false" value="${escape(code)}" placeholder="ABC234"><button class="button primary full" id="confirmJoin">CONNECT TO SQUAD ↗</button>`,
+    `<h2>Join a squad</h2><p>Enter your host’s six-character room code. Join the host’s campaign board, choose your mech and special, then mark ready. Everyone deploys to the same battlefield.</p><label class="small-label" for="joinCode">Room code</label><input class="join-code" id="joinCode" maxlength="6" autocomplete="off" spellcheck="false" value="${escape(code)}" placeholder="ABC234"><button class="button primary full" id="confirmJoin">Join squad ↗</button>`,
   );
   $('#joinCode').focus();
   $('#confirmJoin').onclick = () => {
@@ -1481,7 +1463,6 @@ const {
     campaignMissionActive = false;
     endShown = false;
     thrusterPreview = false;
-    $('#combatMenu').open = false;
   },
   onCombat(current) {
     campaignMissionActive = !!current.mission.campaign;
@@ -1491,7 +1472,7 @@ const {
   },
   clearInputs,
   captureMouse() {
-    if (matchMedia('(pointer:fine)').matches) mouseLook.capture();
+    if (!feedback?.isOpen() && matchMedia('(pointer:fine)').matches) mouseLook.capture();
   },
   stopPreviewSound: () => updatePreviewSound(previewBuild(), performance.now() / 1000, false),
   sendToHost: (data) => safeSend(hostConn, data),
@@ -1503,7 +1484,7 @@ const {
 });
 $('.deployment-cancel').onclick = () => abortDeployment();
 window.addEventListener('keydown', (event) => {
-  if (!deployment) return;
+  if (!deployment || feedback?.isOpen()) return;
   if (event.code === 'Escape') {
     event.preventDefault();
     abortDeployment();
@@ -1536,14 +1517,7 @@ function returnToHangar(send = true) {
   hubView.stop();
   hubView.close();
   if (isHost && send)
-    broadcast({
-      type: 'return',
-      mission: m,
-      roster,
-      campaign,
-      armory,
-      hub: hubSnapshot(hubState),
-    });
+    broadcast({ type: 'return', mission: m, roster, campaign, armory, hub: hubSnapshot(hubState) });
   updateMission();
   updateSquad();
 }
@@ -1629,11 +1603,7 @@ function downloadBuilds() {
   const blob = new Blob(
       [
         JSON.stringify(
-          {
-            game: 'IRONWAKE',
-            version: 6,
-            mechs: saved.length ? saved : [cleanBuild(build)],
-          },
+          { game: 'IRONWAKE', version: 6, mechs: saved.length ? saved : [cleanBuild(build)] },
           null,
           2,
         ),
@@ -1649,22 +1619,28 @@ function downloadBuilds() {
 }
 function showBuilds() {
   modal(
-    `<p class="eyebrow orange">YOUR PERSONAL ARMORY</p><h2>SAVED MECHS <span class="muted">${saved.length}/12</span></h2><p>Saved on this browser. Export a backup to take your mechs to another device. Loading a build resets your ready status.</p>${
+    `<div class="armory-heading"><div><h2>Saved machines</h2></div><span><b>${String(saved.length).padStart(2, '0')}</b> of 12</span></div><p class="armory-intro">Your designs, ready for the next drop. Loading a build clears squad readiness.</p><div class="armory-grid">${
       saved.length
         ? saved
-            .map(
-              (b, i) =>
-                `<div class="build-card"><div><h3 style="color:${b.color}">${escape(b.name)}</h3><p>${mechStats(b).weightClass} / ${mechStats(b).weight}t / ${b.equipment
-                  .filter(Boolean)
-                  .map((id) => EQUIPMENT[id].name.split(' / ').at(-1))
-                  .join(
-                    ' + ',
-                  )}</p></div><div><button class="button secondary" data-load="${i}">LOAD</button><button class="text-button" data-delete="${i}" aria-label="Delete ${escape(b.name)}"> × </button></div></div>`,
-            )
+            .map((b, i) => {
+              const stats = mechStats(b),
+                frame = chassisFor(b);
+              return `<article class="build-card"><span class="armory-machine" style="--frame-paint:${b.color}">${chassisIcon(frame)}</span><div class="armory-card-meta"><small>${frame.name} / ${frame.size || stats.weightClass}</small><h3>${escape(b.name)}</h3><p>${b.equipment
+                .filter(Boolean)
+                .map((id) => EQUIPMENT[id].name.split(' / ').at(-1))
+                .join(
+                  ' · ',
+                )}</p></div><div class="armory-stats"><span><b>${stats.hp}</b> Armor</span><span><b>${stats.weight}<small>t</small></b> Mass</span><span><b>${Math.round(stats.speed * stats.boost)}</b> Boost</span></div><div class="armory-actions"><button class="button primary" data-load="${i}">Load machine ↗</button><button class="armory-delete text-button" data-delete="${i}" aria-label="Delete ${escape(b.name)}">Delete</button></div></article>`;
+            })
             .join('')
-        : '<p>No saved mechs yet. Configure your mech in the workshop, then choose Save Mech.</p>'
-    }<div class="dialog-actions"><button id="exportBuilds" class="button secondary">EXPORT MECHS ↓</button><button id="importBuilds" class="button secondary">IMPORT MECHS ↑</button><input type="file" id="importFile" accept="application/json,.json" hidden></div>`,
+        : `<div class="armory-empty"><span>${chassisIcon(chassisFor(build))}</span><h3>No saved machines</h3><p>Save a machine in Assembly to keep it here.</p><button class="button primary" id="armoryWorkshop">Open assembly ↗</button></div>`
+    }</div><div class="armory-footer"><span>Stored on this device. Export a backup to take your designs with you.</span><div class="dialog-actions"><button id="exportBuilds" class="button secondary">Export ↓</button><button id="importBuilds" class="button secondary">Import ↑</button><input type="file" id="importFile" accept="application/json,.json" hidden></div></div>`,
   );
+  if ($('#armoryWorkshop'))
+    $('#armoryWorkshop').onclick = () => {
+      $('#modal').close();
+      menuScreen('garage');
+    };
   $$('[data-load]').forEach(
     (b) =>
       (b.onclick = () => {
@@ -1678,9 +1654,14 @@ function showBuilds() {
   $$('[data-delete]').forEach(
     (b) =>
       (b.onclick = () => {
-        saved.splice(+b.dataset.delete, 1);
-        write('iw-builds', saved);
-        showBuilds();
+        b.textContent = 'Confirm delete';
+        b.setAttribute('aria-label', 'Confirm deletion of ' + saved[+b.dataset.delete].name);
+        b.classList.add('confirm-delete');
+        b.onclick = () => {
+          saved.splice(+b.dataset.delete, 1);
+          write('iw-builds', saved);
+          showBuilds();
+        };
       }),
   );
   $('#exportBuilds').onclick = downloadBuilds;
@@ -1763,6 +1744,16 @@ const gameKeys = [
   'Numpad2',
   'Numpad3',
 ];
+function toggleFieldInventory() {
+  if (!playing || $('#modal').open || feedback?.isOpen() || !sortieHud.key('KeyB')) return false;
+  if (document.pointerLockElement) document.exitPointerLock();
+  clearInputs();
+  $('#combatMenu').open = false;
+  $('#gameFieldInventory').setAttribute('aria-expanded', String(sortieHud.inventoryOpen));
+  $('#battle').focus({ preventScroll: true });
+  return true;
+}
+$('#gameFieldInventory').onclick = toggleFieldInventory;
 $('#combatMenu').addEventListener('toggle', () => {
   if ($('#combatMenu').open) {
     if (document.pointerLockElement) document.exitPointerLock();
@@ -1775,17 +1766,18 @@ window.addEventListener('keydown', (e) => {
     $('#modal').open ||
     feedback?.isOpen() ||
     $('#combatMenu').open ||
-    e.target.closest?.('button,summary,input,select,textarea,a,[contenteditable]')
+    e.target.closest('button,summary,input,select,textarea,a,[contenteditable]')
   )
     return;
   if (e.code === 'Tab' && e.target !== $('#battle')) return;
-  if (
-    e.target.closest?.('#sortieHud button,#fieldOffers button,#fieldInteraction button') &&
-    ['Space', 'Enter'].includes(e.code)
-  )
-    return;
   if (gameKeys.includes(e.code)) e.preventDefault();
-  if (!e.repeat && sortieHud.key(e.code)) return;
+  if (!e.repeat && sortieHud.key(e.code)) {
+    if (['KeyB', 'KeyU'].includes(e.code)) {
+      if (document.pointerLockElement) document.exitPointerLock();
+      clearInputs();
+    }
+    return;
+  }
   keys[e.code] = true;
   syncStrafe();
   if (!e.repeat && e.code === 'KeyH') {
@@ -1799,7 +1791,6 @@ window.addEventListener('keydown', (e) => {
   if (!e.repeat && e.code === 'KeyV') $('#impactMode').click();
   if (!e.repeat && e.code === 'KeyM') $('#soundToggle').click();
 });
-
 window.addEventListener('keyup', (e) => {
   keys[e.code] = false;
   syncStrafe();
@@ -1943,7 +1934,8 @@ for (const [id, hand] of [
 
 function getInput() {
   const p = world?.players.find((p) => p.id === localId);
-  if (!p || $('#modal').open || feedback?.isOpen()) return { x: 0, y: 0, fire: false };
+  if (!p || $('#modal').open || feedback?.isOpen() || $('#combatMenu').open)
+    return { x: 0, y: 0, fire: false };
   if (keys.ArrowLeft) view.yaw -= 0.055;
   if (keys.ArrowRight) view.yaw += 0.055;
   const movement = movementInput(keys, touch),
@@ -1973,13 +1965,9 @@ feedback = installFeedback({
       client: 'in-game-feedback-v1',
       build: document.querySelector('#buildLabel')?.title || 'Development build',
       page: location.pathname,
-      screen: playing ? 'battle' : document.body.dataset.screen,
+      screen: deployment ? 'deployment' : playing ? 'battle' : document.body.dataset.screen,
       browser: navigator.userAgent,
-      viewport: {
-        width: innerWidth,
-        height: innerHeight,
-        pixelRatio: devicePixelRatio,
-      },
+      viewport: { width: innerWidth, height: innerHeight, pixelRatio: devicePixelRatio },
       effects: impactMode(),
       session: room ? (isHost ? 'co-op host' : 'co-op guest') : 'solo',
       players: world?.players.length || 1,
@@ -2047,10 +2035,7 @@ const updateHud = createCombatHud({
   mouseLook,
   beforeUpdate: (current) => destructionLab.update(current),
 });
-const updateLabels = createWorldLabels({
-  readState: () => ({ world, localId }),
-  projectWorld,
-});
+const updateLabels = createWorldLabels({ readState: () => ({ world, localId }), projectWorld });
 function drawRadar() {
   const p = world.players.find((p) => p.id === localId);
   if (p) drawNearbyMap($('#radar'), world, p, view.yaw);
@@ -2095,7 +2080,7 @@ function frame(t) {
       updatePreviewSound(previewBuild(), t / 1000, false);
     }
     reportCapture.frame(
-      playing
+      playing || deployment?.insertionAt != null
         ? $('#battle')
         : deployment
           ? null
@@ -2130,15 +2115,16 @@ $('#testWeapons').onclick = () => {
 };
 
 function previewBuild() {
-  const slot = activeSlot.startsWith('equip')
+  const inspected = getWorkshopPreview(build),
+    slot = activeSlot.startsWith('equip')
       ? Number(activeSlot.slice(5))
-      : Math.max(0, build.equipment.findIndex(Boolean)),
-    item = build.equipment[slot];
+      : Math.max(0, inspected.equipment.findIndex(Boolean)),
+    item = inspected.equipment[slot];
   return {
-    ...build,
+    ...inspected,
     selectedSlot: slot,
-    weapon: RANGED[item] ? item : build.weapon,
-    melee: MELEE[item] ? item : build.melee,
+    weapon: RANGED[item] ? item : inspected.weapon,
+    melee: MELEE[item] ? item : inspected.melee,
   };
 }
 $('#battle').addEventListener(

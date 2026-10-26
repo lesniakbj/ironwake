@@ -102,7 +102,7 @@ test('persistent weapon damage works in practice and campaign, and run modules m
         const w = make(certified, mission),
           p = w.players[0];
         Object.assign(p, { ...mission.entry, altitude: 0 });
-        p.field = { ...p.field, modules, damage: 0 };
+        p.field = { modules, damage: 0 };
         const e = { ...target(type), x: p.x + 80, y: p.y };
         w.enemies = [e];
         tick(w, { left: true });
@@ -166,6 +166,7 @@ test('career damage reduction multiplies run armor and active shields on actual 
         { id: 999, x: 50, y: 0, z: 30, vx: -2000, vy: 0, vz: 0, life: 1, damage: 100, enemy: true },
       ];
       step(w, 0.05);
+      // Career mitigation multiplies the additive field armor contract once.
       close(
         before - p.hp,
         100 * 0.6 * mods.damageReduction * (modules.length ? 0.8 : 1) * (shield ? 0.4 : 1),

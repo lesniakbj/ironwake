@@ -45,8 +45,13 @@ export function createSortieHud(parent) {
   hud.id = 'sortieHud';
   hud.hidden = true;
   hud.setAttribute('aria-label', 'Field progression');
-  hud.innerHTML =
-    '<div id="fieldSummary"></div><button id="fieldInventoryToggle" type="button" aria-expanded="false" aria-controls="fieldInventory">INVENTORY <span>[B] +</span></button><div id="fieldInventory" hidden></div>';
+  hud.innerHTML = '<div id="fieldSummary"></div>';
+  const inventoryPanel = document.createElement('section');
+  inventoryPanel.id = 'fieldInventoryPanel';
+  inventoryPanel.hidden = true;
+  inventoryPanel.setAttribute('aria-label', 'Field inventory');
+  inventoryPanel.innerHTML =
+    '<button id="fieldInventoryToggle" type="button" aria-expanded="false" aria-controls="fieldInventory">Close inventory <span>[B] ×</span></button><div id="fieldInventory" hidden></div>';
   const offers = document.createElement('section');
   offers.id = 'fieldOffers';
   offers.hidden = true;
@@ -60,10 +65,14 @@ export function createSortieHud(parent) {
   pickup.hidden = true;
   pickup.setAttribute('role', 'status');
   pickup.setAttribute('aria-live', 'polite');
-  parent.append(hud, offers, nearby, pickup);
+  // Routine run data stays behind the mission disclosure. Inventory, choices and
+  // interactions remain independent so B, touch and field commands work when it is shut.
+  const details = parent.querySelector('#objectivesPanel .objective-details');
+  (details || parent).append(hud);
+  parent.append(offers, nearby, pickup, inventoryPanel);
   const summary = hud.querySelector('#fieldSummary'),
-    inventory = hud.querySelector('#fieldInventory'),
-    toggle = hud.querySelector('#fieldInventoryToggle');
+    inventory = inventoryPanel.querySelector('#fieldInventory'),
+    toggle = inventoryPanel.querySelector('#fieldInventoryToggle');
   let world = null,
     player = null,
     choices = [],
@@ -86,11 +95,21 @@ export function createSortieHud(parent) {
   function releaseCursor() {
     if (document.pointerLockElement) document.exitPointerLock();
   }
+  function renderInventory() {
+    if (!inventoryOpen || !player?.field) return;
+    const field = player.field,
+      active = (field.buffs || []).filter((buff) => buff.expiresAt > world.time);
+    render(
+      'inventory',
+      inventory,
+      `<h3>Field upgrades <span>${field.upgrades?.length || 0}</span></h3>${inventoryMarkup(field.upgrades, FIELD_UPGRADES, 'Earn XP from combat and objectives to choose upgrades.')}<h3>Salvage tech <span>${field.items?.length || 0}</span></h3>${inventoryMarkup(field.items, FIELD_ITEMS, 'Open field caches with shared salvage.')}<h3>Relay support <span>${field.relayCount || 0}</span></h3>${inventoryMarkup([...(field.relays || []), ...active.map((buff) => buff.relayId)], FIELD_RELAYS, 'Find a resonance relay and press F to link.')}<h3>Run modules <span>${field.modules?.length || 0}</span></h3>${inventoryMarkup(field.modules, FIELD_MODULES, 'Extract and install modules at campaign refit.')}`,
+    );
+  }
   function showInventory() {
     inventoryOpen = !inventoryOpen;
-    inventory.hidden = !inventoryOpen;
+    inventoryPanel.hidden = inventory.hidden = !inventoryOpen;
     toggle.setAttribute('aria-expanded', String(inventoryOpen));
-    toggle.innerHTML = `INVENTORY <span>[B] ${inventoryOpen ? '−' : '+'}</span>`;
+    renderInventory();
   }
   function choose(id) {
     const entry = choices.find((entry) => entry.id === id);
@@ -139,7 +158,7 @@ export function createSortieHud(parent) {
     );
   }
   toggle.addEventListener('click', showInventory);
-  for (const element of [hud, offers, nearby]) {
+  for (const element of [hud, inventoryPanel, offers, nearby]) {
     // These controls share the live battlefield; a click must never fire a hand weapon.
     element.addEventListener('pointerdown', (event) => {
       event.stopPropagation();
@@ -161,7 +180,7 @@ export function createSortieHud(parent) {
       player = p;
       hud.hidden = !w?.sortie || !p?.field;
       if (hud.hidden) {
-        offers.hidden = nearby.hidden = pickup.hidden = true;
+        offers.hidden = nearby.hidden = pickup.hidden = inventoryPanel.hidden = true;
         return;
       }
       const nextMission = w.mission.seed + '|' + p.id;
@@ -172,9 +191,8 @@ export function createSortieHud(parent) {
         queue = {};
         keys = {};
         inventoryOpen = false;
-        inventory.hidden = true;
+        inventoryPanel.hidden = inventory.hidden = true;
         toggle.setAttribute('aria-expanded', 'false');
-        toggle.innerHTML = 'INVENTORY <span>[B] +</span>';
       }
       lastTime = w.time;
       const field = p.field,
@@ -191,12 +209,7 @@ export function createSortieHud(parent) {
         summary,
         `<div class="field-heading"><span>FIELD SYSTEMS</span><b>LV ${level}</b></div><div class="field-xp-heading"><strong>${Math.max(0, (field.xp || 0) - floor)} <small>/ ${ceiling - floor} XP</small></strong><span>${w.sortie.salvage} SALVAGE</span></div><div class="field-xp" role="progressbar" aria-label="Field experience to next level" aria-valuemin="0" aria-valuemax="${ceiling - floor}" aria-valuenow="${Math.max(0, (field.xp || 0) - floor)}"><i style="width:${progress}%"></i></div><p class="field-loadout-count">${field.upgrades?.length || 0} UPGRADES <span>/</span> ${field.items?.length || 0} TECH</p>${active.length ? `<div class="field-active-buffs">${active.map((buff) => `<span title="${escape(definition(FIELD_RELAYS, buff.relayId).detail)}">${escape(definition(FIELD_RELAYS, buff.relayId).name)} <b>${Math.ceil(buff.expiresAt - w.time)}s</b></span>`).join('')}</div>` : ''}`,
       );
-      if (inventoryOpen)
-        render(
-          'inventory',
-          inventory,
-          `<h3>FIELD UPGRADES <span>${field.upgrades?.length || 0}</span></h3>${inventoryMarkup(field.upgrades, FIELD_UPGRADES, 'Earn XP from combat and objectives to choose upgrades.')}<h3>SALVAGE TECH <span>${field.items?.length || 0}</span></h3>${inventoryMarkup(field.items, FIELD_ITEMS, 'Open field caches with shared salvage.')}<h3>RELAY SUPPORT <span>${field.relayCount || 0}</span></h3>${inventoryMarkup([...(field.relays || []), ...active.map((buff) => buff.relayId)], FIELD_RELAYS, 'Find a resonance relay and press F to link.')}<h3>RUN MODULES <span>${field.modules?.length || 0}</span></h3>${inventoryMarkup(field.modules, FIELD_MODULES, 'Extract and install modules at campaign refit.')}`,
-        );
+      renderInventory();
       if (sentUpgrade === field.offerRevision && w.time - sentUpgradeAt > 1.2) sentUpgrade = null;
       choices = fieldOffer(w, p);
       updateOffers();
@@ -250,6 +263,9 @@ export function createSortieHud(parent) {
       const input = queue;
       queue = {};
       return input;
+    },
+    get inventoryOpen() {
+      return inventoryOpen && !inventoryPanel.hidden;
     },
   };
 }

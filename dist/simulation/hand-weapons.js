@@ -1,9 +1,9 @@
 // Independent hand cycling, ranged fire, melee impacts and native weapon repair.
 import { RANGED, MELEE } from '../catalog/weapons.js';
 import { chassisFor } from '../chassis.js';
-import { combatStats } from '../builds/combat-stats.js';
+import { combatStats, combatRecovery } from '../builds/combat-stats.js';
 import { fieldModifiers } from '../sortie-progression.js';
-import { fieldRate, fieldArea } from '../field-combat.js';
+import { fieldArea } from '../field-combat.js';
 import { damageStructureAt, damageStructureArea } from '../destruction.js';
 import { firingDirection } from '../weapon-origin.js?v=41';
 import { STRIKES } from '../combat-motion.js?v=41';
@@ -22,7 +22,7 @@ export function stepHand(w, owner, index, held, dt) {
     pressed = !!owner.input?.[index ? 'rightPressed' : 'leftPressed'] || (held && !h.triggerHeld);
   const handHull = owner.hp,
     mods = fieldModifiers(owner),
-    rate = fieldRate(mods),
+    rate = combatRecovery(owner).weaponRate,
     area = fieldArea(mods);
   const p = { ...owner, ...h, weapon: item, melee: item, hand: index, triggerHeld: held },
     selected = item,

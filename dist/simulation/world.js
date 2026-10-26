@@ -3,7 +3,11 @@ import { chassisBounds } from '../chassis.js';
 import { AI_ARM_TIME } from '../catalog/combat-moves.js';
 import { cleanBuild } from '../builds/loadout.js';
 import { validBuild, mechStats } from '../builds/stats.js';
-import { freezeDeploymentProgression, combatStats } from '../builds/combat-stats.js';
+import {
+  freezeDeploymentProgression,
+  combatStats,
+  statsForPlayer,
+} from '../builds/combat-stats.js';
 import { applyProgressionStats, progressionModifiers } from '../career-progression.js';
 import { initOperation } from '../planet-mission.js?v=41';
 import { initSortie } from '../sortie-progression.js';
@@ -85,7 +89,7 @@ export function newWorld(m, roster) {
   };
   if (m.mode === 'operation') {
     initOperation(w);
-    initSortie(w);
+    initSortie(w, statsForPlayer);
     for (const p of w.players) p.hp = combatStats(p).hp;
   }
   if (m.destructible) initDestructionMission(w);

@@ -7,7 +7,7 @@
   --muted: #9da5ad;
   --orange: #ff794a;
   --mint: #7bd8dc;
-  --display: 'Barlow Condensed', Impact, sans-serif;
+  --display: Arial, Helvetica, sans-serif;
   --mono: Arial, sans-serif;
   --radius: 3px;
   --space: 8px;
@@ -19,7 +19,7 @@ body {
   margin: 0;
   background: var(--bg);
   color: var(--ink);
-  font-family: 'Barlow', Arial, sans-serif;
+  font-family: Arial, Helvetica, sans-serif;
 }
 button,
 input,

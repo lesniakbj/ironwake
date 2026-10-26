@@ -4,7 +4,7 @@ const combatAudio = createCombatAudioTracker();
 import { createPilotPreference } from './pilot-profiles.js';
 import { createPilotEvents } from './pilot-events.js';
 import { createPilotVoice } from './pilot-voice.js';
-import { RANGED, mechStats } from './core.js?v=41';
+import { RANGED, combatStats } from './core.js?v=41';
 import {
   createSoundBus,
   playWeaponSound,
@@ -33,9 +33,7 @@ let ctx = null,
   lastHeavyAlert = 0,
   lastSirenBeat = -1;
 let pilotVoice = null,
-  pilotEnabled = true,
-  pilotBuild = null,
-  pilotMaxHp = 0;
+  pilotEnabled = true;
 const pilotEvents = createPilotEvents();
 let pilotStorage;
 try {
@@ -121,24 +119,12 @@ export function toggleSound() {
   if (master) master.gain.setTargetAtTime(muted ? 0 : 0.21, ctx.currentTime, 0.03);
   return muted;
 }
-// Brief synthesized launch accents share the combat bus and respect the sound toggle.
-export function playTransitionSound(phase) {
-  if (phase === 'insert') {
-    tone(110, 620, 0.24, 'triangle', 0.18);
-    noise(0.2, 0.13, 1800);
-  } else if (phase === 'engage') {
-    tone(72, 30, 0.2, 'sine', 0.55);
-    tone(660, 990, 0.1, 'triangle', 0.1);
-    noise(0.12, 0.16, 2400);
-  }
-}
 export function resetSound() {
   combatAudio.reset();
   stopPilotVoice();
   pilotIntroPending = true;
   pilotEvents.reset();
   pilotVoice?.reset();
-  pilotBuild = null;
   lastArmorHit = -10;
   lastHeavyAlert = 0;
   lastSirenBeat = -1;
@@ -160,6 +146,17 @@ export function resetSound() {
   hits = 0;
   energy = 100;
   abilityCooldown = 0;
+}
+// Brief synthesized launch accents share the combat bus and respect the sound toggle.
+export function playTransitionSound(phase) {
+  if (phase === 'insert') {
+    tone(110, 620, 0.24, 'triangle', 0.18);
+    noise(0.2, 0.13, 1800);
+  } else if (phase === 'engage') {
+    tone(72, 30, 0.2, 'sine', 0.55);
+    tone(660, 990, 0.1, 'triangle', 0.1);
+    noise(0.12, 0.16, 2400);
+  }
 }
 let impactNoise = null;
 function noise(duration = 0.1, gain = 0.3, frequency = 1500) {
@@ -207,11 +204,7 @@ export function updateSound(w, id) {
   if (!p) return;
   for (const cue of combatAudio.collect(w, p, !!ctx && ctx.state === 'running' && !muted))
     playEnemyTell(ctx, master, cue);
-  if (p.build !== pilotBuild) {
-    pilotBuild = p.build;
-    pilotMaxHp = mechStats(p.build).hp;
-  }
-  const pilotBarks = pilotEvents.update(w, id, pilotMaxHp);
+  const pilotBarks = pilotEvents.update(w, id, combatStats(p).hp);
   if (pilotVoice?.ready) {
     if (pilotIntroPending && w.status === 'playing' && p.hp > 0) {
       pilotBarks.push('deploy');

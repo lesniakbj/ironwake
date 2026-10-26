@@ -3,10 +3,12 @@ import assert from 'node:assert/strict';
 import { chassisBlueprint } from '../dist/chassis.js';
 import { progressionModifiers, treeFor } from '../dist/career-progression.js';
 import { campaignRound } from '../dist/mission-catalog.js';
+import { initSortie } from '../dist/sortie-progression.js';
 import {
   newWorld,
   mechStats,
   combatStats,
+  statsForPlayer,
   testPlatform,
   combatTrial,
   setInput,
@@ -251,4 +253,74 @@ test('field arc damage remains capped at 120 against armored targets with career
   assert.ok(career.damage > 1 && career.heavyDamage > 1);
   assert.ok(2000 - primary.hp > 120 / 0.95, 'primary damage reaches the arc cap');
   near(2000 - neighbor.hp, 120, 'final arc damage cannot amplify beyond its cap');
+});
+
+test('field initialization captures trained maximum hull independently of current damage', () => {
+  const world = newWorld(testPlatform(), [
+    { id: 'p', build: chassisBlueprint('vanguard'), progression: certified },
+  ]);
+  const player = world.players[0];
+  const maximum = combatStats(player).hp;
+  player.hp = 10;
+  initSortie(world, statsForPlayer);
+  near(player.field.maxHull, maximum, 'run hardware starts from trained hull, not damaged hull');
+  near(combatStats(player).hp, maximum, 'initializing field state does not reduce trained maximum');
+  near(player.hp, 10, 'initialization does not repair existing damage');
+});
+
+test('real demolition projectiles compose career and field damage even without a run inventory', () => {
+  for (const hasField of [false, true]) {
+    const mission = {
+      ...testPlatform(),
+      mode: 'destruction',
+      destructible: true,
+      variant: 'yard',
+      panelCount: 1,
+      obstacles: [
+        {
+          x: 80,
+          y: -20,
+          w: 20,
+          h: 40,
+          height: 60,
+          breakable: 0,
+          material: 'fuel',
+          durability: 1000,
+          explosive: 100,
+        },
+      ],
+    };
+    const world = newWorld(mission, [
+      { id: 'p', build: chassisBlueprint('vanguard'), progression: certified },
+    ]);
+    const player = world.players[0];
+    Object.assign(player, { x: 0, y: 0, altitude: 0 });
+    if (hasField) {
+      initSortie(world, statsForPlayer);
+      player.field.upgrades = ['power', 'breaker'];
+      world.field.nodes = [];
+    }
+    const career = progressionModifiers(player.progression, 'vanguard');
+    world.bullets.push({
+      id: world.id++,
+      kind: 'carbine',
+      owner: player.id,
+      x: 77,
+      y: 0,
+      z: 32,
+      vx: 100,
+      vy: 0,
+      vz: 0,
+      life: 0.1,
+      damage: 24,
+      enemy: false,
+      pierce: 1,
+      hit: [],
+    });
+    step(world, 0.05);
+    const expected = Math.round(
+      24 * career.damage * career.heavyDamage * (hasField ? 1.12 * 1.2 : 1),
+    );
+    assert.equal(1000 - world.destruction.hp[0], expected, `demolition, field=${hasField}`);
+  }
 });

@@ -16,14 +16,32 @@ test('Command shows the researched hull used at deployment while fitted gear sti
     if (originalDocument) Object.defineProperty(globalThis, 'document', originalDocument);
     else delete globalThis.document;
   });
-  const root = {
+  const listeners = {},
+    root = {
       innerHTML: '',
-      addEventListener() {},
+      addEventListener(type, listener) {
+        listeners[type] = listener;
+      },
       contains() {
         return false;
       },
+      querySelectorAll() {
+        return [];
+      },
+      querySelector() {
+        return null;
+      },
     },
     view = createCampaignView(root, {});
+  const showLoadout = () => {
+    const target = {
+      dataset: { tab: 'loadout' },
+      closest() {
+        return this;
+      },
+    };
+    listeners.click({ target });
+  };
   let career = newCareer();
   career = unlockCareer(career, {
     kind: 'mech',
@@ -58,11 +76,11 @@ test('Command shows the researched hull used at deployment while fitted gear sti
     canChoose: true,
     licensed: true,
   };
-  const deploymentBlock = (html) =>
-    html.match(/<div class="deployment-stats [^"]*">[\s\S]*?<\/div>/)?.[0];
+  const deploymentBlock = (html) => html.match(/<div data-deployment-stats>[\s\S]*?<\/div>/)?.[0];
   const deployButton = (html) => html.match(/<button\b[^>]*data-action="deploy"[^>]*>/)?.[0];
 
   view.render(state);
+  showLoadout();
   const baseMarkup = deploymentBlock(root.innerHTML),
     baseHull = mechStats(build).hp;
   assert.ok(
@@ -92,10 +110,8 @@ test('Command shows the researched hull used at deployment while fitted gear sti
   assert.doesNotMatch(deployButton(root.innerHTML), /\bdisabled\b/);
 
   view.render({ ...state, deploymentStats: trainedStats, licensed: false });
-  assert.match(
-    deploymentBlock(root.innerHTML),
-    /License fitted gear at Anchorage vendors before deployment\./,
-  );
+  assert.match(deploymentBlock(root.innerHTML), /License required/);
+  assert.match(root.innerHTML, /License fitted gear at Anchorage vendors before deployment\./);
   assert.match(
     deployButton(root.innerHTML),
     /\bdisabled\b/,
