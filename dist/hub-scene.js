@@ -3,15 +3,21 @@ import { makeMech, animateMech, disposeMech } from './three-view.js?v=ui-stack-1
 import { buildKey, cleanBuild } from './core.js?v=41';
 import { chassisBlueprint } from './chassis.js';
 import { HUB_STATIONS } from './hub-state.js';
+import { deviceVisualBudget } from './visual-quality.js';
+import { createAmbientAir } from './ambient-air.js';
+import { createPracticalPools } from './ground-contact.js';
+import { createSurfacePool, surfaceMask } from './surface-pool.js';
+import { chassisFor } from './chassis.js';
 
 // Repeated architecture is instanced by geometry/material; only machinery and pilots animate.
 export function createHubScene(canvas) {
+  const visualBudget = deviceVisualBudget();
   const renderer = new T.WebGLRenderer({
     canvas,
     antialias: true,
     powerPreference: 'high-performance',
   });
-  renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 1.5));
+  renderer.setPixelRatio(Math.min(devicePixelRatio || 1, visualBudget.pixelRatio));
   renderer.outputColorSpace = T.SRGBColorSpace;
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = T.PCFSoftShadowMap;
@@ -33,7 +39,7 @@ export function createHubScene(canvas) {
     near: 1,
     far: 180,
   });
-  sun.shadow.mapSize.set(1024, 1024);
+  sun.shadow.mapSize.set(visualBudget.shadowSize, visualBudget.shadowSize);
   sun.shadow.normalBias = 0.06;
   scene.add(sun);
   const fill = new T.DirectionalLight('#77baca', 1.2);
@@ -378,6 +384,21 @@ export function createHubScene(canvas) {
     mesh.receiveShadow = true;
     scene.add(mesh);
   }
+  const contactMask = surfaceMask(),
+    contact = createSurfacePool(scene, 4, contactMask, '#101c24'),
+    air = createAmbientAir(scene, visualBudget, { hub: true }),
+    practical = createPracticalPools(scene, [
+      ...HUB_STATIONS.filter((s) => s.id !== 'mission').map((s) => ({
+        x: s.x,
+        y: 0.33,
+        z: (s.id === 'parts' || s.id === 'story' ? -17 : 7) + 1,
+        radius: 3.5,
+        strength: 0.12,
+      })),
+      ...[-1, 1].flatMap((side) =>
+        [-20, 0, 20].map((z) => ({ x: side * 43, z, radius: 3, strength: 0.09 })),
+      ),
+    ]);
   let lastTime = 0,
     zoom = 1,
     contextLost = false;
@@ -409,6 +430,7 @@ export function createHubScene(canvas) {
       }
       const self = state.players.find((p) => p.id === selfId),
         portrait = width / height < 1.1;
+      contact.begin();
       const visiting = !!viewContext?.station;
       target.lerp(
         new T.Vector3(
@@ -446,6 +468,7 @@ export function createHubScene(canvas) {
         const member = members.find((m) => m.id === p.id);
         if (!member) continue;
         const key = buildKey(member.build);
+        contact.put(p.x, 0.095, p.z, 2.2 * chassisFor(member.build).scale, 0.3);
         let entry = models.get(p.id);
         if (entry?.key !== key) {
           if (entry) {
@@ -487,6 +510,8 @@ export function createHubScene(canvas) {
         o.scale.y = i < bestLevel ? 0.35 : i === bestLevel ? 1.6 : 1;
         o.visible = i <= bestLevel;
       });
+      contact.end();
+      air.update(time, 0, 0, reduced);
       renderer.render(scene, camera);
     },
     project(x, z, y = 0) {
@@ -498,9 +523,18 @@ export function createHubScene(canvas) {
       };
     },
     stats() {
-      return { calls: renderer.info.render.calls, triangles: renderer.info.render.triangles };
+      return {
+        calls: renderer.info.render.calls,
+        triangles: renderer.info.render.triangles,
+        visualTier: visualBudget.tier,
+        shadowSize: visualBudget.shadowSize,
+      };
     },
     dispose() {
+      contact.dispose();
+      contactMask.dispose();
+      air.dispose();
+      practical.dispose();
       for (const { g } of models.values()) disposeMech(g);
       dummies.forEach(disposeMech);
       scene.traverse((o) => {

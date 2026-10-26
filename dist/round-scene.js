@@ -1,9 +1,13 @@
 import * as T from './vendor/three.module.min.js';
+import { dressArena } from './arena-dressing.js';
+import { createPracticalPools } from './ground-contact.js';
 const box = new T.BoxGeometry(1, 1, 1),
   tube = new T.CylinderGeometry(1, 1, 1, 10),
   shard = new T.OctahedronGeometry(1, 0),
   torus = new T.TorusGeometry(1, 0.035, 4, 48),
-  materials = new Map();
+  materials = new Map(),
+  batchToon = new T.MeshToonMaterial({ color: '#ffffff' }),
+  batchGlow = new T.MeshBasicMaterial({ color: '#ffffff' });
 const mat = (color, lit = false) => {
   const key = color + lit;
   if (!materials.has(key))
@@ -31,7 +35,7 @@ export function roundSky(parent, m) {
       vertexShader:
         'varying vec3 p;void main(){p=position;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',
       fragmentShader:
-        'uniform vec3 tint;varying vec3 p;void main(){float y=normalize(p).y;vec3 c=mix(tint*.9,vec3(.08,.13,.2),smoothstep(-.2,.85,y));gl_FragColor=vec4(c,1.);}',
+        'uniform vec3 tint;varying vec3 p;void main(){float y=normalize(p).y;vec3 c=mix(tint*.9,vec3(.08,.13,.2),smoothstep(-.2,.85,y));gl_FragColor=vec4(c,1.);\n#include <tonemapping_fragment>\n#include <colorspace_fragment>\n}',
     }),
     shell = new T.Mesh(new T.SphereGeometry(850, 20, 12), material);
   shell.userData.ownGeometry = shell.userData.ownMaterial = true;
@@ -55,18 +59,21 @@ export function buildRoundScene(parent, m, coverMeshes) {
   const batches = new Map(),
     stamp = new T.Object3D();
   const add = (x, y, z, w, h, d, color, geo = box, lit = false, angle = 0) => {
-    const key = geo.id + color + lit;
-    if (!batches.has(key)) batches.set(key, { geo, material: mat(color, lit), matrices: [] });
+    // Instance color preserves the authored palette without a draw call for every paint color.
+    const key = geo.id + ':' + lit;
+    if (!batches.has(key))
+      batches.set(key, { geo, material: lit ? batchGlow : batchToon, matrices: [], colors: [] });
     stamp.position.set(x, y, z);
     stamp.scale.set(w, h, d);
     stamp.rotation.set(0, angle, 0);
     stamp.updateMatrix();
     batches.get(key).matrices.push(stamp.matrix.clone());
+    batches.get(key).colors.push(new T.Color(color));
   };
-  for (let x = 100; x < m.width; x += 200)
-    add(x * 0.1, 0.02, m.height * 0.05, 0.035, 0.04, m.height * 0.1, '#667576');
-  for (let y = 100; y < m.height; y += 200)
-    add(m.width * 0.05, 0.025, y * 0.1, m.width * 0.1, 0.04, 0.035, '#667576');
+  for (let x = 100; x < m.width; x += 400)
+    add(x * 0.1, 0.02, m.height * 0.05, 0.035, 0.04, m.height * 0.1, '#536261');
+  for (let y = 100; y < m.height; y += 400)
+    add(m.width * 0.05, 0.025, y * 0.1, m.width * 0.1, 0.04, 0.035, '#536261');
   for (const o of m.obstacles) {
     const x = (o.x + o.w / 2) * 0.1,
       z = (o.y + o.h / 2) * 0.1,
@@ -190,10 +197,19 @@ export function buildRoundScene(parent, m, coverMeshes) {
   add(pad.x * 0.1, 0.08, pad.y * 0.1, 28, 0.15, 28, '#344a48', tube);
   for (const side of [-1, 1])
     add(pad.x * 0.1 + side * 12, 0.3, pad.y * 0.1, 0.6, 0.6, 20, '#a9efbe', box, true);
+  dressArena(add, m, box, tube, shard);
+  const practical = createPracticalPools(parent, [
+    { x: 33, z: 11, radius: 6, strength: 0.1 },
+    { x: m.width * 0.1 - 33, z: 11, radius: 6, strength: 0.1 },
+  ]);
+  practical.mesh.userData.disposeVisual = () => practical.dispose();
   for (const b of batches.values()) {
     const mesh = new T.InstancedMesh(b.geo, b.material, b.matrices.length);
-    b.matrices.forEach((matrix, i) => mesh.setMatrixAt(i, matrix));
-    mesh.castShadow = true;
+    b.matrices.forEach((matrix, i) => {
+      mesh.setMatrixAt(i, matrix);
+      mesh.setColorAt(i, b.colors[i]);
+    });
+    mesh.castShadow = !b.material.isMeshBasicMaterial;
     mesh.receiveShadow = true;
     parent.add(mesh);
   }

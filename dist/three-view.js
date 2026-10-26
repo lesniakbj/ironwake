@@ -9,6 +9,10 @@ import { chassisFor } from './chassis.js';
 import { buildChassisModel } from './chassis-models.js';
 import { createEquipmentFX } from './equipment-effects.js';
 import { createFieldScene } from './field-scene.js';
+import { deviceVisualBudget } from './visual-quality.js';
+import { createBattleLighting } from './battle-lighting.js';
+import { createGroundContact } from './ground-contact.js';
+import { createAmbientAir } from './ambient-air.js';
 import { addItemDetails, updateItemDetails } from './item-models.js';
 import { createImpactPool } from './impact-effects.js';
 import { createCombatFeel } from './combat-feel.js';
@@ -1010,12 +1014,19 @@ const biome = [
   { sky: 0xad8c6e, fog: 0xb59b7a, floor: '#6c6151', wall: '#615b52', sun: 0xffc999 },
 ];
 let destructionScene = null,
-  fieldScene = null;
+  fieldScene = null,
+  groundContact = null,
+  ambientAir = null,
+  battleLighting = null,
+  battleBudget = null;
 export function destructionGraphics() {
   return {
     calls: renderer?.info.render.calls || 0,
     geometries: renderer?.info.memory.geometries || 0,
     textures: renderer?.info.memory.textures || 0,
+    visualTier: battleBudget?.tier,
+    shadowSize: battleBudget?.shadowSize,
+    surfaces: groundContact?.stats(),
     ...destructionScene?.stats(),
   };
 }
@@ -1101,8 +1112,9 @@ export function initBattle(canvas) {
     scene = new T.Scene();
     scene.add(new T.AmbientLight(0xffffff, 0.15));
     const battleSun = lighting(scene);
-    battleSun.shadow.mapSize.set(1024, 1024);
-    renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 1.35));
+    battleBudget = deviceVisualBudget();
+    battleLighting = createBattleLighting(scene, battleSun, battleBudget);
+    renderer.setPixelRatio(Math.min(devicePixelRatio || 1, battleBudget.pixelRatio));
     camera = new T.PerspectiveCamera(72, 1, 0.15, 1000);
     skyGroup = new T.Group();
     scene.add(skyGroup);
@@ -1130,6 +1142,10 @@ export function resetBattle() {
   combatFeel?.reset();
   fieldScene?.dispose();
   fieldScene = null;
+  groundContact?.dispose();
+  groundContact = null;
+  ambientAir?.dispose();
+  ambientAir = null;
   worldSeed = null;
   lastFrame = 0;
   lastKills = 0;
@@ -1143,6 +1159,10 @@ function removeAll(group) {
   }
 }
 function buildWorld(m) {
+  groundContact?.dispose();
+  groundContact = null;
+  ambientAir?.dispose();
+  ambientAir = null;
   fieldScene?.dispose();
   fieldScene = null;
   enemyFlair?.dispose();
@@ -1197,6 +1217,11 @@ function buildWorld(m) {
   } else createSky(skyGroup, m);
   scene.background = new T.Color(p.sky);
   scene.fog = new T.Fog(p.sky, 160, 650);
+  battleLighting.setMission(m);
+  if (m.mode === 'operation' || m.destructible || ['sandbox', 'trial'].includes(m.mode))
+    groundContact = createGroundContact(effectsGroup, battleBudget);
+  // Classic Cinderfall already has authored ash; avoid layering another volume over it.
+  if (m.raid) ambientAir = createAmbientAir(effectsGroup, battleBudget, { theme: m.spec.theme });
 }
 function makeTarget() {
   const g = new T.Group();
@@ -1644,9 +1669,9 @@ export function drawBattle3D(canvas, w, id, t, presentation = {}) {
   enemyCues.update(w);
   enemyFlair.update(w);
   updateEffects(w, t);
-  const sun = scene.children.find((o) => o.isDirectionalLight);
-  sun.position.set(self.x * S - 50, 85, self.y * S - 45);
-  sun.target.position.set(self.x * S, 0, self.y * S);
+  groundContact?.update(w, impactMode() === 'reduced');
+  ambientAir?.update(t, self.x * S, self.y * S, impactMode() === 'reduced');
+  battleLighting.update(self.x * S, self.y * S);
   scene.updateMatrixWorld(true);
   const eye = thirdPersonView(self, view, camera.aspect);
   const cinematic =

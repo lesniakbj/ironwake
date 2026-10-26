@@ -45,12 +45,15 @@ function instances(group, color, items, basic = false, custom = null) {
   return o;
 }
 export function clearSpace(group) {
+  const visualDisposals = [];
   group.traverse((o) => {
-    if (o.isInstancedMesh) o.dispose();
+    if (o.userData.disposeVisual) visualDisposals.push(o.userData.disposeVisual);
+    else if (o.isInstancedMesh) o.dispose();
     if (o.userData.ownGeometry) o.geometry.dispose();
     if (o.userData.ownTexture) o.material.map?.dispose();
     if (o.userData.ownMaterial) o.material.dispose();
   });
+  for (const dispose of visualDisposals) dispose();
   group.clear();
 }
 export function createSky(group, m) {
