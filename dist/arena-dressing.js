@@ -7,20 +7,20 @@ export function dressArena(add, m, box, tube, shard) {
     dark = '#243a45',
     pale = '#8b9b9c',
     warm = '#d6aa70';
-  // Rhythm and scale on the perimeter: piers, plate seams and practical lamps.
+  // Thin cladding sits on the existing wall's inner face, rather than disappearing inside it.
   for (const z of [0, d])
     for (let x = 10; x < w; x += 20) {
-      const inside = z === 0 ? 3.2 : d - 3.2;
-      add(x, 16, inside, 1.8, 32, 2.5, steel);
-      add(x, 31, inside, 4.2, 0.8, 3.3, pale);
-      add(x, 23, inside + (z === 0 ? 1.3 : -1.3), 2.7, 0.5, 0.12, warm, box, true);
-      add(x + 8, 7, inside, 8, 0.3, 0.15, '#687b80');
+      const inside = z === 0 ? 6.52 : d - 6.52;
+      add(x, 16, inside, 1.8, 32, 0.06, steel);
+      add(x, 31, inside, 4.2, 0.8, 0.08, pale);
+      add(x, 23, inside + (z === 0 ? 0.06 : -0.06), 2.7, 0.5, 0.12, warm, box, true);
+      add(x + 8, 7, inside, 8, 0.3, 0.08, '#687b80');
     }
   for (const x of [0, w])
     for (let z = 15; z < d; z += 20) {
-      const inside = x === 0 ? 3.2 : w - 3.2;
-      add(inside, 16, z, 2.5, 32, 1.8, steel);
-      add(inside, 31, z, 3.3, 0.8, 4.2, pale);
+      const inside = x === 0 ? 6.52 : w - 6.52;
+      add(inside, 16, z, 0.06, 32, 1.8, steel);
+      add(inside, 31, z, 0.08, 0.8, 4.2, pale);
     }
   // Service lanes, sparse wear panels and landing-pad markings replace a uniform test grid.
   for (let z = 12; z < d - 10; z += 24)

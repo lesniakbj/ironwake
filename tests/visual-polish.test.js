@@ -221,13 +221,25 @@ test('arena dressing places substantial architecture inside existing solid rims 
     dressArena((...a) => entries.push(a), m, 'box', 'tube', 'shard');
     assert.ok(entries.length < 450);
     for (const [x, y, z, w, h, d] of entries.filter((a) => a[4] > 2)) {
+      const trim = Math.min(w, d) <= 0.15,
+        edge = trim ? 6.7 : 6.5;
       const outside =
-        x + w / 2 <= 6.5 ||
-        x - w / 2 >= m.width * 0.1 - 6.5 ||
-        z + d / 2 <= 6.5 ||
-        z - d / 2 >= m.height * 0.1 - 6.5;
+        x + w / 2 <= edge ||
+        x - w / 2 >= m.width * 0.1 - edge ||
+        z + d / 2 <= edge ||
+        z - d / 2 >= m.height * 0.1 - edge;
       assert.ok(outside, `${spec.id}: art should not create a ghost blocker at ${x},${z}`);
     }
+    const faceCladding = entries.filter((a) => a[4] === 32);
+    assert.ok(
+      faceCladding.every(
+        ([x, , z, w, , d]) =>
+          (d <= 0.08 &&
+            Math.min(Math.abs(z - 6.5), Math.abs(z - (m.height * 0.1 - 6.5))) <= 0.04) ||
+          (w <= 0.08 && Math.min(Math.abs(x - 6.5), Math.abs(x - (m.width * 0.1 - 6.5))) <= 0.04),
+      ),
+      'cladding is exposed at the existing wall face',
+    );
     assert.equal(JSON.stringify(m), before);
   }
 });
