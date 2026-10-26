@@ -6,7 +6,7 @@ import {writeBuildInfo} from './build-info.mjs';
 import {MAX_REQUEST,validateReport} from '../dist/feedback-schema.js';
 // --field-qa enables local browser fixtures and a feedback mock. It never contacts GitHub.
 // Example: node scripts/preview-server.mjs 4190 --field-qa
-const root=resolve(import.meta.dirname,'..'),types={'.html':'text/html','.js':'text/javascript','.css':'text/css','.svg':'image/svg+xml','.json':'application/json'};
+const root=resolve(import.meta.dirname,'..'),types={'.html':'text/html','.js':'text/javascript','.css':'text/css','.svg':'image/svg+xml','.json':'application/json','.png':'image/png','.jpg':'image/jpeg','.jpeg':'image/jpeg','.gif':'image/gif','.wav':'audio/wav','.mp3':'audio/mpeg','.ogg':'audio/ogg','.mp4':'video/mp4','.webm':'video/webm'};
 const json=(res,status,value)=>res.writeHead(status,{'Content-Type':'application/json','Cache-Control':'no-store'}).end(JSON.stringify(value));
 export function createPreviewHandler({fieldQA=false}={}){
 const feedbackLog=[];

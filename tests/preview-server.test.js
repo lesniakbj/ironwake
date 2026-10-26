@@ -5,8 +5,8 @@ import {Readable} from 'node:stream';
 import {createPreviewHandler} from '../scripts/preview-server.mjs';
 
 async function request(handler,url,{method='GET',headers={},body}={}){
- const result={status:null,headers:null,body:null};
- const res={writeHead(status,headers){result.status=status;result.headers=headers;return this;},end(body){result.body=body?.toString()||'';return this;}};
+ const result={status:null,headers:null,body:null,rawBody:null};
+ const res={writeHead(status,headers){result.status=status;result.headers=headers;return this;},end(body){result.rawBody=body;result.body=body?.toString()||'';return this;}};
  const req=body?Object.assign(Readable.from([body]),{url,method,headers}):{url,method,headers};
  await handler(req,res);return result;
 }
@@ -24,6 +24,14 @@ test('only explicit field QA enables the fixture injection and a fresh local-onl
  const config=JSON.parse((await request(handler,'/ironwake/api/feedback')).body);assert.equal(config.available,true);assert.equal(config.mock,true);
  assert.deepEqual(JSON.parse((await request(handler,'/tests/field-qa-log.json')).body),{mock:true,publication:'none',attempts:[]});
  const core=await request(handler,'/ironwake/core.js');assert.equal(core.body,await readFile(new URL('../dist/core.js',import.meta.url),'utf8'));
+});
+
+test('preview preserves pilot WAV bytes and audio MIME type with and without field QA',async()=>{
+ const voice=await readFile(new URL('../dist/audio/pilot/rook/launch.wav',import.meta.url));
+ for(const fieldQA of [false,true]){
+  const response=await request(createPreviewHandler({fieldQA}),'/ironwake/audio/pilot/rook/launch.wav');
+  assert.equal(response.status,200);assert.equal(response.headers['Content-Type'],'audio/wav');assert.deepEqual(response.rawBody,voice);
+ }
 });
 
 async function multipartReport(){

@@ -1,6 +1,6 @@
 # Landscape inventory follow-up — visual verification pending
 
-Local validation on 2026-10-25, on `feature/field-progression`. This follow-up is not pushed. The published draft [PR #17](https://github.com/loganthorneloe/ironwake/pull/17) remains at `a340e65099228fc5a1c1f4b12ea2959d0d35e9bc`, targeting `loganthorneloe/ironwake:main`.
+Historical local validation on 2026-10-25, preserved in commit `84f590ae2137e1b4511499b77f6315dba9713881` on `feature/field-progression`. At that time this follow-up was not pushed and draft [PR #17](https://github.com/loganthorneloe/ironwake/pull/17) published `a340e65099228fc5a1c1f4b12ea2959d0d35e9bc`, targeting `loganthorneloe/ironwake:main`. See the [subsequent stacked integration](field-stacked-integration.md) for the current candidate; the visual verification below is still pending.
 
 ## Reproduction and scoped fix
 

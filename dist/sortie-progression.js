@@ -41,9 +41,10 @@ function makeFieldNodes(w){
   nodes.push({id:'field-'+i,kind,...position,state:'ready',revision:0,cost:kind==='cache'?(i===0?0:18+Math.floor(rng()*4)*4):definition.cost,claimed:[],...(kind==='cache'?{itemId:id}:{relayId:id})});
  }return nodes;
 }
-export function initSortie(w){
+export function initSortie(w,statsForPlayer){
  w.sortie={contract:contractFor(w.mission.contract).id,salvage:0,salvageUnits:0,salvageEarned:0,salvageEarnedUnits:0,salvageSpent:0,combatKills:0,objectives:0,teamSize:w.players.length};
- w.players.forEach((p,i)=>{const profile=w.mission.raid?w.mission.campaign?.pilots?.find(q=>q.name===p.name):null,xp=count(profile?.xp),level=levelForXP(xp),upgrades=cleanFieldUpgrades(profile?.upgrades);p.field={modules:cleanFieldIds(profile?.modules,FIELD_MODULES,FIELD_LIMITS.modules),upgrades,items:cleanFieldItems(profile?.items),damage:0,kills:0,maxHull:p.hp,seed:(w.mission.seed+i*7919)>>>0,xp,level,pending:Math.max(0,Math.min(FIELD_LIMITS.upgrades-upgrades.length,level-1-upgrades.length)),offerRevision:0,buffs:[],relays:[],relayCount:0,nearby:null,lastPickup:null};});w.field={nodes:makeFieldNodes(w),serial:100,dropCount:0};
+ // Capture trained hardware before loading run inventory. Later field hull gains multiply this base once.
+ w.players.forEach((p,i)=>{const profile=w.mission.raid?w.mission.campaign?.pilots?.find(q=>q.name===p.name):null,xp=count(profile?.xp),level=levelForXP(xp),upgrades=cleanFieldUpgrades(profile?.upgrades),baseHull=statsForPlayer?statsForPlayer(p.build,p).hp:p.hp;p.field={modules:cleanFieldIds(profile?.modules,FIELD_MODULES,FIELD_LIMITS.modules),upgrades,items:cleanFieldItems(profile?.items),damage:0,kills:0,maxHull:baseHull,seed:(w.mission.seed+i*7919)>>>0,xp,level,pending:Math.max(0,Math.min(FIELD_LIMITS.upgrades-upgrades.length,level-1-upgrades.length)),offerRevision:0,buffs:[],relays:[],relayCount:0,nearby:null,lastPickup:null};});w.field={nodes:makeFieldNodes(w),serial:100,dropCount:0};
 }
 export function fieldOffer(w,p){
  const f=p?.field;if(!w?.sortie||w.status!=='playing'||!f||!(p.hp>0)||!f.pending||f.upgrades.length>=FIELD_LIMITS.upgrades)return[];
@@ -76,8 +77,8 @@ export function interactField(w,p,request){
  gainHull(p,before);f.lastPickup={name:definition.name,color:definition.color,kind:node.kind,until:(w.time||0)+5};f.nearby=null;return true;
 }
 export function stepField(w,dt){
- if(!w?.field)return;for(const p of w.players){const f=p.field;if(!f)continue;f.buffs=f.buffs.filter(buff=>buff.expiresAt>w.time);p.hp=Math.min(p.hp,currentMaxHull(p));if(f.lastPickup?.until<=w.time)f.lastPickup=null;f.nearby=null;if(!(p.hp>0))continue;let best=125;
-  for(const node of w.field.nodes){if(node.state!=='ready'||node.claimed.includes(p.id)||Math.abs((p.altitude||0)-node.z)>95||node.kind==='relay'&&f.relays.includes(node.relayId))continue;const distance=Math.hypot(p.x-node.x,p.y-node.y);if(distance<=best&&!staticShotBlocked(w.mission,{x:p.x,y:p.y,z:(p.altitude||0)+32},{x:node.x,y:node.y,z:node.z+32})){best=distance;f.nearby=node.id;}}
+ if(!w?.field)return;for(const p of w.players){const f=p.field;if(!f)continue;f.buffs=(f.buffs||[]).filter(buff=>buff.expiresAt>w.time);p.hp=Math.min(p.hp,currentMaxHull(p));if(f.lastPickup?.until<=w.time)f.lastPickup=null;f.nearby=null;if(!(p.hp>0))continue;let best=125;
+  for(const node of w.field.nodes){if(node.state!=='ready'||node.claimed.includes(p.id)||Math.abs((p.altitude||0)-node.z)>95||node.kind==='relay'&&f.relays?.includes(node.relayId))continue;const distance=Math.hypot(p.x-node.x,p.y-node.y);if(distance<=best&&!staticShotBlocked(w.mission,{x:p.x,y:p.y,z:(p.altitude||0)+32},{x:node.x,y:node.y,z:node.z+32})){best=distance;f.nearby=node.id;}}
   // Free combat drops reward moving through the fight; authored caches retain an explicit choice.
   for(const drop of w.field.nodes){if(drop.drop&&drop.state==='ready'&&Math.hypot(p.x-drop.x,p.y-drop.y)<=42+fieldModifiers(p).pickupRadius&&Math.abs((p.altitude||0)-drop.z)<70&&interactField(w,p,{id:drop.id,revision:drop.revision}))break;}
  }
