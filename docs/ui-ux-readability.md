@@ -14,6 +14,8 @@ Reference screenshots and visual criteria are documented in [menu-art-direction.
 
 ## Verification
 
+The current combined candidate includes career, Anchorage, cinematics and field progression. Its [stacked integration record](ui-stacked-integration.md) lists current non-browser checks and the held readiness gate. Existing screenshots and earlier browser results below predate this stack; the browser harness was not run for the combined build and does not validate its hub/field flows.
+
 ```sh
 npm test
 npm run build

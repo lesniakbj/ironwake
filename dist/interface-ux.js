@@ -32,7 +32,7 @@ for(const menu of menus)menu.addEventListener('toggle',()=>{
 
 function syncShell(){
  const screen=document.body.dataset.screen;
- const active={home:'railHome',campaign:'campaignNav',garage:'garageNav'}[screen];
+ const active={home:'railHome',campaign:'campaignNav',hub:'campaignNav',garage:'garageNav'}[screen];
  for(const button of document.querySelectorAll('.section-rail .rail-button')){
   if(button.id===active)button.setAttribute('aria-current','page');else button.removeAttribute('aria-current');
  }

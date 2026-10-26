@@ -68,6 +68,14 @@ body[data-screen=home] .home-choice{padding-left:16px;min-height:50px}
 .topbar>.pilot{margin-left:auto}
 dialog h2,.handbook-content h3{font-size:30px;letter-spacing:-.02em}
 .overline,.eyebrow{display:none!important}
+/* The in-world hub occupies the same navigation-safe area as the other menus. */
+body[data-screen=hub] .hub-screen{inset:var(--shell-top) 0 var(--shell-bottom)}
+.hub-eyebrow{display:none!important}
+#sceneFlow{--launch-ink:var(--paper);--launch-accent:var(--orange)}
+#sceneFlow .deployment-code{display:none}
+#sceneFlow .deployment-mode,#sceneFlow .deployment-squad,#sceneFlow .deployment-steps,#sceneFlow .deployment-status,#sceneFlow button{font-family:Arial,Helvetica,sans-serif;letter-spacing:normal}
+#sceneFlow button{min-height:44px;font-size:14px}
+#sceneFlow .deployment-mission{font-family:Arial,Helvetica,sans-serif;font-style:normal;font-weight:700;letter-spacing:normal}
 .pilot-voice-options{min-width:0}
 .pilot-voice-options legend{font-size:14px}
 .pilot-voice-options label{border-radius:0;min-width:0}
