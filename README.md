@@ -94,6 +94,10 @@ Full is the default unless the operating system requests reduced motion. Reduced
 
 Hit bursts share three instanced draw calls (28 hits maximum); explosions share five (18 bursts maximum). Trails use fixed histories and clean up when a battlefield resets. The effects consume existing replicated events and require no protocol change or remote art assets.
 
+## Pilot voice callouts
+
+Choose **Rook**, **Flint** or **Echo** from the menu's **Voice** button or the combat pilot-name button, then preview the voice before deploying. Each has 32 original English anime-style callouts generated with [OmniVoice](https://github.com/k2-fsa/OmniVoice): weapon attacks, specials, movement and squad reactions. The selected base voice persists across sessions and loadouts. **VOICE ON/OFF** saves a separate speech preference; **SOUND [M]** mutes all audio. Priority and cooldowns keep callouts from overlapping or repeating on every shot. See [pilot callouts](docs/pilot-callouts.md) for the audition page, line catalog and generation workflow.
+
 ## Develop
 
 Press **F8** or **Report** to submit a bug or suggestion with an automatic game
