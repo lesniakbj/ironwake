@@ -1,7 +1,7 @@
 // Host-owned hub movement and permanent armory. No browser or rendering dependencies.
 import {PARTS, WEAPONS, ABILITIES, cleanBuild} from './core.js?v=41';
 
-export const HUB_PROTOCOL = 'ironwake-anchorage-career-v2-';
+export const HUB_PROTOCOL = 'ironwake-anchorage-career-cinematic-v3-';
 export const HUB_STATIONS = Object.freeze([
   {id:'mission', name:'Command', keeper:'Commander Vale', role:'Campaign & deployment', x:0, z:-5, color:'#a7efd1', number:'01'},
   {id:'supply', name:'Run supplies', keeper:'Quartermaster Pip', role:'Current run upgrades', x:-26, z:14, color:'#ffc278', number:'02'},

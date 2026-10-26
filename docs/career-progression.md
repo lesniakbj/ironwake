@@ -35,7 +35,7 @@ The dependency is included in this PR, so the supported campaign path runs direc
 - `cleanBuild` and `mechStats(build)` retain hardware semantics. Separate roster `progression: {mech: [], pilot: []}` ranks are sanitized at deployment. No numeric client modifiers, payload changes or extra heavy mounts are accepted.
 - `combatStats(player)` and player-aware mission callbacks preserve researched hull through damage, recovery, repair, checkpoints, revives and redeploys. Career bonuses compose with existing run effects before the in-progress field layer is integrated.
 - Career never consumes or changes `p.field`, field XP, live offers, items, relays, salvage or refit choices. The field branch still needs reconciliation at overlapping combat/app/stat-callback hooks and combined balance testing.
-- Rooms use `ironwake-anchorage-career-v2-` (or the isolated demolition prefix), preventing incompatible simulations from joining. Saves remain local and are not authenticated account progression.
+- Rooms use `ironwake-anchorage-career-cinematic-v3-` (or the isolated demolition prefix), preventing incompatible simulations from joining. Saves remain local and are not authenticated account progression.
 
 ## Verification
 
